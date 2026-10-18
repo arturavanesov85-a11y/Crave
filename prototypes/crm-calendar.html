@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM — календарь автомобилей</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/proto.css">
+<link rel="stylesheet" href="assets/crm.css">
+<style>
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.seg { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 10px; }
+.seg button { min-height: 36px; padding: 0 14px; border: none; border-radius: 7px; background: transparent; color: var(--text-2); }
+.seg button[aria-pressed="true"] { background: var(--gold); color: var(--bg); font-weight: 600; }
+.nav-btn { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--text); display: flex; align-items: center; justify-content: center; }
+.grid-box { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+.grid { min-width: 1000px; }
+.g-head, .g-row { display: flex; border-bottom: 1px solid var(--line); }
+.g-row:last-child { border-bottom: 0; }
+.g-head { background: var(--surface); position: sticky; top: 0; }
+.g-car { flex: 0 0 220px; padding: 8px 14px; display: flex; flex-direction: column; justify-content: center; gap: 3px; border-right: 1px solid var(--line); }
+.g-cols { flex: 1; display: grid; }
+.g-col { padding: 10px 8px; border-left: 1px solid var(--line); font-size: 13px; overflow: hidden; white-space: nowrap; }
+.g-col.today { background: var(--gold-12); }
+.g-lane { flex: 1; position: relative; min-height: 60px; cursor: copy; }
+.cond { align-self: flex-start; font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.bar { position: absolute; top: 12px; height: 36px; border-radius: 6px; padding: 0 8px; display: flex; align-items: center; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.bar.booking { background: var(--gold); color: var(--bg); }
+.bar.rental { background: var(--text); color: var(--bg); }
+.bar.hold { background: transparent; border: 1.5px dashed var(--gold-light); color: var(--gold-light); }
+.bar.block { background: var(--block); color: var(--text); }
+.bar.overdue { background: var(--warn); color: var(--bg); }
+.bar.buffer { background: repeating-linear-gradient(45deg, var(--block) 0 3px, transparent 3px 6px); cursor: default; }
+.bar.cutl { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.bar.cutr { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--warn); pointer-events: none; }
+.legend { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 13px; color: var(--text-2); }
+.legend li { display: flex; align-items: center; gap: 8px; }
+.legend i { display: inline-block; width: 22px; height: 12px; border-radius: 3px; }
+dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 16px; width: min(440px, 92vw); }
+dialog::backdrop { background: rgba(0, 0, 0, .6); }
+</style>
+</head>
+<body>
+<div class="crm">
+<aside class="crm-side">
+<div style="display: flex; align-items: baseline; gap: 8px; padding: 0 8px"><span class="logo" style="font-size: 24px">CRAVE</span><span class="muted" style="font-size: 12px">CRM</span></div>
+<label class="field" style="padding: 0 8px; font-size: 12px">Направление
+<select class="input" style="height: 40px; font-size: 14px"><option>Прокат</option><option>Автосалон</option><option>Сервис</option></select>
+</label>
+<nav class="crm-nav" aria-label="Основное меню">
+<a href="#">Сегодня <span class="count">5</span></a>
+<a href="crm-calendar.html" aria-current="page">Календарь</a>
+<a href="#">Заказы</a>
+<a href="#">Автомобили</a>
+<a href="#">Клиенты</a>
+<a href="#">Финансы</a>
+</nav>
+<div class="muted" style="margin-top: auto; padding: 0 8px; font-size: 12px"><a href="index.html">← Все прототипы</a><br>Менеджер проката · [Имя]</div>
+</aside>
+
+<main class="crm-main">
+<div class="toolbar">
+<h1 style="font-size: 22px; font-weight: 600">Календарь автомобилей</h1>
+<span class="tag">Прототип · демо-данные</span>
+<div style="flex: 1 1 auto"></div>
+<div class="seg" role="group" aria-label="Масштаб">
+<button type="button" data-view="day" aria-pressed="false">День</button>
+<button type="button" data-view="week" aria-pressed="true">Неделя</button>
+<button type="button" data-view="month" aria-pressed="false">Месяц</button>
+</div>
+<div style="display: flex; align-items: center; gap: 6px">
+<button class="nav-btn" type="button" id="prev" aria-label="Назад"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+<span id="period" style="min-width: 170px; text-align: center; font-weight: 500"></span>
+<button class="nav-btn" type="button" id="next" aria-label="Вперёд"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+<button class="btn btn-quiet btn-sm" type="button" id="today">Сегодня</button>
+</div>
+<button class="btn btn-primary btn-sm" type="button" id="newBooking">Новая бронь</button>
+</div>
+
+<div class="alert" role="alert">
+<strong>Просрочен возврат</strong>
+<span style="flex: 1 1 400px">BMW M5 · R-2026-000141 · план сегодня 12:00. Следующая выдача этой машины — завтра в 10:00 (R-2026-000152).</span>
+<a href="crm-order.html" style="font-weight: 600">Открыть следующий заказ</a>
+</div>
+
+<div class="grid-box"><div class="grid" id="grid"></div></div>
+
+<ul class="legend" aria-label="Обозначения">
+<li><i style="background: var(--gold)"></i>Подтверждённая бронь</li>
+<li><i style="background: var(--text)"></i>Автомобиль выдан</li>
+<li><i style="border: 1.5px dashed var(--gold-light)"></i>Временный резерв по заявке</li>
+<li><i style="background: var(--block)"></i>ТО и блокировки</li>
+<li><i style="background: repeating-linear-gradient(45deg, var(--block) 0 3px, transparent 3px 6px)"></i>Подготовка (буфер)</li>
+<li><i style="background: var(--warn)"></i>Просрочка возврата</li>
+<li><i style="width: 2px; height: 14px; background: var(--warn)"></i>Сейчас: вс 18 окт, 14:00</li>
+</ul>
+<p class="muted" style="margin: 0; font-size: 12px">Клик по свободному месту — создать бронь. Клик по полосе — открыть заказ. Перенос брони перетаскиванием будет проверять доступность и просить подтверждение.</p>
+</main>
+</div>
+
+<dialog id="create">
+<form method="dialog" style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="font-size: 20px">Новая бронь</h2>
+<label class="field">Автомобиль<select class="input" id="cCar"></select></label>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<label class="field">Получение<input class="input" type="datetime-local" id="cFrom"></label>
+<label class="field">Возврат<input class="input" type="datetime-local" id="cTo"></label>
+</div>
+<p id="cCheck" style="margin: 0; font-size: 14px"></p>
+<div style="display: flex; gap: 10px; justify-content: flex-end">
+<button class="btn btn-quiet btn-sm" value="cancel">Отмена</button>
+<button class="btn btn-primary btn-sm" value="ok" id="cOk">Создать резерв</button>
+</div>
+</form>
+</dialog>
+
+<script>
+(function () {
+  // Все времена — часы от вс 18 окт 2026 00:00. Сейчас = 14.
+  var ORIGIN = new Date(2026, 9, 18, 0, 0), NOW = 14, BUF = 3;
+  var CARS = [
+    { name: 'BMW M5 F90 Competition', cond: 'Выдан', items: [['rental', -48, 12, 'R-141 · Клиент А.'], ['overdue', 12, 14, '!'], ['buffer', 14, 17], ['booking', 34, 106, 'R-152 · Клиент Б. · 3 сут'], ['buffer', 106, 109]] },
+    { name: 'Mercedes-AMG GT63 S', cond: 'Готов', items: [['hold', 62, 110, 'Заявка с сайта · резерв до 14:30']] },
+    { name: 'Porsche Cayenne S III', cond: 'ТО', items: [['block', 9, 42, 'ТО · плановое'], ['booking', 84, 252, 'R-155 · Клиент В. · 7 сут'], ['buffer', 252, 255]] },
+    { name: 'Mercedes-Benz G63', cond: 'Выдан', items: [['rental', -72, 68, 'R-138 · Клиент Г.'], ['buffer', 68, 71]] },
+    { name: 'BMW 540i', cond: 'Готов', items: [['booking', 130, 166, 'R-157 · Клиент Д.'], ['buffer', 166, 169]] },
+    { name: 'BMW M340i xDrive', cond: 'Подготовка', items: [['buffer', 10, 16]] },
+    { name: 'Dodge RAM TRX', cond: 'Готов', items: [['booking', 18, 66, 'R-150 · Клиент Е. · 2 сут'], ['buffer', 66, 69]] },
+    { name: 'Land Cruiser 300', cond: 'Готов', items: [['block', 106, 114, 'Блокировка: фотосъёмка']] }
+  ];
+  var COND = { 'Готов': 'var(--gold-light)', 'Выдан': 'var(--text)', 'Подготовка': 'var(--text-2)', 'ТО': 'var(--muted)' };
+  var TITLE = { booking: 'Подтверждённая бронь', rental: 'Автомобиль выдан', hold: 'Временный резерв', block: 'Блокировка', overdue: 'Просрочка возврата', buffer: 'Подготовка между заказами' };
+  var view = 'week', offset = 0;
+
+  var at = function (h) { return new Date(ORIGIN.getTime() + h * 3600000); };
+  var toH = function (d) { return (d - ORIGIN) / 3600000; };
+  function range() {
+    if (view === 'day') return { s: offset * 24, len: 24, cols: 24, step: 1 };
+    if (view === 'week') return { s: offset * 168, len: 168, cols: 7, step: 24 };
+    var first = new Date(2026, 9 + offset, 1), next = new Date(2026, 10 + offset, 1);
+    var s = toH(first), len = toH(next) - s;
+    return { s: s, len: len, cols: Math.round(len / 24), step: 24 };
+  }
+  function label(r) {
+    var a = at(r.s), b = at(r.s + r.len - 1);
+    if (view === 'day') return a.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' });
+    if (view === 'month') return a.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+    return a.getDate() + ' – ' + b.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function render() {
+    var r = range();
+    document.querySelectorAll('[data-view]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-view') === view)); });
+    document.getElementById('period').textContent = label(r);
+    var colsTpl = 'grid-template-columns: repeat(' + r.cols + ', minmax(0, 1fr))';
+    var head = '<div class="g-head"><div class="g-car muted" style="font-size: 12px">Автомобиль</div><div class="g-cols" style="' + colsTpl + '">';
+    for (var i = 0; i < r.cols; i++) {
+      var h = r.s + i * r.step, d = at(h);
+      var isToday = view !== 'day' && h <= NOW && NOW < h + 24;
+      var top = view === 'day' ? String(d.getHours()).padStart(2, '0') : (view === 'week' ? d.toLocaleDateString('ru-RU', { weekday: 'short' }) + ' ' + d.getDate() : d.getDate());
+      var sub = view === 'week' ? (isToday ? 'Сегодня' : d.toLocaleDateString('ru-RU', { month: 'short' })) : '';
+      head += '<div class="g-col' + (isToday ? ' today' : '') + '"' + (view === 'day' ? ' style="padding: 10px 2px; text-align: center"' : '') + '><div style="font-weight: 600">' + top + '</div>' + (sub ? '<div class="muted" style="font-size: 12px">' + sub + '</div>' : '') + '</div>';
+    }
+    head += '</div></div>';
+    var lines = 'background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(100% / ' + r.cols + ' - 1px), var(--line-soft) calc(100% / ' + r.cols + ' - 1px), var(--line-soft) calc(100% / ' + r.cols + '))';
+    var rows = CARS.map(function (car, ci) {
+      var bars = car.items.map(function (it) {
+        var a = Math.max(r.s, it[1]), b = Math.min(r.s + r.len, it[2]);
+        if (b <= a) return '';
+        var cls = 'bar ' + it[0] + (it[1] < r.s ? ' cutl' : '') + (it[2] > r.s + r.len ? ' cutr' : '');
+        var style = 'left: ' + ((a - r.s) / r.len * 100) + '%; width: calc(' + ((b - a) / r.len * 100) + '% - 2px)';
+        var title = TITLE[it[0]] + ': ' + at(it[1]).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' — ' + at(it[2]).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        if (it[0] === 'buffer') return '<span class="' + cls + '" style="' + style + '" title="' + title + '"></span>';
+        return '<a class="' + cls + '" href="crm-order.html" style="' + style + '" title="' + title + '">' + (it[3] || '') + '</a>';
+      }).join('');
+      var now = NOW >= r.s && NOW < r.s + r.len ? '<span class="now" style="left: ' + ((NOW - r.s) / r.len * 100) + '%"></span>' : '';
+      return '<div class="g-row"><div class="g-car"><span style="font-weight: 600; font-size: 14px">' + car.name + '</span><span class="cond" style="color: ' + COND[car.cond] + '">' + car.cond + '</span></div>' +
+        '<div class="g-lane" data-car="' + ci + '" style="' + lines + '">' + bars + now + '</div></div>';
+    }).join('');
+    document.getElementById('grid').innerHTML = head + rows;
+  }
+
+  // Проверка пересечений — та же логика, что будет у ограничения в БД (с буфером подготовки).
+  function conflict(ci, s, e) {
+    return CARS[ci].items.filter(function (it) {
+      if (it[0] === 'buffer') return false;
+      var end = it[2] + (it[0] === 'block' ? 0 : BUF);
+      return s < end && it[1] < e + BUF;
+    })[0];
+  }
+  var dlg = document.getElementById('create'), cCar = document.getElementById('cCar'), cFrom = document.getElementById('cFrom'), cTo = document.getElementById('cTo'), cCheck = document.getElementById('cCheck'), cOk = document.getElementById('cOk');
+  cCar.innerHTML = CARS.map(function (c, i) { return '<option value="' + i + '">' + c.name + '</option>'; }).join('');
+  var iso = function (d) { var p = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); };
+  function check() {
+    var s = toH(new Date(cFrom.value)), e = toH(new Date(cTo.value)), ci = Number(cCar.value);
+    var bad = !(e > s) ? 'Возврат должен быть позже получения.' : (conflict(ci, s, e) ? 'Пересекается с «' + TITLE[conflict(ci, s, e)[0]] + '» с учётом подготовки ' + BUF + ' ч. Создать нельзя.' : '');
+    cCheck.textContent = bad || 'Свободно. Будет создан временный резерв на 30 минут.';
+    cCheck.style.color = bad ? 'var(--warn)' : 'var(--gold-light)';
+    cOk.disabled = !!bad; cOk.style.opacity = bad ? .4 : 1;
+  }
+  function openCreate(ci, h) {
+    cCar.value = ci; h = Math.floor(h); cFrom.value = iso(at(h)); cTo.value = iso(at(h + 24)); check(); dlg.showModal();
+  }
+  [cCar, cFrom, cTo].forEach(function (el) { el.addEventListener('input', check); });
+  dlg.addEventListener('close', function () {
+    if (dlg.returnValue !== 'ok') return;
+    var ci = Number(cCar.value), s = toH(new Date(cFrom.value)), e = toH(new Date(cTo.value));
+    CARS[ci].items.push(['hold', s, e, 'Новый резерв · 30 мин']);
+    render();
+  });
+
+  document.getElementById('grid').addEventListener('click', function (ev) {
+    var lane = ev.target.closest('.g-lane');
+    if (!lane || ev.target.closest('a.bar')) return;
+    var r = range(), rect = lane.getBoundingClientRect();
+    openCreate(Number(lane.getAttribute('data-car')), r.s + (ev.clientX - rect.left) / rect.width * r.len);
+  });
+  document.getElementById('newBooking').addEventListener('click', function () { openCreate(4, 34); });
+  document.querySelectorAll('[data-view]').forEach(function (b) { b.addEventListener('click', function () { view = b.getAttribute('data-view'); offset = 0; render(); }); });
+  document.getElementById('prev').addEventListener('click', function () { offset--; render(); });
+  document.getElementById('next').addEventListener('click', function () { offset++; render(); });
+  document.getElementById('today').addEventListener('click', function () { offset = 0; render(); });
+  render();
+})();
+</script>
+</body>
+</html>

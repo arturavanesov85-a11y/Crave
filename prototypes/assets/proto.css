@@ -1,0 +1,105 @@
+/* CRAVE — прототипы. Токены сняты с текущего сайта crave-rental.ru (см. docs/00-audit.md). */
+:root {
+  --bg: #0A0A09;
+  --surface: #111110;
+  --surface-2: #1A1A18;
+  --line: #33373D;
+  --line-soft: #1F1F1D;
+  --block: #4A4F57;
+  --text: #F0ECE4;
+  --text-2: #C8C4B8;
+  --muted: #9A9488;
+  --gold: #A89878;
+  --gold-light: #C4AA88;
+  --gold-12: rgba(168, 152, 120, 0.12);
+  --gold-20: rgba(168, 152, 120, 0.2);
+  --warn: #E0894A;
+  --warn-12: rgba(224, 137, 74, 0.12);
+  --photo: #D9D6CF;
+  --photo-text: #3A3833;
+  --serif: 'Cormorant Garamond', serif;
+  --sans: Montserrat, system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 16px; line-height: 1.5; }
+a { color: var(--gold-light); text-decoration: none; }
+a:hover { color: var(--text); }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+h1, h2, h3 { margin: 0; }
+
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.serif { font-family: var(--serif); font-weight: 600; }
+.muted { color: var(--muted); }
+.text-2 { color: var(--text-2); }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+
+/* Баннер прототипа */
+.proto-bar { background: var(--gold-12); border-bottom: 1px solid var(--line); font-size: 13px; color: var(--text-2); }
+.proto-bar .wrap { display: flex; flex-wrap: wrap; gap: 6px 16px; padding-top: 8px; padding-bottom: 8px; }
+
+/* Шапка сайта */
+.site-header { border-bottom: 1px solid var(--line); }
+.site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; min-height: 72px; padding-top: 10px; padding-bottom: 10px; }
+.logo { font-family: var(--serif); font-size: 30px; font-weight: 600; letter-spacing: .18em; color: var(--text); }
+.switcher { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; }
+.switcher a { padding: 6px 14px; border-radius: 999px; color: var(--text-2); }
+.switcher a[aria-current] { background: var(--gold); color: var(--bg); font-weight: 600; }
+.site-nav { display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px; flex: 1 1 auto; }
+.site-nav a { color: var(--text-2); }
+.site-nav a[aria-current] { color: var(--text); }
+.phone { font-size: 15px; font-weight: 600; color: var(--text); }
+
+/* Элементы форм */
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+.input { height: 48px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font-size: 15px; width: 100%; }
+.btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; padding: 0 20px; border-radius: 10px; font-weight: 600; border: 1px solid var(--gold); }
+.btn-primary { background: var(--gold); color: var(--bg); }
+.btn-primary:hover { background: var(--gold-light); color: var(--bg); }
+.btn-ghost { background: transparent; color: var(--gold-light); font-weight: 500; }
+.btn-quiet { background: transparent; color: var(--text-2); border-color: var(--line); font-weight: 500; }
+.btn-sm { min-height: 40px; padding: 0 14px; border-radius: 8px; font-size: 14px; }
+.chip { min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 14px; border: 1px solid var(--line); background: transparent; color: var(--text-2); }
+.chip[aria-pressed="true"] { border-color: var(--gold); background: var(--gold); color: var(--bg); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+
+/* Карточки */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.photo { aspect-ratio: 4 / 3; background: var(--photo); color: var(--photo-text); display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; font-size: 13px; }
+.car-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
+.car { overflow: hidden; display: flex; flex-direction: column; }
+.car-body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.car-body h2, .car-body h3 { font-size: 19px; font-weight: 600; }
+.price-dl { margin: 6px 0 0; padding-top: 12px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 14px; }
+.price-dl dt { color: var(--muted); }
+.price-dl dd { margin: 0; text-align: right; }
+.price-dl .total { color: var(--text); font-weight: 600; font-size: 16px; }
+.price-dl dd.total { font-size: 18px; }
+
+.alert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--warn); background: var(--warn-12); }
+.alert strong { color: var(--warn); }
+
+.row { display: flex; justify-content: space-between; gap: 12px; }
+.hr { height: 1px; background: var(--line); }
+
+/* Оглавление */
+.index-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.index-list a { display: flex; flex-direction: column; gap: 6px; padding: 20px; color: var(--text); }
+.index-list a:hover { border-color: var(--gold); }
+
+/* Мобильная шапка: меню за бургером, переключатель направлений — внутри меню */
+.burger { display: none; width: 44px; height: 44px; margin-left: auto; align-items: center; justify-content: center; background: none; border: 1px solid var(--line); border-radius: 10px; color: var(--text); }
+@media (max-width: 760px) {
+  .site-header .wrap { min-height: 60px; gap: 12px; }
+  .logo { font-size: 26px; }
+  .burger { display: flex; }
+  .site-nav, .site-header .switcher, .site-header .phone { display: none; }
+  .site-header.open .switcher { display: flex; flex-basis: 100%; justify-content: space-between; }
+  .site-header.open .site-nav { display: flex; flex-direction: column; flex-basis: 100%; gap: 0; }
+  .site-header.open .site-nav a { min-height: 44px; display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+  .site-header.open .phone { display: block; padding: 8px 0 4px; }
+  .stack-sm { grid-template-columns: minmax(0, 1fr) !important; }
+}

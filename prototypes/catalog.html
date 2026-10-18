@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Автопарк — CRAVE Rental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/proto.css">
+<style>
+.datebar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.datebar .wrap { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; padding-top: 24px; padding-bottom: 24px; }
+.layout { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; padding-top: 32px; padding-bottom: 72px; }
+.filters { flex: 1 1 240px; max-width: 100%; display: flex; flex-direction: column; gap: 24px; }
+.filters fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.filters legend { padding: 0; margin-bottom: 10px; }
+.results { flex: 999 1 620px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.badge { font-size: 12px; padding: 3px 10px; border-radius: 999px; }
+.badge.free { background: var(--gold-20); color: var(--gold-light); }
+.badge.busy { background: var(--line); color: var(--text-2); }
+.empty { border: 1px dashed var(--line); border-radius: 16px; padding: 40px; text-align: center; color: var(--text-2); }
+</style>
+</head>
+<body>
+<div class="proto-bar"><div class="wrap"><a href="index.html">← Все прототипы</a><span>Прототип. Доступность — демо: GT63 и RAM TRX показаны занятыми.</span></div></div>
+
+<header class="site-header">
+<div class="wrap">
+<a class="logo" href="home.html">CRAVE</a>
+<button class="burger" type="button" aria-label="Меню" aria-expanded="false" onclick="var h=this.closest('.site-header');h.classList.toggle('open');this.setAttribute('aria-expanded',h.classList.contains('open'))"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+<nav class="switcher" aria-label="Направления">
+<a href="home.html" aria-current="page">Прокат</a>
+<a href="#">Автосалон</a>
+<a href="#">Сервис</a>
+</nav>
+<nav class="site-nav" aria-label="Разделы">
+<a href="catalog.html" aria-current="page">Автопарк</a>
+<a href="#">Цены</a>
+<a href="#">Условия аренды</a>
+<a href="#">Контакты</a>
+</nav>
+<a class="phone" href="tel:+79104210222">+7 (910) 421-02-22</a>
+</div>
+</header>
+
+<section class="datebar">
+<div class="wrap">
+<div style="flex: 1 1 100%">
+<h1 class="serif" style="font-size: 40px">Автопарк</h1>
+<p class="text-2" style="margin: 0; font-size: 15px">Укажите даты — покажем, какие машины свободны и сколько стоит поездка.</p>
+</div>
+<label class="field" style="flex: 1 1 220px">Получение<input class="input" type="datetime-local" id="from"></label>
+<label class="field" style="flex: 1 1 220px">Возврат<input class="input" type="datetime-local" id="to"></label>
+<div style="flex: 2 1 340px; display: flex; flex-direction: column; gap: 6px">
+<span class="muted" style="font-size: 13px">Быстрый выбор срока</span>
+<div class="chips" id="quick"></div>
+</div>
+</div>
+</section>
+
+<div class="wrap layout">
+<aside class="filters" aria-label="Фильтры">
+<fieldset><legend class="eyebrow">Тип кузова</legend><div class="chips" data-filter="cls"></div></fieldset>
+<fieldset><legend class="eyebrow">Бюджет в сутки</legend><div class="chips" data-filter="budget"></div></fieldset>
+<fieldset><legend class="eyebrow">Марка</legend><div class="chips" data-filter="brand"></div></fieldset>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text-2); font-size: 15px">
+<input type="checkbox" id="onlyFree" style="width: 20px; height: 20px; accent-color: var(--gold)">
+Только свободные на эти даты
+</label>
+</aside>
+
+<section class="results" aria-label="Результаты">
+<p class="text-2" id="summary" style="margin: 0; font-size: 15px" aria-live="polite"></p>
+<div class="car-grid" id="cars"></div>
+<div class="empty" id="empty" hidden>Под эти условия машин нет. Измените фильтры или <a href="#">попросите менеджера помочь с выбором</a>.</div>
+<p class="muted" style="margin: 8px 0 0; font-size: 13px">Расчёт предварительный: стоимость подтверждает менеджер. Сутки считаются блоками по 24 часа от времени получения — это предположение, правило округления ещё не утверждено.</p>
+</section>
+</div>
+
+<script src="assets/data.js"></script>
+<script>
+(function () {
+  var c = window.crave, CARS = window.CRAVE_CARS;
+  var q = new URLSearchParams(location.search);
+  var state = { cls: q.get('cls') || 'all', budget: 'all', brand: 'all', onlyFree: false };
+  var from = document.getElementById('from'), to = document.getElementById('to');
+  from.value = q.get('from') || '2026-10-23T10:00';
+  to.value = q.get('to') || '2026-10-26T10:00';
+
+  var OPTS = {
+    cls: [['all', 'Все'], ['sedan', 'Седаны'], ['suv', 'Внедорожники'], ['coupe', 'Купе'], ['pickup', 'Пикапы']],
+    budget: [['all', 'Любой'], ['lt25', 'до 25 000 ₽'], ['b25_40', '25–40 тыс. ₽'], ['gt40', 'от 40 000 ₽']],
+    brand: [['all', 'Все'], ['BMW', 'BMW'], ['Mercedes', 'Mercedes'], ['Porsche', 'Porsche'], ['Toyota', 'Toyota'], ['Dodge', 'Dodge']]
+  };
+  document.querySelectorAll('[data-filter]').forEach(function (box) {
+    var key = box.getAttribute('data-filter');
+    box.innerHTML = OPTS[key].map(function (o) { return '<button type="button" class="chip" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('');
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      state[key] = b.getAttribute('data-v'); render();
+    });
+  });
+
+  var quick = document.getElementById('quick');
+  quick.innerHTML = [1, 2, 3, 7, 14, 30].map(function (d) { return '<button type="button" class="chip" data-d="' + d + '">' + c.days(d) + '</button>'; }).join('');
+  quick.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var start = new Date(from.value);
+    var end = new Date(start.getTime() + Number(b.getAttribute('data-d')) * 86400000);
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    to.value = end.getFullYear() + '-' + pad(end.getMonth() + 1) + '-' + pad(end.getDate()) + 'T' + pad(end.getHours()) + ':' + pad(end.getMinutes());
+    render();
+  });
+  from.addEventListener('input', render); to.addEventListener('input', render);
+  document.getElementById('onlyFree').addEventListener('change', function (e) { state.onlyFree = e.target.checked; render(); });
+
+  function budgetOk(rate) {
+    if (state.budget === 'lt25') return rate < 25000;
+    if (state.budget === 'b25_40') return rate >= 25000 && rate <= 40000;
+    if (state.budget === 'gt40') return rate > 40000;
+    return true;
+  }
+
+  function render() {
+    document.querySelectorAll('[data-filter]').forEach(function (box) {
+      var key = box.getAttribute('data-filter');
+      box.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-v') === state[key])); });
+    });
+    var hours = (new Date(to.value) - new Date(from.value)) / 3600000;
+    var days = hours > 0 ? Math.ceil(hours / 24) : 0;
+    quick.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-d')) === days && hours === days * 24)); });
+    if (!days) {
+      document.getElementById('summary').textContent = 'Дата возврата должна быть позже даты получения.';
+      document.getElementById('cars').innerHTML = ''; document.getElementById('empty').hidden = true; return;
+    }
+    var tier = c.tierOf(days);
+    var list = CARS.filter(function (x) {
+      return (state.cls === 'all' || x.cls === state.cls) && (state.brand === 'all' || x.brand === state.brand) &&
+        budgetOk(x.t[tier.idx]) && (!state.onlyFree || x.free);
+    });
+    document.getElementById('cars').innerHTML = list.map(function (x) {
+      var rate = x.t[tier.idx];
+      return '<article class="card car">' +
+        '<div class="photo" role="img" aria-label="Место для фотографии">Фото: ' + c.esc(x.name) + ', 3/4 спереди</div>' +
+        '<div class="car-body">' +
+        '<div class="row" style="align-items: center"><span class="eyebrow">' + window.CRAVE_CLS[x.cls] + '</span>' +
+        (x.free ? '<span class="badge free">Свободен</span>' : '<span class="badge busy">Занят в эти даты</span>') + '</div>' +
+        '<h2>' + c.esc(x.name) + '</h2>' +
+        '<span class="text-2" style="font-size: 14px">' + x.specs + '</span>' +
+        '<dl class="price-dl">' +
+        '<dt>Тариф «' + tier.label + '»</dt><dd>' + c.fmt(rate) + ' ₽ / сутки</dd>' +
+        '<dt class="total">Итого за ' + c.days(days) + '</dt><dd class="total">' + c.fmt(rate * days) + ' ₽</dd>' +
+        '<dt>Залог, отдельно</dt><dd class="text-2">от ' + c.fmt(x.deposit) + ' ₽</dd>' +
+        '<dt>Включено</dt><dd class="text-2">' + c.fmt(250 * days) + ' км</dd>' +
+        '</dl>' +
+        '<a class="btn btn-primary btn-sm" style="margin-top: auto; min-height: 46px" href="car.html?car=' + x.slug + '&from=' + encodeURIComponent(from.value) + '&to=' + encodeURIComponent(to.value) + '">Подробнее и заявка</a>' +
+        '</div></article>';
+    }).join('');
+    document.getElementById('empty').hidden = list.length > 0;
+    document.getElementById('summary').textContent = list.length + ' из ' + CARS.length + ' автомобилей · ' + c.days(days) + ' · цены посчитаны на весь срок';
+  }
+  render();
+})();
+</script>
+</body>
+</html>

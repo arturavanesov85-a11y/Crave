@@ -16,3 +16,6 @@ Monorepo containing rental, sales, service sites and CRM.
 - [docs/01-missing-data.md](docs/01-missing-data.md) — недостающие данные и предположения
 - [docs/02-architecture.md](docs/02-architecture.md) — архитектура и схема данных
 - [docs/03-plan.md](docs/03-plan.md) — поэтапный план
+
+## Прототипы
+Запуск: `npm run proto`, затем http://localhost:4173. Подробности — [prototypes/README.md](prototypes/README.md).

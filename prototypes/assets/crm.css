@@ -1,0 +1,13 @@
+/* Каркас CRM: боковое меню + рабочая область. */
+body { font-size: 14px; line-height: 1.4; }
+.crm { display: flex; flex-wrap: wrap; min-height: 100vh; }
+.crm-side { flex: 1 1 220px; max-width: 100%; padding: 20px 14px; border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 20px; }
+.crm-main { flex: 999 1 860px; min-width: 0; padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 16px; }
+.crm-nav { display: flex; flex-direction: column; gap: 2px; }
+.crm-nav a { display: flex; justify-content: space-between; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 8px; color: var(--text-2); }
+.crm-nav a[aria-current] { background: var(--gold-20); color: var(--text); font-weight: 600; }
+.crm-nav .count { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--warn); color: var(--bg); font-weight: 600; }
+@media (max-width: 1100px) {
+  .crm-side { flex-direction: row; flex-wrap: wrap; align-items: center; border-right: 0; border-bottom: 1px solid var(--line); }
+  .crm-nav { flex-direction: row; flex-wrap: wrap; }
+}

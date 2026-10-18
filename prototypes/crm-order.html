@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM — заказ R-2026-000152</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/proto.css">
+<link rel="stylesheet" href="assets/crm.css">
+<style>
+.summary { padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; }
+.status { font-size: 13px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-2); }
+.status.main { background: var(--gold); border-color: var(--gold); color: var(--bg); font-weight: 600; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px 24px; }
+.facts div { display: flex; flex-direction: column; gap: 2px; }
+.facts .k { font-size: 12px; color: var(--muted); }
+.body { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.tabs-card { flex: 999 1 620px; min-width: 0; overflow: hidden; }
+.tablist { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding: 0 12px; }
+.tablist button { min-height: 48px; padding: 0 14px; border: none; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); }
+.tablist button[aria-selected="true"] { border-bottom-color: var(--gold); color: var(--text); font-weight: 600; }
+.panel { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 10px 0; border-bottom: 1px solid var(--line); }
+td:last-child { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+.boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.box { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.box.gold { border-color: var(--gold); }
+.side { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.side .card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.history { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.history li { display: flex; gap: 16px; }
+.history time { flex: 0 0 110px; color: var(--muted); }
+dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 16px; width: min(420px, 92vw); }
+dialog::backdrop { background: rgba(0, 0, 0, .6); }
+</style>
+</head>
+<body>
+<div class="crm">
+<aside class="crm-side">
+<div style="display: flex; align-items: baseline; gap: 8px; padding: 0 8px"><span class="logo" style="font-size: 24px">CRAVE</span><span class="muted" style="font-size: 12px">CRM</span></div>
+<nav class="crm-nav" aria-label="Основное меню">
+<a href="#">Сегодня <span class="count">5</span></a>
+<a href="crm-calendar.html">Календарь</a>
+<a href="#" aria-current="page">Заказы</a>
+<a href="#">Автомобили</a>
+<a href="#">Клиенты</a>
+<a href="#">Финансы</a>
+</nav>
+<div class="muted" style="margin-top: auto; padding: 0 8px; font-size: 12px"><a href="index.html">← Все прототипы</a><br>Менеджер проката · [Имя]</div>
+</aside>
+
+<main class="crm-main">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px">
+<a href="crm-calendar.html">← Календарь</a>
+<span class="tag">Прототип · демо-данные</span>
+</div>
+
+<section class="card summary" aria-label="Сводка заказа">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px">
+<h1 style="font-size: 24px; font-weight: 600">Заказ R-2026-000152</h1>
+<span class="status main" id="stOrder">Подтверждённая бронь</span>
+<span class="status" id="stPay"></span>
+<span class="status" id="stDep"></span>
+<span class="status">Автомобиль: в аренде у R-141</span>
+<div style="flex: 1 1 auto"></div>
+<button class="btn btn-primary" type="button" id="nextAction"></button>
+</div>
+<div class="facts">
+<div><span class="k">Клиент</span><a href="#" style="font-weight: 600; color: var(--text)">Клиент Б.</a><span class="text-2">+7 ••• •••-••-12</span></div>
+<div><span class="k">Автомобиль</span><a href="#" style="font-weight: 600; color: var(--text)">BMW M5 F90 Competition</a><span class="text-2">тёмно-серый · 2020</span></div>
+<div><span class="k">Срок</span><span style="font-weight: 600">19 окт 10:00 → 22 окт 10:00</span><span class="text-2">3 суток</span></div>
+<div><span class="k">Стоимость</span><span style="font-weight: 600" id="fTotal"></span><span id="fDebt"></span></div>
+<div><span class="k">Ответственный</span><span style="font-weight: 600">[Менеджер проката]</span><span class="text-2">выдача: [сотрудник выдачи]</span></div>
+</div>
+</section>
+
+<div class="alert" role="alert">
+<strong>Выдача под риском</strong>
+<span style="flex: 1 1 380px">Предыдущая аренда этой машины (R-2026-000141) просрочена на 2 часа. Подготовка займёт 3 часа.</span>
+<a class="btn btn-ghost btn-sm" href="#">Подобрать другой автомобиль</a>
+<a class="btn btn-quiet btn-sm" href="#">Передать руководителю</a>
+</div>
+
+<div class="body">
+<section class="card tabs-card">
+<div class="tablist" role="tablist" aria-label="Разделы заказа">
+<button type="button" role="tab" data-tab="terms" aria-selected="true">Условия</button>
+<button type="button" role="tab" data-tab="pay" aria-selected="false">Оплаты</button>
+<button type="button" role="tab" data-tab="handover" aria-selected="false">Выдача и возврат</button>
+<button type="button" role="tab" data-tab="docs" aria-selected="false">Документы</button>
+<button type="button" role="tab" data-tab="history" aria-selected="false">История</button>
+</div>
+
+<div class="panel" role="tabpanel" data-panel="terms">
+<p class="muted" style="margin: 0; font-size: 13px">Снимок условий от 17 окт 2026, 15:20. Изменение общего прайса этот заказ не пересчитывает.</p>
+<table><tbody id="termsTable"></tbody></table>
+<div class="chips">
+<button class="btn btn-ghost btn-sm" type="button" disabled title="В прототипе не реализовано">Продлить</button>
+<button class="btn btn-quiet btn-sm" type="button" disabled title="В прототипе не реализовано">Заменить автомобиль</button>
+<button class="btn btn-quiet btn-sm" type="button" data-open="charge">Добавить начисление</button>
+<button class="btn btn-quiet btn-sm" type="button" data-open="discount">Скидка с причиной</button>
+<button class="btn btn-quiet btn-sm" type="button" disabled title="В прототипе не реализовано">Отменить заказ</button>
+</div>
+</div>
+
+<div class="panel" role="tabpanel" data-panel="pay" hidden>
+<div class="boxes">
+<div class="box"><strong>Начисления</strong><div id="charges" style="display: flex; flex-direction: column; gap: 6px"></div>
+<div class="row" style="border-top: 1px solid var(--line); padding-top: 8px; font-weight: 600"><span>Итого</span><span id="chargesTotal"></span></div></div>
+<div class="box"><strong>Оплаты</strong><div id="payments" style="display: flex; flex-direction: column; gap: 6px"></div>
+<div class="row" style="border-top: 1px solid var(--line); padding-top: 8px; font-weight: 600"><span>Долг</span><span id="debt"></span></div>
+<button class="btn btn-primary btn-sm" type="button" data-open="payment">Принять оплату</button></div>
+<div class="box gold"><strong>Залог</strong>
+<div class="row"><span class="text-2">Требуется</span><span>50 000 ₽</span></div>
+<div class="row"><span class="text-2">Получено</span><span id="depIn"></span></div>
+<p class="muted" style="margin: 0; font-size: 12px">Учитывается отдельно, не является выручкой. Удержание — только с основанием и подтверждением руководителя.</p>
+<button class="btn btn-ghost btn-sm" type="button" id="takeDeposit">Принять залог</button></div>
+</div>
+<p class="muted" style="margin: 0; font-size: 12px">Проведённые операции не удаляются: ошибка исправляется сторнированием с историей.</p>
+</div>
+
+<div class="panel" role="tabpanel" data-panel="handover" hidden>
+<div class="boxes">
+<div class="box"><strong>Выдача</strong><span class="text-2">Не проведена · план 19 окт 10:00</span><span class="muted" style="font-size: 13px">Пробег, топливо, комплектность, фото, договор и акт</span></div>
+<div class="box"><strong>Возврат</strong><span class="text-2">План 22 окт 10:00</span><span class="muted" style="font-size: 13px">Фактическое время, фото, новые повреждения, решение по залогу</span></div>
+</div>
+<div class="box"><strong>Известные повреждения автомобиля</strong><span class="muted" style="font-size: 13px">Показываются сотруднику при выдаче — пример формата</span><div class="row" style="flex-wrap: wrap"><span>[Место · описание повреждения]</span><span class="muted">[дата осмотра · фото]</span></div></div>
+</div>
+
+<div class="panel" role="tabpanel" data-panel="docs" hidden>
+<table><tbody>
+<tr><td>Договор аренды</td><td style="color: var(--gold-light)">шаблон не утверждён</td></tr>
+<tr><td>Акт приёма-передачи</td><td class="muted">после выдачи</td></tr>
+<tr><td>Паспорт клиента</td><td class="muted">доступ по разрешению</td></tr>
+<tr><td>Водительское удостоверение</td><td class="muted">доступ по разрешению</td></tr>
+</tbody></table>
+</div>
+
+<div class="panel" role="tabpanel" data-panel="history" hidden>
+<ol class="history" id="history"></ol>
+</div>
+</section>
+
+<aside class="side">
+<section class="card">
+<strong>Задачи</strong>
+<label style="display: flex; gap: 10px; align-items: flex-start"><input type="checkbox" style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--gold)"><span>Связаться с клиентом R-141 по возврату<br><span style="font-size: 12px; color: var(--warn)">просрочено · сегодня 12:30</span></span></label>
+<label style="display: flex; gap: 10px; align-items: flex-start"><input type="checkbox" style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--gold)"><span>Подготовить автомобиль к выдаче<br><span class="muted" style="font-size: 12px">до 19 окт 09:00</span></span></label>
+</section>
+<section class="card">
+<strong>Комментарии</strong>
+<div id="comments" style="display: flex; flex-direction: column; gap: 8px; font-size: 13px" class="text-2"><div>[Менеджер] · 17 окт: Клиент просит выдачу у офиса.</div></div>
+<label class="field" style="font-size: 12px">Новый комментарий<textarea id="newComment" rows="3" class="input" style="height: auto; padding: 10px; resize: vertical"></textarea></label>
+<button class="btn btn-quiet btn-sm" type="button" id="addComment">Добавить</button>
+</section>
+</aside>
+</div>
+</main>
+</div>
+
+<dialog id="dlg">
+<form method="dialog" style="display: flex; flex-direction: column; gap: 14px">
+<h2 style="font-size: 20px" id="dTitle"></h2>
+<label class="field">Сумма, ₽<input class="input" type="number" id="dAmount" min="1" required></label>
+<label class="field" id="dMethodWrap">Способ<select class="input" id="dMethod"><option>Перевод</option><option>Карта</option><option>Наличные</option></select></label>
+<label class="field">Основание (обязательно)<input class="input" type="text" id="dBasis" required></label>
+<p class="muted" style="margin: 0; font-size: 13px" id="dNote"></p>
+<div style="display: flex; gap: 10px; justify-content: flex-end">
+<button class="btn btn-quiet btn-sm" value="cancel" formnovalidate>Отмена</button>
+<button class="btn btn-primary btn-sm" value="ok">Провести</button>
+</div>
+</form>
+</dialog>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n) { return n.toLocaleString('ru-RU') + ' ₽'; };
+  var stamp = function () { return 'сейчас'; };
+  // Журнал операций (в реальной системе — ledger_entries, только вставка).
+  var state = {
+    charges: [{ label: 'Аренда, 3 сут × 38 000 ₽', amount: 114000 }],
+    payments: [{ label: '17 окт · перевод', amount: 50000 }],
+    deposit: 0, issued: false,
+    history: [
+      ['17 окт 15:20', 'Бронь подтверждена, условия зафиксированы · [Менеджер]'],
+      ['17 окт 15:05', 'Получена оплата 50 000 ₽, перевод · [Менеджер]'],
+      ['17 окт 14:40', 'Согласование: временный резерв на 30 минут'],
+      ['17 окт 14:32', 'Новая заявка с сайта crave-rental.ru · UTM: [источник]']
+    ]
+  };
+  var sum = function (a) { return a.reduce(function (s, x) { return s + x.amount; }, 0); };
+
+  function render() {
+    var total = sum(state.charges), paid = sum(state.payments), debt = total - paid;
+    $('fTotal').textContent = fmt(total);
+    $('fDebt').textContent = debt > 0 ? 'долг ' + fmt(debt) : (debt < 0 ? 'переплата ' + fmt(-debt) : 'оплачено полностью');
+    $('fDebt').style.color = debt > 0 ? 'var(--warn)' : 'var(--gold-light)';
+    $('stPay').textContent = 'Оплата: ' + (paid === 0 ? 'не оплачено' : debt > 0 ? 'частично' : debt < 0 ? 'переплата' : 'оплачено');
+    $('stDep').textContent = 'Залог: ' + (state.deposit >= 50000 ? 'получен' : state.deposit > 0 ? 'частично' : 'не получен');
+    $('depIn').textContent = fmt(state.deposit);
+    $('takeDeposit').hidden = state.deposit >= 50000;
+    $('debt').textContent = fmt(Math.max(0, debt));
+    $('chargesTotal').textContent = fmt(total);
+    var line = function (x) { return '<div class="row"><span class="text-2">' + x.label + '</span><span>' + fmt(x.amount) + '</span></div>'; };
+    $('charges').innerHTML = state.charges.map(line).join('');
+    $('payments').innerHTML = state.payments.map(line).join('');
+    $('termsTable').innerHTML = [
+      ['Тариф', '«от 3 суток» · 38 000 ₽ / сутки'], ['Оплачиваемый срок', '3 суток'], ['Аренда', '114 000 ₽'],
+      ['Доп. начисления и скидки', state.charges.length > 1 ? state.charges.slice(1).map(function (c) { return c.label + ': ' + fmt(c.amount); }).join('<br>') : 'нет'],
+      ['Включённый пробег', '750 км · сверх — 150 ₽ / км'], ['Залог', '50 000 ₽ · не входит в стоимость'],
+      ['Правила', '<span style="color: var(--gold-light)">округление суток и опоздание — предположение, не утверждены</span>']
+    ].map(function (r) { return '<tr><td class="muted">' + r[0] + '</td><td>' + r[1] + '</td></tr>'; }).join('');
+    $('history').innerHTML = state.history.map(function (h) { return '<li><time>' + h[0] + '</time><span>' + h[1] + '</span></li>'; }).join('');
+    var na = $('nextAction');
+    if (state.issued) { na.textContent = 'Оформить возврат'; }
+    else if (debt > 0) { na.textContent = 'Принять оплату · ' + fmt(debt); na.dataset.open = 'payment'; }
+    else if (state.deposit < 50000) { na.textContent = 'Принять залог'; delete na.dataset.open; }
+    else { na.textContent = 'Начать выдачу'; delete na.dataset.open; }
+  }
+
+  document.querySelectorAll('[role=tab]').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('[role=tab]').forEach(function (x) { x.setAttribute('aria-selected', String(x === t)); });
+      document.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-panel') !== t.getAttribute('data-tab'); });
+    });
+  });
+
+  var mode = null, dlg = $('dlg');
+  var MODES = {
+    payment: { title: 'Принять оплату', note: 'Операция попадёт в журнал и в историю заказа.', method: true },
+    charge: { title: 'Дополнительное начисление', note: 'Например, перепробег или опоздание. Основание обязательно.', method: false },
+    discount: { title: 'Скидка', note: 'Требует права «Скидки». Причина сохраняется в истории.', method: false }
+  };
+  function open(m) {
+    mode = m; var cfg = MODES[m];
+    $('dTitle').textContent = cfg.title; $('dNote').textContent = cfg.note; $('dMethodWrap').hidden = !cfg.method;
+    var debt = sum(state.charges) - sum(state.payments);
+    $('dAmount').value = m === 'payment' && debt > 0 ? debt : ''; $('dBasis').value = m === 'payment' ? 'Оплата аренды' : '';
+    dlg.showModal();
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-open]'); if (b) { open(b.dataset.open); return; }
+    if (e.target.closest('#nextAction')) {
+      if (state.deposit < 50000) { $('takeDeposit').click(); }
+      else if (!state.issued) { state.issued = true; $('stOrder').textContent = 'Автомобиль выдан'; state.history.unshift([stamp(), 'Начата выдача: откроется мобильная форма осмотра']); render(); }
+    }
+  });
+  dlg.addEventListener('close', function () {
+    if (dlg.returnValue !== 'ok') return;
+    var a = Math.abs(Number($('dAmount').value) || 0), basis = $('dBasis').value.trim();
+    if (!a || !basis) return;
+    if (mode === 'payment') { state.payments.push({ label: 'сейчас · ' + $('dMethod').value.toLowerCase(), amount: a }); state.history.unshift([stamp(), 'Получена оплата ' + fmt(a) + ' · ' + basis]); }
+    if (mode === 'charge') { state.charges.push({ label: basis, amount: a }); state.history.unshift([stamp(), 'Начисление ' + fmt(a) + ' · ' + basis]); }
+    if (mode === 'discount') { state.charges.push({ label: 'Скидка: ' + basis, amount: -a }); state.history.unshift([stamp(), 'Скидка ' + fmt(a) + ' · причина: ' + basis]); }
+    render();
+  });
+  $('takeDeposit').addEventListener('click', function () {
+    state.deposit = 50000; state.history.unshift([stamp(), 'Получен залог 50 000 ₽ (не выручка)']); render();
+  });
+  $('addComment').addEventListener('click', function () {
+    var v = $('newComment').value.trim(); if (!v) return;
+    var d = document.createElement('div'); d.textContent = '[Вы] · сейчас: ' + v; $('comments').appendChild(d); $('newComment').value = '';
+  });
+  render();
+})();
+</script>
+</body>
+</html>

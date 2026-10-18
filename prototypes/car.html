@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Автомобиль — CRAVE Rental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/proto.css">
+<style>
+body { font-size: 15px; }
+.phone-col { max-width: 520px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.icon-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--text); }
+.pad { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; }
+.seg button { min-height: 44px; border-radius: 9px; border: none; background: transparent; color: var(--text-2); font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--gold); color: var(--bg); font-weight: 600; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.box.gold { background: transparent; border-color: var(--gold); gap: 6px; }
+.opt { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; }
+.opt input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--gold); }
+.tier { display: flex; justify-content: space-between; align-items: center; min-height: 56px; padding: 0 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.tier.on { border-color: var(--gold); }
+.sticky { position: sticky; bottom: 0; margin-top: auto; padding: 12px 16px 20px; background: var(--bg); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+.todo { color: var(--gold-light); text-align: right; }
+dialog { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 16px; max-width: 420px; }
+dialog::backdrop { background: rgba(0, 0, 0, .6); }
+</style>
+</head>
+<body>
+<div class="phone-col">
+<div class="topbar">
+<a class="icon-btn" href="catalog.html" aria-label="Назад в автопарк"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+<a class="logo" href="home.html" style="font-size: 24px">CRAVE</a>
+<a class="icon-btn" href="index.html" aria-label="Все прототипы"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></a>
+</div>
+
+<div class="photo" role="img" aria-label="Место для фотографии" id="photo"></div>
+
+<div style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 6px">
+<span class="eyebrow" id="cls"></span>
+<h1 style="font-size: 24px; font-weight: 600; line-height: 1.2" id="name"></h1>
+<span class="text-2" style="font-size: 14px" id="specs"></span>
+</div>
+
+<div class="pad" style="padding-bottom: 0">
+<div class="seg" role="group" aria-label="Режим цены">
+<button type="button" data-mode="calc" aria-pressed="true">Рассчитать стоимость</button>
+<button type="button" data-mode="all" aria-pressed="false">Все тарифы</button>
+</div>
+</div>
+
+<div class="pad" id="calc">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<label class="field" style="font-size: 12px">Получение<input class="input" type="datetime-local" id="from" style="padding: 0 8px; font-size: 14px"></label>
+<label class="field" style="font-size: 12px">Возврат<input class="input" type="datetime-local" id="to" style="padding: 0 8px; font-size: 14px"></label>
+</div>
+
+<section class="box" aria-label="Расчёт" aria-live="polite" id="quote"></section>
+
+<section class="box gold" aria-label="Залог">
+<div class="row" style="font-weight: 600"><span>Залог</span><span id="deposit"></span></div>
+<p class="text-2" style="margin: 0; font-size: 14px">Не входит в стоимость аренды. Возвращается при возврате автомобиля, 20 000 ₽ — через 21 день после проверки штрафов.</p>
+</section>
+
+<section class="box" aria-label="Пробег">
+<div class="row"><span class="muted">Включено</span><span id="km"></span></div>
+<div class="row"><span class="muted">Сверх лимита</span><span id="over"></span></div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px" aria-label="Дополнительные услуги">
+<span class="eyebrow" style="font-size: 13px">Дополнительно</span>
+<label class="opt" id="driverOpt"><input type="checkbox" id="driver"><span style="flex: 1">С водителем</span><span class="text-2" id="driverPrice"></span></label>
+<label class="opt" id="hoursRow" hidden><span style="flex: 1">Часов с водителем</span><input class="input" type="number" id="hours" min="1" value="4" style="width: 90px; height: 40px"></label>
+<label class="opt"><input type="checkbox" disabled><span style="flex: 1" class="muted">Дополнительный водитель</span><span class="todo">[цена]</span></label>
+</section>
+
+<p class="muted" style="margin: 0; font-size: 13px">Предварительный расчёт. Менеджер подтвердит стоимость и наличие автомобиля. Сутки — блоки по 24 часа от времени получения (правило не утверждено).</p>
+</div>
+
+<div class="pad" id="all" hidden>
+<div id="tiers" style="display: flex; flex-direction: column; gap: 8px"></div>
+<div class="text-2" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px" id="allMeta"></div>
+</div>
+
+<div class="sticky">
+<div style="display: flex; flex-direction: column; line-height: 1.2">
+<span style="font-size: 18px; font-weight: 600" id="stickyTotal"></span>
+<span class="muted" style="font-size: 12px" id="stickySub"></span>
+</div>
+<button class="btn btn-primary" type="button" id="send" style="flex: 1; min-height: 52px; border-radius: 12px">Отправить заявку</button>
+</div>
+</div>
+
+<dialog id="sent">
+<h2 style="font-size: 20px; margin-bottom: 8px">Заявка получена</h2>
+<p class="text-2" style="margin: 0 0 16px">Менеджер проверит даты и подтвердит бронь. До подтверждения автомобиль не закреплён за вами.</p>
+<form method="dialog"><button class="btn btn-primary" style="width: 100%">Понятно</button></form>
+</dialog>
+
+<script src="assets/data.js"></script>
+<script>
+(function () {
+  var c = window.crave, $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(location.search);
+  var car = window.CRAVE_CARS.filter(function (x) { return x.slug === q.get('car'); })[0] || window.CRAVE_CARS[0];
+  document.title = car.name + ' — CRAVE Rental';
+  $('photo').textContent = 'Фото: ' + car.name + ', 3/4 спереди · галерея';
+  $('cls').textContent = window.CRAVE_CLS[car.cls];
+  $('name').textContent = car.name;
+  $('specs').textContent = car.specs;
+  $('from').value = q.get('from') || '2026-10-23T10:00';
+  $('to').value = q.get('to') || '2026-10-26T10:00';
+  $('deposit').textContent = 'от ' + c.fmt(car.deposit) + ' ₽';
+  $('over').textContent = car.overKm + ' ₽ / км';
+  if (car.driver) { $('driverPrice').textContent = c.fmt(car.driver) + ' ₽ / час'; }
+  else { $('driver').disabled = true; $('driverPrice').textContent = 'уточняйте у менеджера'; $('driverOpt').classList.add('muted'); }
+
+  var fmtDT = function (v) { var d = new Date(v); return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }); };
+  var row = function (a, b, cls) { return '<div class="row' + (cls ? ' ' + cls : '') + '"><span' + (cls ? '' : ' class="muted"') + '>' + a + '</span><span style="text-align: right">' + b + '</span></div>'; };
+
+  function render() {
+    var hours = (new Date($('to').value) - new Date($('from').value)) / 3600000;
+    var days = hours > 0 ? Math.ceil(hours / 24) : 0;
+    var tier = c.tierOf(days || 1);
+    $('tiers').innerHTML = window.CRAVE_TIERS.slice().reverse().map(function (t) {
+      return '<div class="tier' + (days && t.idx === tier.idx ? ' on' : '') + '"><span class="text-2">' + t.label + '</span><span style="font-weight: 600">' + c.fmt(car.t[t.idx]) + ' ₽ <span class="muted" style="font-weight: 400; font-size: 13px">/ сутки</span></span></div>';
+    }).join('');
+    $('allMeta').innerHTML = row('Лимит пробега', '250 км / сутки') + row('Перепробег', car.overKm + ' ₽ / км') +
+      row('С водителем', car.driver ? c.fmt(car.driver) + ' ₽ / час' : 'уточняйте') + row('Залог', 'от ' + c.fmt(car.deposit) + ' ₽');
+    if (!days) {
+      $('quote').innerHTML = '<span style="color: var(--warn)">Дата возврата должна быть позже даты получения.</span>';
+      $('stickyTotal').textContent = '—'; $('stickySub').textContent = ''; $('km').textContent = '—'; return;
+    }
+    var rate = car.t[tier.idx], rent = rate * days;
+    var drv = $('driver').checked && car.driver ? car.driver * Math.max(1, Number($('hours').value) || 1) : 0;
+    $('hoursRow').hidden = !$('driver').checked;
+    var total = rent + drv;
+    $('quote').innerHTML =
+      row('Период', fmtDT($('from').value) + ' — ' + fmtDT($('to').value)) +
+      row('Оплачиваемый срок', c.days(days) + (hours % 24 ? ' <span class="muted" style="font-size: 12px">(' + Math.round(hours) + ' ч)</span>' : '')) +
+      row('Тариф', tier.label + ' · ' + c.fmt(rate) + ' ₽') +
+      '<div class="hr"></div>' +
+      row('Аренда, ' + days + ' × ' + c.fmt(rate) + ' ₽', c.fmt(rent) + ' ₽', 'x') +
+      row('Услуги', drv ? c.fmt(drv) + ' ₽' : 'не выбраны') +
+      row('Скидка', '—') +
+      '<div class="hr"></div>' +
+      '<div class="row" style="font-size: 20px; font-weight: 600"><span>Итого</span><span>' + c.fmt(total) + ' ₽</span></div>' +
+      row('К оплате сейчас', '<span class="todo">[правило не утверждено]</span>') +
+      row('Остаток', '<span class="todo">[правило не утверждено]</span>');
+    $('km').textContent = c.fmt(250 * days) + ' км (250 × ' + days + ')';
+    $('stickyTotal').textContent = c.fmt(total) + ' ₽';
+    $('stickySub').textContent = 'за ' + c.days(days) + ' + залог';
+  }
+
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var m = b.getAttribute('data-mode');
+      document.querySelectorAll('.seg button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      $('calc').hidden = m !== 'calc'; $('all').hidden = m !== 'all';
+    });
+  });
+  ['from', 'to', 'hours'].forEach(function (id) { $(id).addEventListener('input', render); });
+  $('driver').addEventListener('change', render);
+  $('send').addEventListener('click', function () { $('sent').showModal(); });
+  render();
+})();
+</script>
+</body>
+</html>
