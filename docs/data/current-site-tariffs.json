@@ -1,0 +1,58 @@
+{
+  "_source": "https://crave-rental.ru/prajs/ и карточки автомобилей, снято 2026-10-18",
+  "_status": "ТРЕБУЕТ ПРОВЕРКИ ВЛАДЕЛЬЦЕМ. Не использовать в продакшене без подтверждения.",
+  "currency": "RUB",
+  "units": "Суммы в рублях за сутки; в БД хранятся в копейках",
+  "periodTiers": [
+    { "code": "d1_2", "label": "1–2 суток", "minDays": 1 },
+    { "code": "d3", "label": "от 3 суток", "minDays": 3 },
+    { "code": "d7", "label": "от 7 суток", "minDays": 7 },
+    { "code": "d14", "label": "от 14 суток", "minDays": 14 },
+    { "code": "d30", "label": "от 30 суток", "minDays": 30 }
+  ],
+  "includedKmPerDay": 250,
+  "vehicles": [
+    {
+      "slug": "dodge-ram-trx", "legacyUrl": "/dodge-ram-trx/", "name": "Dodge RAM TRX",
+      "daily": { "d1_2": 50000, "d3": 47500, "d7": 45000, "d14": 40500, "d30": 35000 },
+      "overmileagePerKm": 200, "driverPerHour": null, "driverNote": "—", "depositFrom": 100000
+    },
+    {
+      "slug": "porsche-cayenne-s-iii", "legacyUrl": "/porsche-cayenne-s-iii/", "name": "Porsche Cayenne S III Stage 1",
+      "daily": { "d1_2": 30000, "d3": 28500, "d7": 27000, "d14": 24000, "d30": 21000 },
+      "overmileagePerKm": 150, "driverPerHour": 6000, "depositFrom": 50000
+    },
+    {
+      "slug": "mercedes-amg-gt63-s", "legacyUrl": "/mercedes-amg-gt63-s/", "name": "Mercedes-AMG GT63 S 4-door",
+      "daily": { "d1_2": 45000, "d3": 42000, "d7": 38000, "d14": 34000, "d30": 30000 },
+      "overmileagePerKm": 150, "driverPerHour": 7000, "depositFrom": 50000
+    },
+    {
+      "slug": "toyota-land-cruiser-300-70th-anniversary", "legacyUrl": "/toyota-land-cruiser-300-70th-anniversary/", "name": "Toyota Land Cruiser 300 70th Anniversary",
+      "daily": { "d1_2": 30000, "d3": 28500, "d7": 27000, "d14": 24000, "d30": 21000 },
+      "overmileagePerKm": 100, "driverPerHour": 6000, "depositFrom": 50000
+    },
+    {
+      "slug": "bmw-m5-f90-competition", "legacyUrl": "/bmw-m5-f90-competition-stage/", "name": "BMW M5 F90 Competition Stage 1",
+      "daily": { "d1_2": 40000, "d3": 38000, "d7": 36000, "d14": 32000, "d30": 28000 },
+      "overmileagePerKm": 150, "driverPerHour": 7000, "depositFrom": 50000
+    },
+    {
+      "slug": "bmw-540i", "legacyUrl": "/bmw-540i/", "name": "BMW 540i",
+      "daily": { "d1_2": 22500, "d3": 20000, "d7": 18700, "d14": 17500, "d30": 15000 },
+      "overmileagePerKm": 150, "driverPerHour": null, "driverNote": "уточняйте у менеджера", "depositFrom": 50000
+    },
+    {
+      "slug": "bmw-m340i-xdrive-lci", "legacyUrl": "/bmw-m340i-xdrive-lci/", "name": "BMW M340i xDrive LCI",
+      "daily": { "d1_2": 21000, "d3": 19000, "d7": 17000, "d14": 15500, "d30": 13000 },
+      "conflicts": { "d14": "прайс 15 500, карточка 15 000" },
+      "overmileagePerKm": 150, "driverPerHour": null, "driverNote": "уточняйте у менеджера", "depositFrom": 50000
+    },
+    {
+      "slug": "mercedes-benz-g63-first-edition", "legacyUrl": "/mercedes-benz-g63-first-edition/", "name": "Mercedes-Benz G63 First Edition",
+      "daily": { "d1_2": 54000, "d3": 52000, "d7": 49500, "d14": 46000, "d30": 39500 },
+      "conflicts": { "d7": "прайс 49 500, карточка 49 000" },
+      "overmileagePerKm": 150, "driverPerHour": null, "driverNote": "уточняйте у менеджера", "depositFrom": 100000
+    }
+  ]
+}

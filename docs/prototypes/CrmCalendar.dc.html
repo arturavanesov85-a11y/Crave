@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>CRM — календарь автомобилей</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&amp;family=Montserrat:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0A09}
+a{color:#C4AA88;text-decoration:none}a:hover{color:#F0ECE4}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="background: #0A0A09; color: #F0ECE4; font-family: Montserrat, sans-serif; font-size: 14px; line-height: 1.4; min-height: 100vh; display: flex; flex-wrap: wrap">
+
+<!-- Боковое меню -->
+<aside style="flex: 1 1 220px; max-width: 100%; box-sizing: border-box; padding: 20px 14px; border-right: 1px solid #33373D; background: #111110; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: baseline; gap: 8px; padding: 0 8px">
+<span style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; letter-spacing: 0.18em">CRAVE</span>
+<span style="font-size: 12px; color: #9A9488">CRM</span>
+</div>
+<label style="display: flex; flex-direction: column; gap: 4px; padding: 0 8px; font-size: 12px; color: #9A9488">Направление
+<select style="height: 40px; padding: 0 10px; border-radius: 8px; border: 1px solid #33373D; background: #1A1A18; color: #F0ECE4; font: inherit; font-size: 14px">
+<option>Прокат</option>
+<option>Автосалон</option>
+<option>Сервис</option>
+</select>
+</label>
+<nav aria-label="Основное меню" style="display: flex; flex-direction: column; gap: 2px">
+<a href="#" style="display: flex; justify-content: space-between; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 8px; color: #C8C4B8">Сегодня <span style="font-size: 12px; padding: 1px 8px; border-radius: 999px; background: #E0894A; color: #0A0A09; font-weight: 600">5</span></a>
+<a href="CrmCalendar.dc.html" aria-current="page" style="display: flex; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 8px; background: rgba(168,152,120,0.2); color: #F0ECE4; font-weight: 600">Календарь</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 8px; color: #C8C4B8">Заказы</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 8px; color: #C8C4B8">Автомобили</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 8px; color: #C8C4B8">Клиенты</a>
+<a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 8px; color: #C8C4B8">Финансы</a>
+</nav>
+<div style="margin-top: auto; padding: 0 8px; font-size: 12px; color: #9A9488">Менеджер проката<br>[Имя сотрудника]</div>
+</aside>
+
+<!-- Основная область -->
+<main style="flex: 999 1 900px; min-width: 0; box-sizing: border-box; padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 16px">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 600">Календарь автомобилей</h1>
+<span style="font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid #33373D; color: #9A9488">Прототип · демо-данные</span>
+<div style="flex: 1 1 auto"></div>
+<div role="group" aria-label="Масштаб" style="display: flex; padding: 3px; border: 1px solid #33373D; border-radius: 10px">
+<button type="button" aria-pressed="false" style="min-height: 36px; padding: 0 14px; border: none; border-radius: 7px; background: transparent; color: #C8C4B8">День</button>
+<button type="button" aria-pressed="true" style="min-height: 36px; padding: 0 14px; border: none; border-radius: 7px; background: #A89878; color: #0A0A09; font-weight: 600">Неделя</button>
+<button type="button" aria-pressed="false" style="min-height: 36px; padding: 0 14px; border: none; border-radius: 7px; background: transparent; color: #C8C4B8">Месяц</button>
+</div>
+<div style="display: flex; align-items: center; gap: 6px">
+<button type="button" aria-label="Предыдущая неделя" style="width: 40px; height: 40px; border-radius: 8px; border: 1px solid #33373D; background: transparent; color: #F0ECE4">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</button>
+<span style="min-width: 150px; text-align: center; font-weight: 500">18 – 24 октября 2026</span>
+<button type="button" aria-label="Следующая неделя" style="width: 40px; height: 40px; border-radius: 8px; border: 1px solid #33373D; background: transparent; color: #F0ECE4">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</button>
+</div>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; padding: 0 16px; border-radius: 8px; background: #A89878; color: #0A0A09; font-weight: 600">Новая бронь</a>
+</div>
+
+<!-- Предупреждение о просрочке -->
+<div role="alert" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 16px; border-radius: 10px; border: 1px solid #E0894A; background: rgba(224,137,74,0.12)">
+<strong style="color: #E0894A">Просрочен возврат</strong>
+<span style="flex: 1 1 400px">BMW M5 · R-2026-000141 · план сегодня 12:00. Следующая выдача этой машины — завтра в 10:00 (R-2026-000152).</span>
+<a href="Order.dc.html" style="font-weight: 600">Открыть следующий заказ</a>
+</div>
+
+<!-- Сетка -->
+<div style="overflow-x: auto; border: 1px solid #33373D; border-radius: 12px">
+<div style="min-width: 1060px">
+<div style="display: flex; border-bottom: 1px solid #33373D; background: #111110">
+<div style="flex: 0 0 220px; padding: 10px 14px; font-size: 12px; color: #9A9488">Автомобиль</div>
+<div style="flex: 1; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr))">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+<div style="{{d.style}}"><div style="font-weight: 600">{{d.top}}</div><div style="font-size: 12px; color: #9A9488">{{d.sub}}</div></div>
+</sc-for>
+</div>
+</div>
+
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<div style="display: flex; border-bottom: 1px solid #33373D; min-height: 60px">
+<div style="flex: 0 0 220px; box-sizing: border-box; padding: 8px 14px; display: flex; flex-direction: column; justify-content: center; gap: 3px; border-right: 1px solid #33373D">
+<span style="font-weight: 600; font-size: 14px">{{r.name}}</span>
+<span style="{{r.chipStyle}}">{{r.cond}}</span>
+</div>
+<div style="flex: 1; position: relative; background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(100% / 7 - 1px), #1F1F1D calc(100% / 7 - 1px), #1F1F1D calc(100% / 7))">
+<sc-for list="{{r.buffers}}" as="b" hint-placeholder-count="1">
+<span title="{{b.title}}" style="{{b.style}}"></span>
+</sc-for>
+<sc-for list="{{r.bars}}" as="b" hint-placeholder-count="1">
+<a href="Order.dc.html" title="{{b.title}}" style="{{b.style}}">{{b.label}}</a>
+</sc-for>
+<sc-for list="{{r.slots}}" as="b" hint-placeholder-count="0">
+<a href="#" style="{{b.style}}">{{b.label}}</a>
+</sc-for>
+<span aria-hidden="true" style="{{nowStyle}}"></span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<!-- Легенда -->
+<ul aria-label="Обозначения" style="margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 13px; color: #C8C4B8">
+<li style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 12px; border-radius: 3px; background: #A89878"></span>Подтверждённая бронь</li>
+<li style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 12px; border-radius: 3px; background: #F0ECE4"></span>Автомобиль выдан</li>
+<li style="display: flex; align-items: center; gap: 8px"><span style="width: 20px; height: 10px; border-radius: 3px; border: 1.5px dashed #C4AA88"></span>Временный резерв по заявке</li>
+<li style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 12px; border-radius: 3px; background: #4A4F57"></span>ТО и блокировки</li>
+<li style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 12px; border-radius: 3px; background: repeating-linear-gradient(45deg, #4A4F57 0 3px, transparent 3px 6px)"></span>Подготовка (буфер)</li>
+<li style="display: flex; align-items: center; gap: 8px"><span style="width: 22px; height: 12px; border-radius: 3px; background: #E0894A"></span>Просрочка возврата</li>
+<li style="display: flex; align-items: center; gap: 8px"><span style="width: 2px; height: 14px; background: #E0894A"></span>Сейчас, 14:00</li>
+</ul>
+<p style="margin: 0; font-size: 12px; color: #9A9488">Клик по свободному интервалу — создать бронь. Клик по полосе — открыть заказ. Перетаскивание брони проверяет доступность и просит подтвердить изменение.</p>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var H = 168;
+    var pos = function (s, e) {
+      var a = Math.max(0, s), b = Math.min(H, e);
+      return 'left: ' + (a / H * 100).toFixed(3) + '%; width: calc(' + ((b - a) / H * 100).toFixed(3) + '% - 2px);';
+    };
+    var base = 'position: absolute; top: 12px; height: 36px; box-sizing: border-box; border-radius: 6px; padding: 0 8px; display: flex; align-items: center; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+    var KIND = {
+      booking: 'background: #A89878; color: #0A0A09;',
+      rental: 'background: #F0ECE4; color: #0A0A09;',
+      hold: 'background: transparent; border: 1.5px dashed #C4AA88; color: #C4AA88;',
+      block: 'background: #4A4F57; color: #F0ECE4;',
+      overdue: 'background: #E0894A; color: #0A0A09;'
+    };
+    var bar = function (kind, s, e, label, title) {
+      var clipL = s < 0 ? ' border-top-left-radius: 0; border-bottom-left-radius: 0;' : '';
+      var clipR = e > H ? ' border-top-right-radius: 0; border-bottom-right-radius: 0;' : '';
+      return { label: label, title: title, style: base + KIND[kind] + pos(s, e) + clipL + clipR };
+    };
+    var buf = function (s, e, title) {
+      return { title: title || 'Подготовка между заказами', style: 'position: absolute; top: 12px; height: 36px; border-radius: 6px; background: repeating-linear-gradient(45deg, #4A4F57 0 3px, transparent 3px 6px);' + pos(s, e) };
+    };
+    var chip = function (cond) {
+      var c = { 'Готов': '#C4AA88', 'Выдан': '#F0ECE4', 'Подготовка': '#C8C4B8', 'ТО': '#9A9488' }[cond];
+      return 'align-self: flex-start; font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid #33373D; color: ' + c;
+    };
+    var ROWS = [
+      { name: 'BMW M5 F90 Competition', cond: 'Выдан',
+        bars: [bar('rental', -48, 12, 'R-141 · Клиент А.', 'Выдан, план возврата 18 окт 12:00'), bar('overdue', 12, 14, '!', 'Просрочка возврата'), bar('booking', 34, 106, 'R-152 · Клиент Б. · 3 сут', 'Подтверждённая бронь 19–22 окт')],
+        buffers: [buf(14, 17), buf(106, 109)], slots: [] },
+      { name: 'Mercedes-AMG GT63 S', cond: 'Готов',
+        bars: [bar('hold', 62, 110, 'Заявка с сайта · резерв до 14:30', 'Временный резерв истекает сегодня в 14:30')],
+        buffers: [], slots: [] },
+      { name: 'Porsche Cayenne S III', cond: 'ТО',
+        bars: [bar('block', 9, 42, 'ТО · плановое', 'Плановое обслуживание'), bar('booking', 84, 200, 'R-155 · Клиент В. · 7 сут', 'Подтверждённая бронь 21–28 окт')],
+        buffers: [], slots: [] },
+      { name: 'Mercedes-Benz G63', cond: 'Выдан',
+        bars: [bar('rental', -72, 68, 'R-138 · Клиент Г.', 'Выдан до 20 окт 20:00')],
+        buffers: [buf(68, 71)], slots: [] },
+      { name: 'BMW 540i', cond: 'Готов',
+        bars: [bar('booking', 130, 166, 'R-157 · Клиент Д.', 'Подтверждённая бронь 23–24 окт')],
+        buffers: [], slots: [{ label: '+ Создать бронь', style: base + 'background: rgba(240,236,228,0.06); border: 1px solid #C8C4B8; color: #F0ECE4; font-weight: 500;' + pos(34, 58) }] },
+      { name: 'BMW M340i xDrive', cond: 'Подготовка',
+        bars: [],
+        buffers: [buf(10, 16, 'Подготовка после возврата, ждёт подтверждения готовности')], slots: [] },
+      { name: 'Dodge RAM TRX', cond: 'Готов',
+        bars: [bar('booking', 18, 66, 'R-150 · Клиент Е. · 2 сут', 'Подтверждённая бронь 18–20 окт')],
+        buffers: [buf(66, 69)], slots: [] },
+      { name: 'Land Cruiser 300', cond: 'Готов',
+        bars: [bar('block', 106, 114, 'Блокировка: фотосъёмка', 'Ручная блокировка')],
+        buffers: [], slots: [] }
+    ];
+    var DAYS = [['Вс', '18 окт', true], ['Пн', '19 окт'], ['Вт', '20 окт'], ['Ср', '21 окт'], ['Чт', '22 окт'], ['Пт', '23 окт'], ['Сб', '24 окт']];
+    return {
+      days: DAYS.map(function (d) {
+        return { top: d[0] + ' ' + d[1].split(' ')[0], sub: d[2] ? 'Сегодня' : d[1], style: 'padding: 10px 12px; border-left: 1px solid #33373D;' + (d[2] ? ' background: rgba(168,152,120,0.12);' : '') };
+      }),
+      rows: ROWS.map(function (r) { return { name: r.name, cond: r.cond, chipStyle: chip(r.cond), bars: r.bars, buffers: r.buffers, slots: r.slots }; }),
+      nowStyle: 'position: absolute; top: 0; bottom: 0; width: 2px; background: #E0894A; left: ' + (14 / H * 100).toFixed(3) + '%;'
+    };
+  }
+}
+</script>
+</body>
+</html>

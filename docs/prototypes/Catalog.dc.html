@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>CRAVE Rental — автопарк</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Montserrat:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0A09}
+a{color:#C4AA88;text-decoration:none}a:hover{color:#F0ECE4}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="background: #0A0A09; color: #F0ECE4; font-family: Montserrat, sans-serif; font-size: 16px; line-height: 1.5; min-height: 100vh">
+
+<header style="border-bottom: 1px solid #33373D">
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; min-height: 72px">
+<a href="Main.dc.html" style="font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.18em; color: #F0ECE4">CRAVE</a>
+<nav aria-label="Направления" style="display: flex; gap: 4px; padding: 4px; border: 1px solid #33373D; border-radius: 999px; font-size: 13px">
+<a href="#" aria-current="page" style="padding: 6px 14px; border-radius: 999px; background: #A89878; color: #0A0A09; font-weight: 600">Прокат</a>
+<a href="#" style="padding: 6px 14px; border-radius: 999px; color: #C8C4B8">Автосалон</a>
+<a href="#" style="padding: 6px 14px; border-radius: 999px; color: #C8C4B8">Сервис</a>
+</nav>
+<nav aria-label="Разделы" style="display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px; flex: 1 1 auto">
+<a href="Catalog.dc.html" aria-current="page" style="color: #F0ECE4">Автопарк</a>
+<a href="#" style="color: #C8C4B8">Цены</a>
+<a href="#" style="color: #C8C4B8">Условия аренды</a>
+<a href="#" style="color: #C8C4B8">Контакты</a>
+</nav>
+<a href="tel:+79104210222" style="font-size: 15px; font-weight: 600; color: #F0ECE4">+7 (910) 421-02-22</a>
+</div>
+</header>
+
+<!-- Даты — первым шагом -->
+<section style="background: #111110; border-bottom: 1px solid #33373D">
+<div style="max-width: 1280px; margin: 0 auto; padding: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end">
+<div style="flex: 1 1 100%">
+<h1 style="margin: 0 0 4px; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 40px">Автопарк</h1>
+<p style="margin: 0; color: #C8C4B8; font-size: 15px">Укажите даты — покажем, какие машины свободны и сколько стоит поездка.</p>
+</div>
+<label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #9A9488">Получение
+<input type="text" value="{{pickup}}" readonly="" style="height: 48px; padding: 0 14px; border-radius: 10px; border: 1px solid #33373D; background: #1A1A18; color: #F0ECE4; font: inherit; font-size: 15px">
+</label>
+<label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #9A9488">Возврат
+<input type="text" value="{{dropoff}}" readonly="" style="height: 48px; padding: 0 14px; border-radius: 10px; border: 1px solid #33373D; background: #1A1A18; color: #F0ECE4; font: inherit; font-size: 15px">
+</label>
+<div style="flex: 2 1 360px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; color: #9A9488">Срок аренды (для прототипа)</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{dayOpts}}" as="o" hint-placeholder-count="6">
+<button type="button" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="{{o.style}}">{{o.label}}</button>
+</sc-for>
+</div>
+</div>
+</div>
+</section>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 32px 24px 72px; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
+
+<!-- Фильтры -->
+<aside aria-label="Фильтры" style="flex: 1 1 240px; max-width: 100%; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: #A89878">Тип кузова</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{clsOpts}}" as="o" hint-placeholder-count="5">
+<button type="button" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="{{o.style}}">{{o.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: #A89878">Бюджет в сутки</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{budgetOpts}}" as="o" hint-placeholder-count="4">
+<button type="button" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="{{o.style}}">{{o.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: #A89878">Марка</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{brandOpts}}" as="o" hint-placeholder-count="6">
+<button type="button" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="{{o.style}}">{{o.label}}</button>
+</sc-for>
+</div>
+</div>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 15px; color: #C8C4B8; min-height: 44px">
+<input type="checkbox" checked="{{onlyFree}}" onChange="{{toggleFree}}" style="width: 20px; height: 20px; accent-color: #A89878">
+Только свободные на эти даты
+</label>
+</aside>
+
+<!-- Результаты -->
+<section aria-label="Результаты" style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<p style="margin: 0; font-size: 15px; color: #C8C4B8">{{summary}}</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px">
+<sc-for list="{{cars}}" as="car" hint-placeholder-count="6">
+<article style="background: #111110; border: 1px solid #33373D; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
+<div role="img" aria-label="Место для фотографии" style="aspect-ratio: 4 / 3; background: #D9D6CF; color: #3A3833; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; font-size: 13px">Фото: {{car.name}}, 3/4 спереди</div>
+<div style="padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center">
+<span style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #A89878">{{car.cls}}</span>
+<span style="{{car.badgeStyle}}">{{car.badge}}</span>
+</div>
+<h2 style="margin: 0; font-size: 19px; font-weight: 600">{{car.name}}</h2>
+<div style="font-size: 14px; color: #C8C4B8">{{car.specs}}</div>
+<dl style="margin: 6px 0 0; padding-top: 12px; border-top: 1px solid #33373D; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 14px">
+<dt style="color: #9A9488">{{car.tierLabel}}</dt><dd style="margin: 0; text-align: right">{{car.rate}} ₽ / сутки</dd>
+<dt style="color: #F0ECE4; font-weight: 600; font-size: 16px">Итого за {{daysLabel}}</dt><dd style="margin: 0; text-align: right; font-weight: 600; font-size: 18px">{{car.total}} ₽</dd>
+<dt style="color: #9A9488">Залог, отдельно</dt><dd style="margin: 0; text-align: right; color: #C8C4B8">{{car.deposit}} ₽</dd>
+<dt style="color: #9A9488">Включено</dt><dd style="margin: 0; text-align: right; color: #C8C4B8">{{car.km}} км</dd>
+</dl>
+<a href="MobilePrice.dc.html" style="margin-top: auto; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #A89878; color: #0A0A09; font-weight: 600; font-size: 15px">Подробнее и заявка</a>
+</div>
+</article>
+</sc-for>
+</div>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<div style="border: 1px dashed #33373D; border-radius: 16px; padding: 40px; text-align: center; color: #C8C4B8">Под эти условия машин нет. Измените фильтры или <a href="#">попросите менеджера помочь с выбором</a>.</div>
+</sc-if>
+<p style="margin: 8px 0 0; font-size: 13px; color: #9A9488">Расчёт предварительный: стоимость подтверждает менеджер. Правила округления суток и предоплаты ещё не утверждены. Доступность в прототипе — демо.</p>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { days: 3, cls: 'all', budget: 'all', brand: 'all', onlyFree: false };
+  }
+  renderVals() {
+    var s = this.state, self = this;
+    var CARS = [
+      { name: 'BMW M5 F90 Competition', brand: 'BMW', cls: 'sedan', specs: '750 л.с. · 2,8 с · 2020 · полный привод', t: [40000, 38000, 36000, 32000, 28000], deposit: 50000, free: true },
+      { name: 'Mercedes-AMG GT63 S 4-door', brand: 'Mercedes', cls: 'coupe', specs: '740 л.с. · 2,8 с · 2020 · полный привод', t: [45000, 42000, 38000, 34000, 30000], deposit: 50000, free: false },
+      { name: 'Porsche Cayenne S III', brand: 'Porsche', cls: 'suv', specs: '530 л.с. · 4,4 с · 2020 · полный привод', t: [30000, 28500, 27000, 24000, 21000], deposit: 50000, free: true },
+      { name: 'Mercedes-Benz G63 First Edition', brand: 'Mercedes', cls: 'suv', specs: '750 л.с. · 3,9 с · 2018 · полный привод', t: [54000, 52000, 49500, 46000, 39500], deposit: 100000, free: true },
+      { name: 'BMW 540i', brand: 'BMW', cls: 'sedan', specs: '340 л.с. · 4,8 с · 2020 · полный привод', t: [22500, 20000, 18700, 17500, 15000], deposit: 50000, free: true },
+      { name: 'BMW M340i xDrive LCI', brand: 'BMW', cls: 'sedan', specs: '387 л.с. · 4,1 с · 2024 · полный привод', t: [21000, 19000, 17000, 15500, 13000], deposit: 50000, free: true },
+      { name: 'Dodge RAM TRX', brand: 'Dodge', cls: 'pickup', specs: '900 л.с. · 3,5 с · 2022 · полный привод', t: [50000, 47500, 45000, 40500, 35000], deposit: 100000, free: false },
+      { name: 'Toyota Land Cruiser 300 70th Anniversary', brand: 'Toyota', cls: 'suv', specs: '360 л.с. · 5,9 с · 2022 · дизель', t: [30000, 28500, 27000, 24000, 21000], deposit: 50000, free: true }
+    ];
+    var CLS = { sedan: 'Седан', coupe: 'Купе', suv: 'Внедорожник', pickup: 'Пикап' };
+    var TIERS = [[30, 4, 'Тариф «от 30 суток»'], [14, 3, 'Тариф «от 14 суток»'], [7, 2, 'Тариф «от 7 суток»'], [3, 1, 'Тариф «от 3 суток»'], [1, 0, 'Тариф «1–2 суток»']];
+    var fmt = function (n) { return n.toLocaleString('ru-RU'); };
+    var tierOf = function (d) { for (var i = 0; i < TIERS.length; i++) { if (d >= TIERS[i][0]) return TIERS[i]; } return TIERS[4]; };
+    var plural = function (n) { var m10 = n % 10, m100 = n % 100; if (m10 === 1 && m100 !== 11) return n + ' сутки'; return n + ' суток'; };
+    var chip = function (on) {
+      return 'min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 14px; border: 1px solid ' + (on ? '#A89878' : '#33373D') + '; background: ' + (on ? '#A89878' : 'transparent') + '; color: ' + (on ? '#0A0A09' : '#C8C4B8') + '; font-weight: ' + (on ? '600' : '400');
+    };
+    var opts = function (key, list) {
+      return list.map(function (o) { var on = s[key] === o[0]; return { label: o[1], pressed: on ? 'true' : 'false', style: chip(on), pick: function () { var p = {}; p[key] = o[0]; self.setState(p); } }; });
+    };
+    var start = new Date(2026, 9, 23, 10, 0);
+    var end = new Date(start.getTime() + s.days * 86400000);
+    var dfmt = function (d) { return d.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · 10:00'; };
+    var tier = tierOf(s.days);
+    var budgetOk = function (rate) {
+      if (s.budget === 'lt25') return rate < 25000;
+      if (s.budget === 'b25_40') return rate >= 25000 && rate <= 40000;
+      if (s.budget === 'gt40') return rate > 40000;
+      return true;
+    };
+    var list = CARS.filter(function (c) {
+      var rate = c.t[tier[1]];
+      return (s.cls === 'all' || c.cls === s.cls) && (s.brand === 'all' || c.brand === s.brand) && budgetOk(rate) && (!s.onlyFree || c.free);
+    }).map(function (c) {
+      var rate = c.t[tier[1]];
+      return {
+        name: c.name, cls: CLS[c.cls], specs: c.specs, tierLabel: tier[2], rate: fmt(rate), total: fmt(rate * s.days),
+        deposit: 'от ' + fmt(c.deposit), km: fmt(250 * s.days),
+        badge: c.free ? 'Свободен' : 'Занят в эти даты',
+        badgeStyle: 'font-size: 12px; padding: 3px 10px; border-radius: 999px; ' + (c.free ? 'background: rgba(168,152,120,0.2); color: #C4AA88' : 'background: #33373D; color: #C8C4B8')
+      };
+    });
+    return {
+      pickup: dfmt(start), dropoff: dfmt(end), daysLabel: plural(s.days),
+      dayOpts: opts('days', [[1, '1 сутки'], [2, '2 суток'], [3, '3 суток'], [7, '7 суток'], [14, '14 суток'], [30, '30 суток']]),
+      clsOpts: opts('cls', [['all', 'Все'], ['sedan', 'Седаны'], ['suv', 'Внедорожники'], ['coupe', 'Купе'], ['pickup', 'Пикапы']]),
+      budgetOpts: opts('budget', [['all', 'Любой'], ['lt25', 'до 25 000 ₽'], ['b25_40', '25–40 тыс. ₽'], ['gt40', 'от 40 000 ₽']]),
+      brandOpts: opts('brand', [['all', 'Все'], ['BMW', 'BMW'], ['Mercedes', 'Mercedes'], ['Porsche', 'Porsche'], ['Toyota', 'Toyota'], ['Dodge', 'Dodge']]),
+      onlyFree: s.onlyFree,
+      toggleFree: function () { self.setState({ onlyFree: !s.onlyFree }); },
+      cars: list, empty: list.length === 0,
+      summary: list.length + ' из 8 автомобилей · ' + plural(s.days) + ' · цены уже посчитаны на весь срок'
+    };
+  }
+}
+</script>
+</body>
+</html>

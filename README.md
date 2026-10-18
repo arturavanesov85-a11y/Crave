@@ -10,3 +10,9 @@ Monorepo containing rental, sales, service sites and CRM.
 
 ## Packages
 - `packages/ui` — Shared UI components
+
+## Документация проекта
+- [docs/00-audit.md](docs/00-audit.md) — аудит текущего сайта и репозитория
+- [docs/01-missing-data.md](docs/01-missing-data.md) — недостающие данные и предположения
+- [docs/02-architecture.md](docs/02-architecture.md) — архитектура и схема данных
+- [docs/03-plan.md](docs/03-plan.md) — поэтапный план

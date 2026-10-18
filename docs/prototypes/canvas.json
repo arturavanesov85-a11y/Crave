@@ -1,0 +1,20 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-18T12:00:00Z" },
+  "title": "CRAVE — прототипы",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 3300, "title": "Прокат · Главная", "expand": "fill", "is_interactive": true },
+    "Catalog.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 1900, "title": "Прокат · Автопарк с расчётом", "expand": "fill", "is_interactive": true },
+    "MobilePrice.dc.html": { "x": 3040, "y": 0, "w": 390, "h": 1900, "title": "Телефон · Расчёт стоимости", "is_interactive": true },
+    "CrmCalendar.dc.html": { "x": 0, "y": 3720, "w": 1440, "h": 980, "title": "CRM · Календарь автомобилей", "expand": "fill", "is_interactive": true },
+    "Order.dc.html": { "x": 1520, "y": 3720, "w": 1440, "h": 1200, "title": "CRM · Карточка заказа", "expand": "fill", "is_interactive": true }
+  },
+  "order": ["Main.dc.html", "Catalog.dc.html", "MobilePrice.dc.html", "CrmCalendar.dc.html", "Order.dc.html"],
+  "notes": {
+    "sites": { "x": 0, "y": -300, "text": "Сайт проката", "kind": "title1", "maxW": 3430 },
+    "crm": { "x": 0, "y": 3420, "text": "CRM проката", "kind": "title1", "maxW": 2960 }
+  },
+  "designSystems": []
+}

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Расчёт стоимости на телефоне</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Montserrat:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0A09}
+a{color:#C4AA88;text-decoration:none}a:hover{color:#F0ECE4}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 1900px; box-sizing: border-box; background: #0A0A09; color: #F0ECE4; font-family: Montserrat, sans-serif; font-size: 15px; line-height: 1.5; display: flex; flex-direction: column">
+
+<header style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #33373D">
+<a href="Catalog.dc.html" aria-label="Назад в автопарк" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F0ECE4">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+</a>
+<span style="font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; letter-spacing: 0.18em">CRAVE</span>
+<button type="button" aria-label="Меню" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: #F0ECE4">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+</button>
+</header>
+
+<div role="img" aria-label="Место для фотографии" style="aspect-ratio: 4 / 3; background: #D9D6CF; color: #3A3833; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; font-size: 13px">Фото: BMW M5 F90 Competition, 3/4 спереди · галерея 1 / 12</div>
+
+<div style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #A89878">Седан · 2020</span>
+<h1 style="margin: 0; font-size: 24px; font-weight: 600; line-height: 1.2">BMW M5 F90 Competition Stage 1</h1>
+<span style="font-size: 14px; color: #C8C4B8">750 л.с. · 2,8 с до 100 км/ч · полный привод · 5 мест</span>
+</div>
+
+<div style="margin: 20px 16px 0; padding: 4px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; border: 1px solid #33373D; border-radius: 12px" role="group" aria-label="Режим цены">
+<button type="button" onClick="{{toCalc}}" aria-pressed="{{calcPressed}}" style="{{calcStyle}}">Рассчитать стоимость</button>
+<button type="button" onClick="{{toAll}}" aria-pressed="{{allPressed}}" style="{{allStyle}}">Все тарифы</button>
+</div>
+
+<sc-if value="{{isCalc}}" hint-placeholder-val="{{true}}">
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #9A9488">Получение
+<input type="text" value="Пт, 23 окт · 10:00" style="height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #33373D; background: #1A1A18; color: #F0ECE4; font: inherit; font-size: 15px">
+</label>
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #9A9488">Возврат
+<input type="text" value="Пн, 26 окт · 10:00" style="height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #33373D; background: #1A1A18; color: #F0ECE4; font: inherit; font-size: 15px">
+</label>
+</div>
+
+<section aria-label="Расчёт" style="background: #111110; border: 1px solid #33373D; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">Период</span><span style="text-align: right">23 окт 10:00 — 26 окт 10:00</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">Оплачиваемый срок</span><span>3 суток</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">Тариф</span><span style="text-align: right">от 3 суток · 38 000 ₽</span></div>
+<div style="height: 1px; background: #33373D"></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span>Аренда, 3 × 38 000 ₽</span><span>114 000 ₽</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">Услуги</span><span style="color: #9A9488">не выбраны</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">Скидка</span><span style="color: #9A9488">—</span></div>
+<div style="height: 1px; background: #33373D"></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 20px; font-weight: 600"><span>Итого</span><span>114 000 ₽</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">К оплате сейчас</span><span style="text-align: right; color: #C4AA88">[правило не утверждено]</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">Остаток</span><span style="text-align: right; color: #C4AA88">[правило не утверждено]</span></div>
+</section>
+
+<section aria-label="Залог" style="border: 1px solid #A89878; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-weight: 600"><span>Залог</span><span>от 50 000 ₽</span></div>
+<p style="margin: 0; font-size: 14px; color: #C8C4B8">Не входит в стоимость аренды. Возвращается при возврате автомобиля, 20 000 ₽ — через 21 день после проверки штрафов.</p>
+</section>
+
+<section aria-label="Пробег" style="background: #111110; border: 1px solid #33373D; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">Включено</span><span>750 км (250 км × 3)</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #9A9488">Сверх лимита</span><span>150 ₽ / км</span></div>
+</section>
+
+<section aria-label="Дополнительные услуги" style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: #A89878">Дополнительно</span>
+<label style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: 1px solid #33373D; border-radius: 12px">
+<input type="checkbox" style="width: 20px; height: 20px; accent-color: #A89878">
+<span style="flex: 1">С водителем</span><span style="color: #C8C4B8">7 000 ₽ / час</span>
+</label>
+<label style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: 1px solid #33373D; border-radius: 12px">
+<input type="checkbox" style="width: 20px; height: 20px; accent-color: #A89878">
+<span style="flex: 1">Дополнительный водитель</span><span style="color: #C4AA88">[цена]</span>
+</label>
+</section>
+
+<p style="margin: 0; font-size: 13px; color: #9A9488">Предварительный расчёт. Менеджер подтвердит стоимость и наличие автомобиля.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{isAll}}" hint-placeholder-val="{{false}}">
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{tiers}}" as="t" hint-placeholder-count="5">
+<div style="display: flex; justify-content: space-between; align-items: center; min-height: 56px; padding: 0 16px; background: #111110; border: 1px solid #33373D; border-radius: 12px">
+<span style="color: #C8C4B8">{{t.label}}</span>
+<span style="font-weight: 600">{{t.price}} ₽ <span style="font-weight: 400; color: #9A9488; font-size: 13px">/ сутки</span></span>
+</div>
+</sc-for>
+<div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: #C8C4B8">
+<div style="display: flex; justify-content: space-between"><span>Лимит пробега</span><span>250 км / сутки</span></div>
+<div style="display: flex; justify-content: space-between"><span>Перепробег</span><span>150 ₽ / км</span></div>
+<div style="display: flex; justify-content: space-between"><span>С водителем</span><span>7 000 ₽ / час</span></div>
+<div style="display: flex; justify-content: space-between"><span>Залог</span><span>от 50 000 ₽</span></div>
+</div>
+</div>
+</sc-if>
+
+<div style="margin-top: auto; position: sticky; bottom: 0; padding: 12px 16px 20px; background: #0A0A09; border-top: 1px solid #33373D; display: flex; align-items: center; gap: 12px">
+<div style="display: flex; flex-direction: column; line-height: 1.2">
+<span style="font-size: 18px; font-weight: 600">114 000 ₽</span>
+<span style="font-size: 12px; color: #9A9488">за 3 суток + залог</span>
+</div>
+<a href="#" style="flex: 1; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #A89878; color: #0A0A09; font-weight: 600">Отправить заявку</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'calc' };
+  }
+  renderVals() {
+    var self = this, calc = this.state.mode === 'calc';
+    var seg = function (on) {
+      return 'min-height: 44px; border-radius: 9px; border: none; font-size: 14px; background: ' + (on ? '#A89878' : 'transparent') + '; color: ' + (on ? '#0A0A09' : '#C8C4B8') + '; font-weight: ' + (on ? '600' : '400');
+    };
+    return {
+      isCalc: calc, isAll: !calc,
+      calcPressed: calc ? 'true' : 'false', allPressed: calc ? 'false' : 'true',
+      calcStyle: seg(calc), allStyle: seg(!calc),
+      toCalc: function () { self.setState({ mode: 'calc' }); },
+      toAll: function () { self.setState({ mode: 'all' }); },
+      tiers: [
+        { label: '1–2 суток', price: '40 000' },
+        { label: 'от 3 суток', price: '38 000' },
+        { label: 'от 7 суток', price: '36 000' },
+        { label: 'от 14 суток', price: '32 000' },
+        { label: 'от 30 суток', price: '28 000' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

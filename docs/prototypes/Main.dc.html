@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>CRAVE Rental — главная</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Montserrat:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0A09}
+a{color:#C4AA88;text-decoration:none}a:hover{color:#F0ECE4}
+details summary{cursor:pointer;list-style:none}
+details summary::-webkit-details-marker{display:none}
+input,select{font:inherit}
+</style>
+</helmet>
+<div style="background: #0A0A09; color: #F0ECE4; font-family: Montserrat, sans-serif; font-size: 16px; line-height: 1.5; min-height: 100vh">
+
+<!-- Шапка -->
+<header style="border-bottom: 1px solid #33373D; background: #0A0A09">
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; min-height: 72px">
+<a href="Main.dc.html" style="font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.18em; color: #F0ECE4">CRAVE</a>
+<nav aria-label="Направления" style="display: flex; gap: 4px; padding: 4px; border: 1px solid #33373D; border-radius: 999px; font-size: 13px">
+<a href="#" aria-current="page" style="padding: 6px 14px; border-radius: 999px; background: #A89878; color: #0A0A09; font-weight: 600">Прокат</a>
+<a href="#" style="padding: 6px 14px; border-radius: 999px; color: #C8C4B8">Автосалон</a>
+<a href="#" style="padding: 6px 14px; border-radius: 999px; color: #C8C4B8">Сервис</a>
+</nav>
+<nav aria-label="Разделы" style="display: flex; flex-wrap: wrap; gap: 24px; font-size: 14px; flex: 1 1 auto">
+<a href="Catalog.dc.html" style="color: #C8C4B8">Автопарк</a>
+<a href="#" style="color: #C8C4B8">Цены</a>
+<a href="#" style="color: #C8C4B8">Условия аренды</a>
+<a href="#" style="color: #C8C4B8">Контакты</a>
+</nav>
+<a href="tel:+79104210222" style="font-size: 15px; font-weight: 600; color: #F0ECE4">+7 (910) 421-02-22</a>
+</div>
+</header>
+
+<!-- Первый экран -->
+<section style="max-width: 1280px; margin: 0 auto; padding: 56px 24px 40px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center">
+<div style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<p style="margin: 0; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: #A89878">Аренда премиальных автомобилей · Москва</p>
+<h1 style="margin: 0; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 56px; line-height: 1.05">Премиальные автомобили. Понятные условия аренды.</h1>
+<p style="margin: 0; font-size: 18px; color: #C8C4B8; max-width: 520px">Выберите автомобиль и даты — узнайте стоимость поездки и отправьте заявку на бронирование.</p>
+
+<form style="margin-top: 8px; background: #111110; border: 1px solid #33373D; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #9A9488">Получение
+<input type="text" value="Пт, 23 окт · 10:00" style="height: 48px; padding: 0 14px; border-radius: 10px; border: 1px solid #33373D; background: #1A1A18; color: #F0ECE4">
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #9A9488">Возврат
+<input type="text" value="Пн, 26 окт · 10:00" style="height: 48px; padding: 0 14px; border-radius: 10px; border: 1px solid #33373D; background: #1A1A18; color: #F0ECE4">
+</label>
+</div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #9A9488">Класс автомобиля
+<select style="height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #33373D; background: #1A1A18; color: #F0ECE4">
+<option>Все автомобили</option>
+<option>Седаны</option>
+<option>Внедорожники</option>
+<option>Купе</option>
+<option>Пикапы</option>
+</select>
+</label>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<a href="Catalog.dc.html" style="flex: 1 1 200px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #A89878; color: #0A0A09; font-weight: 600">Подобрать автомобиль</a>
+<a href="#" style="flex: 1 1 160px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #A89878; color: #C4AA88; font-weight: 500">Помочь с выбором</a>
+</div>
+<p style="margin: 0; font-size: 13px; color: #9A9488">3 суток · стоимость покажем для каждого свободного автомобиля</p>
+</form>
+</div>
+
+<figure style="flex: 1 1 560px; min-width: 0; margin: 0; display: flex; flex-direction: column; gap: 12px">
+<div role="img" aria-label="Место для фотографии автомобиля" style="aspect-ratio: 4 / 3; border-radius: 16px; background: #D9D6CF; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #3A3833; font-size: 14px">Фото: Mercedes-AMG GT63 S, 3/4 спереди, светлая нейтральная локация, без затемнения</div>
+<figcaption style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 14px; color: #C8C4B8">
+<span>Mercedes-AMG GT63 S 4-door · 740 л.с. · 2,8 с до 100 км/ч</span>
+<a href="#">от 30 000 ₽ / сутки при аренде от 30 суток</a>
+</figcaption>
+</figure>
+</section>
+
+<!-- Краткие условия -->
+<section aria-label="Краткие условия" style="max-width: 1280px; margin: 0 auto; padding: 0 24px 64px">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: #33373D; border: 1px solid #33373D; border-radius: 16px; overflow: hidden">
+<div style="background: #111110; padding: 20px 24px"><div style="font-size: 22px; font-weight: 600">от 20 лет</div><div style="font-size: 14px; color: #9A9488">возраст водителя</div></div>
+<div style="background: #111110; padding: 20px 24px"><div style="font-size: 22px; font-weight: 600">от 1,5 лет</div><div style="font-size: 14px; color: #9A9488">водительский стаж</div></div>
+<div style="background: #111110; padding: 20px 24px"><div style="font-size: 22px; font-weight: 600">250 км / сутки</div><div style="font-size: 14px; color: #9A9488">включено в стоимость</div></div>
+<div style="background: #111110; padding: 20px 24px"><div style="font-size: 22px; font-weight: 600">от 50 000 ₽</div><div style="font-size: 14px; color: #9A9488">залог, отдельно от стоимости</div></div>
+</div>
+</section>
+
+<!-- Автопарк -->
+<section style="max-width: 1280px; margin: 0 auto; padding: 0 24px 72px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 24px">
+<h2 style="margin: 0; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 40px">Автопарк</h2>
+<a href="Catalog.dc.html" style="font-size: 15px">Все 8 автомобилей →</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px">
+<sc-for list="{{cars}}" as="car" hint-placeholder-count="4">
+<article style="background: #111110; border: 1px solid #33373D; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
+<div role="img" aria-label="Место для фотографии" style="aspect-ratio: 4 / 3; background: #D9D6CF; color: #3A3833; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; font-size: 13px">Фото: {{car.name}}, 3/4 спереди</div>
+<div style="padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1">
+<div style="font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #A89878">{{car.cls}}</div>
+<h3 style="margin: 0; font-size: 19px; font-weight: 600">{{car.name}}</h3>
+<div style="font-size: 14px; color: #C8C4B8">{{car.specs}}</div>
+<div style="margin-top: auto; padding-top: 12px; border-top: 1px solid #33373D; display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 18px; font-weight: 600">{{car.short}} ₽ <span style="font-size: 14px; font-weight: 400; color: #C8C4B8">/ сутки за 1–2 суток</span></div>
+<div style="font-size: 13px; color: #9A9488">от {{car.long}} ₽ / сутки при аренде от 30 суток</div>
+</div>
+<a href="Catalog.dc.html" style="height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #A89878; color: #C4AA88; font-size: 15px; font-weight: 500">Рассчитать на мои даты</a>
+</div>
+</article>
+</sc-for>
+</div>
+</section>
+
+<!-- Как получить автомобиль -->
+<section style="background: #111110; border-top: 1px solid #33373D; border-bottom: 1px solid #33373D">
+<div style="max-width: 1280px; margin: 0 auto; padding: 64px 24px">
+<h2 style="margin: 0 0 28px; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 40px">Как получить автомобиль</h2>
+<ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px">
+<li style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; color: #A89878; font-weight: 600">01</span><strong style="font-size: 17px">Выберите автомобиль и даты</strong><span style="font-size: 15px; color: #C8C4B8">Сайт покажет итоговую стоимость с расшифровкой и залог отдельно.</span></li>
+<li style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; color: #A89878; font-weight: 600">02</span><strong style="font-size: 17px">Менеджер подтвердит бронь</strong><span style="font-size: 15px; color: #C8C4B8">До подтверждения это заявка: мы проверим даты и условия и свяжемся с вами.</span></li>
+<li style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; color: #A89878; font-weight: 600">03</span><strong style="font-size: 17px">Внесите залог для резерва</strong><span style="font-size: 15px; color: #C8C4B8">Залог от 50 000 ₽ закрепляет дату. Он не входит в стоимость аренды.</span></li>
+<li style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; color: #A89878; font-weight: 600">04</span><strong style="font-size: 17px">Получите автомобиль</strong><span style="font-size: 15px; color: #C8C4B8">Москва, Коровинское шоссе, 10. Возьмите паспорт и водительское удостоверение.</span></li>
+</ol>
+</div>
+</section>
+
+<!-- Дополнительные услуги -->
+<section style="max-width: 1280px; margin: 0 auto; padding: 64px 24px">
+<h2 style="margin: 0 0 24px; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 40px">Дополнительные услуги</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px">
+<div style="border: 1px solid #33373D; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 8px"><strong style="font-size: 18px">Аренда с водителем</strong><span style="color: #C8C4B8; font-size: 15px">от 6 000 ₽ / час, цена зависит от модели</span></div>
+<div style="border: 1px solid #33373D; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 8px"><strong style="font-size: 18px">Дополнительный водитель</strong><span style="color: #C8C4B8; font-size: 15px">[ЦЕНА — нужна от владельца]. Заявляется до начала аренды.</span></div>
+<div style="border: 1px solid #33373D; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 8px"><strong style="font-size: 18px">Поездка за пределы региона</strong><span style="color: #C8C4B8; font-size: 15px">Москва и МО, Санкт-Петербург и ЛО — включены. Другие регионы — по согласованию.</span></div>
+</div>
+</section>
+
+<!-- Частые вопросы -->
+<section style="max-width: 880px; margin: 0 auto; padding: 0 24px 72px">
+<h2 style="margin: 0 0 20px; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 40px">Частые вопросы</h2>
+<div style="display: flex; flex-direction: column; border-top: 1px solid #33373D">
+<details open="" style="border-bottom: 1px solid #33373D; padding: 18px 0">
+<summary style="font-size: 17px; font-weight: 500">Когда возвращается залог?</summary>
+<p style="margin: 10px 0 0; color: #C8C4B8; font-size: 15px">Сразу при возврате автомобиля. 20 000 ₽ удерживаются на 21 день для проверки штрафов.</p>
+</details>
+<details style="border-bottom: 1px solid #33373D; padding: 18px 0">
+<summary style="font-size: 17px; font-weight: 500">Какие документы нужны?</summary>
+<p style="margin: 10px 0 0; color: #C8C4B8; font-size: 15px">Паспорт и водительское удостоверение.</p>
+</details>
+<details style="border-bottom: 1px solid #33373D; padding: 18px 0">
+<summary style="font-size: 17px; font-weight: 500">Можно ли арендовать иностранному гражданину?</summary>
+<p style="margin: 10px 0 0; color: #C8C4B8; font-size: 15px">Да. Размер залога может быть увеличен.</p>
+</details>
+<details style="border-bottom: 1px solid #33373D; padding: 18px 0">
+<summary style="font-size: 17px; font-weight: 500">Возвращается ли предоплата при отмене?</summary>
+<p style="margin: 10px 0 0; color: #C8C4B8; font-size: 15px">Нет, предоплата не возвращается и не переносится.</p>
+</details>
+</div>
+</section>
+
+<!-- Подвал -->
+<footer style="border-top: 1px solid #33373D; background: #111110">
+<div style="max-width: 1280px; margin: 0 auto; padding: 48px 24px; display: flex; flex-wrap: wrap; gap: 40px">
+<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; letter-spacing: 0.18em">CRAVE</span>
+<span style="color: #C8C4B8; font-size: 15px">Москва, Коровинское шоссе, 10</span>
+<a href="tel:+79104210222" style="font-size: 15px">+7 (910) 421-02-22</a>
+<a href="https://t.me/crave_rental" style="font-size: 15px">Telegram</a>
+</div>
+<nav aria-label="Направления в подвале" style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 8px; font-size: 15px">
+<span style="color: #9A9488; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em">CRAVE</span>
+<a href="#">Прокат</a>
+<a href="#">Автосалон</a>
+<a href="#">Сервис</a>
+</nav>
+<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #9A9488">
+<a href="#">Политика конфиденциальности</a>
+<span>[РЕКВИЗИТЫ — нужны от владельца]</span>
+<span>© 2026 CRAVE</span>
+</div>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      cars: [
+        { name: 'BMW M5 F90 Competition', cls: 'Седан', specs: '750 л.с. · 2,8 с · 2020', short: '40 000', long: '28 000' },
+        { name: 'Mercedes-AMG GT63 S', cls: 'Купе', specs: '740 л.с. · 2,8 с · 2020', short: '45 000', long: '30 000' },
+        { name: 'Mercedes-Benz G63 First Edition', cls: 'Внедорожник', specs: '750 л.с. · 3,9 с · 2018', short: '54 000', long: '39 500' },
+        { name: 'BMW M340i xDrive LCI', cls: 'Седан', specs: '387 л.с. · 4,1 с · 2024', short: '21 000', long: '13 000' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
