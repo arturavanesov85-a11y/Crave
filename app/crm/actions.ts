@@ -486,6 +486,48 @@ export async function expenseAction(_: ActionState, fd: FormData): Promise<Actio
   });
 }
 
+// ---------- Клиенты ----------
+
+export async function customerUpdateAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard('customers.write');
+    const id = str(fd, 'customerId');
+    const c = await db.customer.findUnique({ where: { id }, include: { directions: true } });
+    if (!c) throw new Error('Клиент не найден');
+    // Редактировать можно только клиентов своего направления.
+    const dirs = directionsOf(user);
+    if (!c.directions.some((d) => dirs.includes(d.direction as never))) throw new Forbidden();
+
+    const fullName = str(fd, 'fullName');
+    if (fullName.length < 2) throw new Error('Укажите имя клиента');
+    const phone = normalizePhone(str(fd, 'phone'));
+    if (!phone) throw new Error('Проверьте телефон: нужен российский номер из 11 цифр');
+    if (phone !== c.phone && (await db.customer.findUnique({ where: { phone } }))) throw new Error('Клиент с таким телефоном уже есть в базе');
+    const email = str(fd, 'email');
+    if (email && !z.string().email().safeParse(email).success) throw new Error('Проверьте e-mail');
+    const date = (k: string, label: string) => {
+      const v = str(fd, k);
+      if (!v) return null;
+      const d = parseLocal(`${v}T12:00`);
+      if (!d) throw new Error(`Проверьте поле «${label}»`);
+      if (d > new Date()) throw new Error(`«${label}» не может быть в будущем`);
+      return d;
+    };
+    const birthDate = date('birthDate', 'Дата рождения');
+    const drivingSince = date('drivingSince', 'Стаж с');
+    if (birthDate && drivingSince && drivingSince < birthDate) throw new Error('Стаж не может начинаться раньше даты рождения');
+    const notes = str(fd, 'notes').slice(0, 2000);
+
+    const data = { fullName, phone, email: email || null, birthDate, drivingSince, isForeign: fd.get('isForeign') === 'on', notes: notes || null };
+    const changed = (Object.keys(data) as (keyof typeof data)[]).filter((k) => String(data[k] ?? '') !== String(c[k] ?? ''));
+    if (!changed.length) return 'Изменений нет';
+    await db.customer.update({ where: { id }, data: { ...data, updatedAt: new Date() } });
+    // В журнал — только какие поля изменены, без самих персональных данных.
+    await audit(db, user.id, 'customer.update', 'customer', id, { fields: changed });
+    return 'Сохранено';
+  });
+}
+
 // ---------- Заявки ----------
 
 export async function leadAction(_: ActionState, fd: FormData): Promise<ActionState> {

@@ -11,6 +11,7 @@ export const PERMS = [
   'leads.sales',
   'leads.service',
   'customers.read',
+  'customers.write', // редактирование карточки клиента своего направления
   'customer.docs.view',
   'fleet.read',
   'fleet.write',
@@ -36,12 +37,12 @@ const ROLES: Record<string, { label: string; directions: Direction[]; perms: Per
   rental_head: {
     label: 'Руководитель проката',
     directions: ['rental'],
-    perms: ['rental.read', 'rental.write', 'rental.inspect', 'leads.rental', 'customers.read', 'customer.docs.view', 'fleet.read', 'fleet.write', 'vehicle.sensitive', 'tariff.edit', 'discount.apply', 'payment.accept', 'refund.issue', 'deposit.withhold.request', 'deposit.withhold.approve', 'ledger.reverse', 'finance.view', 'export.run'],
+    perms: ['rental.read', 'rental.write', 'rental.inspect', 'leads.rental', 'customers.read', 'customers.write', 'customer.docs.view', 'fleet.read', 'fleet.write', 'vehicle.sensitive', 'tariff.edit', 'discount.apply', 'payment.accept', 'refund.issue', 'deposit.withhold.request', 'deposit.withhold.approve', 'ledger.reverse', 'finance.view', 'export.run'],
   },
   rental_manager: {
     label: 'Менеджер проката',
     directions: ['rental'],
-    perms: ['rental.read', 'rental.write', 'rental.inspect', 'leads.rental', 'customers.read', 'fleet.read', 'payment.accept', 'deposit.withhold.request'],
+    perms: ['rental.read', 'rental.write', 'rental.inspect', 'leads.rental', 'customers.read', 'customers.write', 'fleet.read', 'payment.accept', 'deposit.withhold.request'],
   },
   handover: {
     label: 'Сотрудник выдачи',
@@ -53,8 +54,8 @@ const ROLES: Record<string, { label: string; directions: Direction[]; perms: Per
     directions: ['rental', 'sales', 'service'],
     perms: ['rental.read', 'customers.read', 'fleet.read', 'payment.accept', 'refund.issue', 'ledger.reverse', 'finance.view', 'finance.expenses', 'finance.result', 'export.run'],
   },
-  sales_staff: { label: 'Сотрудник автосалона', directions: ['sales'], perms: ['leads.sales', 'customers.read'] },
-  service_staff: { label: 'Сотрудник сервиса', directions: ['service'], perms: ['leads.service', 'customers.read'] },
+  sales_staff: { label: 'Сотрудник автосалона', directions: ['sales'], perms: ['leads.sales', 'customers.read', 'customers.write'] },
+  service_staff: { label: 'Сотрудник сервиса', directions: ['service'], perms: ['leads.service', 'customers.read', 'customers.write'] },
   tech_admin: { label: 'Технический администратор', directions: [], perms: ['users.manage', 'settings.manage', 'fleet.read'] },
 };
 

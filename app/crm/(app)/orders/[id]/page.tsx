@@ -6,6 +6,7 @@ import { daysWord, fmtDateTime, toLocalInput } from '@/lib/dates';
 import { holdInfo, usersById } from '@/lib/crm-data';
 import { DEPOSIT_STATUS_LABEL, KIND_LABEL as LEDGER_LABEL, METHOD_LABEL, PAYMENT_STATUS_LABEL, summarize } from '@/lib/ledger';
 import { rub } from '@/lib/money';
+import { eligibility } from '@/lib/customers';
 import { formatPhone, freeAlternatives, returnExtras, STATUS_LABEL, type QuoteOk, type Terms } from '@/lib/orders';
 import { can } from '@/lib/permissions';
 import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
@@ -53,6 +54,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   ]);
   const name = (uid: string | null) => (uid ? users.get(uid)?.fullName ?? '—' : '—');
   const terms = json<Terms>(o.termsSnapshot, null as never);
+  const el = eligibility(o.customer);
   const q = json<QuoteOk>(o.quoteSnapshot, null as never);
   const m = summarize(o.ledger);
   const hold = holds.get(o.id);
@@ -134,7 +136,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           {next}
         </div>
         <div className="facts-grid">
-          <div><span className="k">Клиент</span>{can(user, 'customers.read') ? <Link href={`/crm/customers/${o.customerId}`} style={{ fontWeight: 600, color: 'var(--text)' }}>{o.customer.fullName}</Link> : <strong>{o.customer.fullName}</strong>}<a href={`tel:+${o.customer.phone}`} className="text-2">{formatPhone(o.customer.phone)}</a></div>
+          <div><span className="k">Клиент</span>{can(user, 'customers.read') ? <Link href={`/crm/customers/${o.customerId}`} style={{ fontWeight: 600, color: 'var(--text)' }}>{o.customer.fullName}</Link> : <strong>{o.customer.fullName}</strong>}<a href={`tel:+${o.customer.phone}`} className="text-2">{formatPhone(o.customer.phone)}</a>{el.issues.map((i) => <span key={i} className="warn small">{i}</span>)}{el.unknown.length && ['new', 'negotiation', 'confirmed'].includes(o.status) ? <span className="muted small">не заполнено: {el.unknown.join(', ')}</span> : null}</div>
           <div><span className="k">Автомобиль</span><Link href={`/crm/vehicles/${o.vehicleId}`} style={{ fontWeight: 600, color: 'var(--text)' }}>{o.vehicle.title}</Link><span className="text-2">{o.vehicle.colorExterior} · {o.vehicle.year}</span></div>
           <div><span className="k">Срок</span><strong>{fmtDateTime(o.pickupAt)} → {fmtDateTime(o.returnAt)}</strong><span className="text-2">{daysWord(q.days)}{o.actualPickupAt ? ` · выдан ${fmtDateTime(o.actualPickupAt)}` : ''}{o.actualReturnAt ? ` · возвращён ${fmtDateTime(o.actualReturnAt)}` : ''}{o.closedAt ? ` · завершён ${fmtDateTime(o.closedAt)}` : ''}</span></div>
           <div><span className="k">Стоимость</span><strong>{rub(m.charges || q.total)}</strong>{m.charges ? <span className={m.debt > 0 ? 'warn' : 'gold'}>{m.debt > 0 ? `долг ${rub(m.debt)}` : m.debt < 0 ? `переплата ${rub(-m.debt)}` : 'оплачено'}</span> : <span className="muted">начислится при подтверждении</span>}</div>
