@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "crave",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
       "name": "prototypes",
       "runtimeExecutable": "node",
       "runtimeArgs": ["prototypes/serve.mjs"],

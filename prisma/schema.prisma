@@ -1,0 +1,308 @@
+// CRAVE: сайты и CRM. Суммы — целые копейки. Время — UTC, показ в Europe/Moscow.
+// Для PostgreSQL: provider = "postgresql" и DATABASE_URL на сервер.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Доступ ----------
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  fullName     String
+  passwordHash String
+  role         String // owner | rental_head | rental_manager | handover | finance | sales_staff | service_staff | tech_admin
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id // sha256 токена
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// ---------- Клиенты и обращения ----------
+
+model Customer {
+  id          String              @id @default(cuid())
+  fullName    String
+  phone       String              @unique // только цифры, 7XXXXXXXXXX
+  email       String?
+  notes       String?
+  createdAt   DateTime            @default(now())
+  directions  CustomerDirection[]
+  orders      RentalOrder[]
+  leads       Lead[]
+}
+
+model CustomerDirection {
+  customerId String
+  direction  String // rental | sales | service
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([customerId, direction])
+}
+
+model Lead {
+  id             String    @id @default(cuid())
+  direction      String // rental | sales | service
+  site           String
+  kind           String // booking_request | callback | purchase | service_request
+  status         String    @default("new") // new | in_progress | converted | rejected | spam
+  name           String
+  phone          String
+  message        String?
+  payload        String? // JSON
+  utm            String? // JSON
+  idempotencyKey String?   @unique
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id])
+  assigneeId     String?
+  orderId        String?
+  createdAt      DateTime  @default(now())
+}
+
+// ---------- Автопарк и тарифы ----------
+
+model Vehicle {
+  id             String            @id @default(cuid())
+  slug           String            @unique
+  make           String
+  model          String
+  title          String
+  year           Int
+  bodyType       String // sedan | suv | coupe | pickup
+  powerHp        Int
+  accel          String
+  drive          String
+  fuel           String
+  seats          Int?
+  colorExterior  String?
+  colorInterior  String?
+  description    String?
+  equipment      String? // JSON-массив строк
+  vin            String?
+  plate          String?
+  mileageKm      Int               @default(0)
+  condition      String            @default("ready") // ready | preparing | maintenance | unavailable
+  nextServiceKm  Int?
+  nextServiceAt  DateTime?
+  isPublished    Boolean           @default(true)
+  sortOrder      Int               @default(0)
+  legacyPath     String?
+  createdAt      DateTime          @default(now())
+  tariffs        TariffPlan[]
+  occupancies    Occupancy[]
+  orders         RentalOrder[]
+  documents      VehicleDocument[]
+  damages        Damage[]
+}
+
+model VehicleDocument {
+  id         String    @id @default(cuid())
+  vehicleId  String
+  vehicle    Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  kind       String // sts | osago | kasko | diagnostic_card | other
+  title      String
+  validUntil DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model TariffPlan {
+  id               String   @id @default(cuid())
+  vehicleId        String
+  vehicle          Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  validFrom        DateTime @default(now())
+  status           String   @default("active") // active | archived
+  tiers            String // JSON [{minDays, dailyRate}] — копейки
+  deposit          Int
+  includedKmPerDay Int
+  overmileagePerKm Int
+  driverPerHour    Int?
+  note             String?
+  createdById      String?
+  createdAt        DateTime @default(now())
+}
+
+model PricingRule {
+  key       String   @id
+  value     String // JSON
+  status    String   @default("assumption") // assumption | approved
+  title     String
+  updatedAt DateTime @updatedAt
+}
+
+model ExtraService {
+  code     String  @id
+  name     String
+  pricing  String // fixed | per_day | per_hour
+  amount   Int? // null — цена не утверждена, услугу нельзя выбрать
+  isActive Boolean @default(true)
+}
+
+// ---------- Бронирование ----------
+
+// Единственный источник правды о занятости машины.
+model Occupancy {
+  id           String       @id @default(cuid())
+  vehicleId    String
+  vehicle      Vehicle      @relation(fields: [vehicleId], references: [id])
+  kind         String // hold | booking | rental | maintenance | block
+  orderId      String?
+  order        RentalOrder? @relation(fields: [orderId], references: [id])
+  startsAt     DateTime
+  endsAt       DateTime
+  blockedUntil DateTime // endsAt + буфер подготовки
+  expiresAt    DateTime? // только hold
+  releasedAt   DateTime?
+  note         String?
+  createdById  String?
+  createdAt    DateTime     @default(now())
+
+  @@index([vehicleId, startsAt])
+}
+
+// ---------- Заказы ----------
+
+model RentalOrder {
+  id             String        @id @default(cuid())
+  number         String        @unique
+  status         String // new | negotiation | confirmed | issued | returned | closed | cancelled | no_show
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  vehicleId      String
+  vehicle        Vehicle       @relation(fields: [vehicleId], references: [id])
+  leadId         String?
+  pickupAt       DateTime
+  returnAt       DateTime
+  actualPickupAt DateTime?
+  actualReturnAt DateTime?
+  assigneeId     String?
+  handoverId     String?
+  termsSnapshot  String // JSON: тариф и правила на момент согласования
+  quoteSnapshot  String // JSON: расчёт
+  services       String        @default("[]") // JSON [{code, qty}]
+  cancelReason   String?
+  source         String        @default("crm") // site | crm
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  occupancies    Occupancy[]
+  events         OrderEvent[]
+  comments       OrderComment[]
+  inspections    Inspection[]
+  ledger         LedgerEntry[]
+}
+
+model OrderEvent {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     RentalOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type      String
+  text      String
+  actorId   String?
+  createdAt DateTime    @default(now())
+}
+
+model OrderComment {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     RentalOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String
+  createdAt DateTime    @default(now())
+}
+
+// ---------- Осмотры ----------
+
+model Inspection {
+  id          String           @id @default(cuid())
+  orderId     String
+  order       RentalOrder      @relation(fields: [orderId], references: [id])
+  kind        String // pickup | return
+  performedBy String
+  performedAt DateTime         @default(now())
+  mileageKm   Int
+  fuelPercent Int
+  checklist   String // JSON
+  notes       String?
+  photos      InspectionPhoto[]
+  damages     Damage[]
+}
+
+model InspectionPhoto {
+  id           String     @id @default(cuid())
+  inspectionId String
+  inspection   Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  path         String
+  mime         String
+  createdAt    DateTime   @default(now())
+}
+
+model Damage {
+  id           String      @id @default(cuid())
+  vehicleId    String
+  vehicle      Vehicle     @relation(fields: [vehicleId], references: [id])
+  inspectionId String?
+  inspection   Inspection? @relation(fields: [inspectionId], references: [id])
+  location     String
+  description  String
+  status       String      @default("open") // open | repaired
+  createdAt    DateTime    @default(now())
+}
+
+// ---------- Финансы ----------
+
+// Журнал только на добавление. Исправление — сторно (reversesId) и новая запись.
+model LedgerEntry {
+  id             String       @id @default(cuid())
+  direction      String       @default("rental")
+  kind           String // charge.rental | charge.service | charge.extra | charge.discount | payment.in | payment.refund | deposit.in | deposit.refund | deposit.withhold | expense.vehicle | expense.general
+  amount         Int // копейки; сторно — с обратным знаком
+  occurredAt     DateTime     @default(now())
+  orderId        String?
+  order          RentalOrder? @relation(fields: [orderId], references: [id])
+  vehicleId      String?
+  customerId     String?
+  method         String? // cash | card | transfer
+  basis          String
+  reversesId     String?      @unique
+  createdById    String
+  approvedById   String?
+  idempotencyKey String?      @unique
+  createdAt      DateTime     @default(now())
+}
+
+model WithholdRequest {
+  id           String    @id @default(cuid())
+  orderId      String
+  amount       Int
+  basis        String
+  status       String    @default("pending") // pending | approved | rejected
+  requestedBy  String
+  decidedBy    String?
+  decidedAt    DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+// ---------- Журнал изменений ----------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String
+  details   String?
+  createdAt DateTime @default(now())
+}
