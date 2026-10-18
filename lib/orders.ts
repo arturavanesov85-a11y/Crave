@@ -17,7 +17,7 @@ export const STATUS_LABEL: Record<string, string> = {
   confirmed: 'Подтверждённая бронь',
   issued: 'Автомобиль выдан',
   returned: 'Автомобиль возвращён',
-  closed: 'Заказ закрыт',
+  closed: 'Заказ завершён',
   cancelled: 'Отменён',
   no_show: 'Неявка',
 };
@@ -253,7 +253,7 @@ async function reverseCharges(tx: Tx, user: SessionUser, orderId: string, reason
   for (const c of charges) {
     const rev = await tx.ledgerEntry.findUnique({ where: { reversesId: c.id } });
     if (rev) continue;
-    await tx.ledgerEntry.create({ data: { kind: c.kind, amount: -c.amount, basis: `Сторно: ${reason}`, createdById: user.id, orderId, vehicleId: c.vehicleId, customerId: c.customerId, reversesId: c.id } });
+    await tx.ledgerEntry.create({ data: { kind: c.kind, amount: -c.amount, basis: `Возврат: ${reason}`, createdById: user.id, orderId, vehicleId: c.vehicleId, customerId: c.customerId, reversesId: c.id } });
   }
 }
 
@@ -266,7 +266,7 @@ export async function cancelOrder(user: SessionUser, id: string, reason: string,
     await reverseCharges(tx, user, id, status === 'no_show' ? 'неявка' : 'отмена заказа');
     await tx.rentalOrder.update({ where: { id }, data: { status, cancelReason: reason.trim() } });
     if (o.leadId && o.status === 'new') await tx.lead.update({ where: { id: o.leadId }, data: { status: 'rejected' } });
-    await event(tx, id, 'status', `${STATUS_LABEL[status]}: ${reason.trim()}. Начисления сторнированы; полученные деньги и залог — решение в разделе «Оплаты».`, user.id);
+    await event(tx, id, 'status', `${STATUS_LABEL[status]}: ${reason.trim()}. Начисления отменены возвратом; полученные деньги и залог — решение в разделе «Оплаты».`, user.id);
     await audit(tx, user.id, `order.${status}`, 'order', id, { reason });
   });
 }
@@ -384,18 +384,59 @@ export function returnExtras(o: { returnAt: Date }, q: QuoteOk, terms: Terms, pi
   return { driven, overKm, overAmount: overKm * terms.tariff.overmileagePerKm, lateMin, lateDays, lateAmount: lateDays * q.dailyRate };
 }
 
-export async function closeOrder(user: SessionUser, id: string) {
+export type CompleteInput = {
+  payment?: { amount: number; method: string } | null; // доплата клиента при завершении
+  overpayRefund?: { amount: number; method: string } | null; // возврат переплаты
+  depositRefund?: { amount: number; method: string } | null; // возврат залога сейчас
+  holdDays: number; // остаток залога держим на проверку штрафов
+  allowDebt: boolean; // завершить с долгом — долг остаётся в отчёте «Долги клиентов»
+  canRefund: boolean; // право на возвраты денег
+};
+
+/**
+ * Завершение заказа после возврата автомобиля: расчёт с клиентом одной операцией.
+ * Все движения денег проводятся в журнал; заказ уходит в неактивные.
+ * Неоплаченный долг и удерживаемый остаток залога продолжают учитываться в финансах.
+ */
+export async function completeOrder(user: SessionUser, id: string, input: CompleteInput) {
   return withBookingLock(async (tx) => {
     const o = await loadOrder(tx, id);
     assertTransition(o.status, 'closed');
-    const m = await orderMoney(tx, id);
-    if (m.debt > 0) throw new Error(`Нельзя закрыть: задолженность ${m.debt / 100} ₽`);
-    if (m.debt < 0) throw new Error(`Нельзя закрыть: переплата ${-m.debt / 100} ₽ — верните или зачтите`);
-    if (m.depositBalance !== 0) throw new Error(`Нельзя закрыть: по залогу остаток ${m.depositBalance / 100} ₽ — верните или удержите`);
     const pending = await tx.withholdRequest.count({ where: { orderId: id, status: 'pending' } });
-    if (pending) throw new Error('Есть неподтверждённый запрос на удержание');
-    await tx.rentalOrder.update({ where: { id }, data: { status: 'closed' } });
-    await event(tx, id, 'status', 'Заказ закрыт.', user.id);
+    if (pending) throw new Error('Есть удержание из залога, ожидающее решения руководителя — сначала оно');
+    const base = { createdById: user.id, orderId: id, vehicleId: o.vehicleId, customerId: o.customerId };
+    const notes: string[] = [];
+
+    if (input.payment && input.payment.amount > 0) {
+      await post(tx, { ...base, kind: 'payment.in', amount: input.payment.amount, method: input.payment.method, basis: 'Доплата при завершении заказа' });
+      notes.push(`доплата ${input.payment.amount / 100} ₽`);
+    }
+    let m = await orderMoney(tx, id);
+    if (m.debt < 0 && input.overpayRefund && input.overpayRefund.amount > 0) {
+      if (!input.canRefund) throw new Error('Возврат переплаты проводит руководитель или финансист');
+      if (input.overpayRefund.amount > -m.debt) throw new Error(`Возврат больше переплаты (${-m.debt / 100} ₽)`);
+      await post(tx, { ...base, kind: 'payment.refund', amount: input.overpayRefund.amount, method: input.overpayRefund.method, basis: 'Возврат переплаты при завершении заказа' });
+      notes.push(`возврат переплаты ${input.overpayRefund.amount / 100} ₽`);
+      m = await orderMoney(tx, id);
+    }
+    if (m.debt > 0 && !input.allowDebt) throw new Error(`Остался долг ${m.debt / 100} ₽ — примите доплату или отметьте «Завершить с долгом»`);
+
+    if (input.depositRefund && input.depositRefund.amount > 0) {
+      if (!input.canRefund) throw new Error('Возврат залога проводит руководитель или финансист');
+      if (input.depositRefund.amount > m.depositBalance) throw new Error(`Возврат больше остатка залога (${m.depositBalance / 100} ₽)`);
+      await post(tx, { ...base, kind: 'deposit.refund', amount: input.depositRefund.amount, method: input.depositRefund.method, basis: 'Возврат залога при завершении заказа' });
+      notes.push(`возвращено залога ${input.depositRefund.amount / 100} ₽`);
+      m = await orderMoney(tx, id);
+    }
+    const now = new Date();
+    const releaseAt = m.depositBalance > 0 ? new Date(now.getTime() + Math.max(0, input.holdDays) * 86400000) : null;
+    if (releaseAt) notes.push(`остаток залога ${m.depositBalance / 100} ₽ — вернуть после ${releaseAt.toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' })}`);
+    if (m.debt > 0) notes.push(`долг ${m.debt / 100} ₽ остаётся в отчёте «Долги клиентов»`);
+
+    await tx.rentalOrder.update({ where: { id }, data: { status: 'closed', closedAt: now, depositReleaseAt: releaseAt } });
+    await event(tx, id, 'status', `Заказ завершён${notes.length ? `: ${notes.join('; ')}` : ''}.`, user.id);
+    await audit(tx, user.id, 'order.complete', 'order', id, { debt: m.debt, depositBalance: m.depositBalance });
+    return m;
   });
 }
 

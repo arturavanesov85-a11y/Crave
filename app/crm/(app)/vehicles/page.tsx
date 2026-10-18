@@ -14,7 +14,11 @@ export default async function Vehicles() {
   const vehicles = await db.vehicle.findMany({ orderBy: { sortOrder: 'asc' }, include: { occupancies: { where: { releasedAt: null, blockedUntil: { gt: now } }, include: { order: true }, orderBy: { startsAt: 'asc' } }, documents: true, damages: { where: { status: 'open' } } } });
   return (
     <>
-      <h1>Автомобили</h1>
+      <div className="toolbar">
+        <h1>Автомобили</h1>
+        <div className="grow" />
+        {can(user, 'fleet.write') ? <Link className="btn btn-primary btn-sm" href="/crm/vehicles/new">Добавить автомобиль</Link> : null}
+      </div>
       <div className="table-box">
         <table className="table">
           <thead><tr><th>Автомобиль</th><th>Состояние</th><th>Сейчас</th><th>Следующее</th><th className="num">Пробег</th><th>Документы и ТО</th>{can(user, 'vehicle.sensitive') ? <th>Госномер</th> : null}</tr></thead>

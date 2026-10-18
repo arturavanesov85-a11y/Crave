@@ -97,14 +97,14 @@ export async function post(
 export async function reverse(tx: Tx, entryId: string, basis: string, userId: string) {
   const src = await tx.ledgerEntry.findUnique({ where: { id: entryId } });
   if (!src) throw new Error('Операция не найдена');
-  if (src.reversesId) throw new Error('Сторно нельзя сторнировать');
+  if (src.reversesId) throw new Error('Возврат операции нельзя отменить повторно');
   const already = await tx.ledgerEntry.findUnique({ where: { reversesId: entryId } });
-  if (already) throw new Error('Операция уже сторнирована');
+  if (already) throw new Error('По этой операции уже сделан возврат');
   return tx.ledgerEntry.create({
     data: {
       kind: src.kind,
       amount: -src.amount,
-      basis: `Сторно: ${basis.trim()}`,
+      basis: `Возврат: ${basis.trim()}`,
       createdById: userId,
       orderId: src.orderId,
       vehicleId: src.vehicleId,

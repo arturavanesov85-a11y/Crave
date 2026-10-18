@@ -194,6 +194,8 @@ model RentalOrder {
   quoteSnapshot  String // JSON: расчёт
   services       String        @default("[]") // JSON [{code, qty}]
   cancelReason   String?
+  closedAt       DateTime?
+  depositReleaseAt DateTime? // когда вернуть остаток залога (после проверки штрафов)
   source         String        @default("crm") // site | crm
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt

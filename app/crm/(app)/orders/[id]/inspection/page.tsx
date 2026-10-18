@@ -10,6 +10,25 @@ import { InspectionForm } from './InspectionForm';
 
 export const metadata = { title: 'Осмотр' };
 
+/** Подсказки из ранее введённых повреждений и заметок: сначала по этой машине, затем частые. */
+async function inspectionHints(vehicleId: string) {
+  const [damages, notes] = await Promise.all([
+    db.damage.findMany({ orderBy: { createdAt: 'desc' }, take: 300, select: { vehicleId: true, location: true, description: true } }),
+    db.inspection.findMany({ where: { notes: { not: null } }, orderBy: { performedAt: 'desc' }, take: 200, select: { notes: true } }),
+  ]);
+  const rank = (items: { key: string; own: boolean }[], limit: number) => {
+    const score = new Map<string, number>();
+    for (const i of items) if (i.key) score.set(i.key, (score.get(i.key) ?? 0) + (i.own ? 5 : 1));
+    return [...score.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([k]) => k);
+  };
+  return {
+    damageHints: rank(damages.map((d) => ({ key: d.description && d.description !== d.location ? `${d.location} — ${d.description}` : d.location, own: d.vehicleId === vehicleId })), 10),
+    locationHints: rank(damages.map((d) => ({ key: d.location, own: d.vehicleId === vehicleId })), 30),
+    descriptionHints: rank(damages.map((d) => ({ key: d.description, own: false })), 30),
+    noteHints: rank(notes.map((n) => ({ key: (n.notes ?? '').trim().slice(0, 80), own: false })), 8),
+  };
+}
+
 export default async function Inspection({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await requireUser('rental.inspect');
   const { id } = await params;
@@ -42,7 +61,7 @@ export default async function Inspection({ params, searchParams }: { params: Pro
             <h2>Уже зафиксированные повреждения</h2>
             {damages.length ? damages.map((d) => <div key={d.id} className="small"><strong>{d.location}</strong> — {d.description} <span className="muted">({fmtDateTime(d.createdAt)})</span></div>) : <span className="muted small">Нет</span>}
           </div>
-          <InspectionForm id={id} kind={kind} mileage={kind === 'return' ? pickup?.mileageKm ?? o.vehicle.mileageKm : o.vehicle.mileageKm} />
+          <InspectionForm id={id} kind={kind} mileage={kind === 'return' ? pickup?.mileageKm ?? o.vehicle.mileageKm : o.vehicle.mileageKm} {...(await inspectionHints(o.vehicleId))} />
         </>
       )}
     </div>

@@ -115,13 +115,13 @@ async function Ledger({ from, to, canReverse }: { from: Date; to: Date; canRever
           {entries.map((e) => (
             <tr key={e.id} style={e.reversesId || reversed.has(e.id) ? { opacity: 0.6 } : undefined}>
               <td style={{ whiteSpace: 'nowrap' }}>{fmtDateTime(e.occurredAt)}</td>
-              <td>{e.reversesId ? 'Сторно · ' : ''}{KIND_LABEL[e.kind] ?? e.kind}{e.method ? <div className="muted small">{METHOD_LABEL[e.method]}</div> : null}</td>
+              <td>{e.reversesId ? 'Возврат · ' : ''}{KIND_LABEL[e.kind] ?? e.kind}{e.method ? <div className="muted small">{METHOD_LABEL[e.method]}</div> : null}</td>
               <td>{e.orderId ? <Link href={`/crm/orders/${e.orderId}?tab=money`}>{e.order?.number}</Link> : '—'}</td>
               <td>{e.basis}</td>
               <td className="num">{rub(e.amount)}</td>
               <td className="small">{users.get(e.createdById)?.fullName}{e.approvedById ? <div className="muted">подтв.: {users.get(e.approvedById)?.fullName}</div> : null}</td>
               <td>{canReverse && !e.reversesId && !reversed.has(e.id) ? (
-                <ActionDialog label="Сторно" title="Сторно операции" action={reverseAction} submit="Сторнировать" hidden={{ entryId: e.id }} description={`${KIND_LABEL[e.kind]} ${rub(e.amount)}`}>
+                <ActionDialog label="Возврат" title="Возврат операции" action={reverseAction} submit="Сделать возврат" hidden={{ entryId: e.id }} description={`${KIND_LABEL[e.kind]} ${rub(e.amount)}`}>
                   <label className="field">Причина<input className="input" name="basis" required /></label>
                 </ActionDialog>
               ) : null}</td>
@@ -139,7 +139,7 @@ async function Debts() {
   const block = (title: string, rows: typeof debts, value: (r: (typeof debts)[number]) => number) => (
     <section className="card pad stack">
       <h2>{title} <span className="muted">· {rub(rows.reduce((s, r) => s + value(r), 0))}</span></h2>
-      {rows.length ? <ul className="list">{rows.map((r) => <li key={r.o.id}><Link href={`/crm/orders/${r.o.id}?tab=money`}>{r.o.number}</Link><span className="grow">{r.o.customer.fullName} · {r.o.vehicle.title}</span><strong>{rub(value(r))}</strong></li>)}</ul> : <p className="muted">Нет</p>}
+      {rows.length ? <ul className="list">{rows.map((r) => <li key={r.o.id}><Link href={`/crm/orders/${r.o.id}?tab=money`}>{r.o.number}</Link><span className="grow">{r.o.customer.fullName} · {r.o.vehicle.title}{r.o.status === 'closed' ? <span className="muted small"> · завершён</span> : null}</span>{r.o.depositReleaseAt && title.startsWith('Залоги') ? <span className={r.o.depositReleaseAt <= new Date() ? 'warn small' : 'muted small'}>вернуть с {fmtDateTime(r.o.depositReleaseAt)}</span> : null}<strong>{rub(value(r))}</strong></li>)}</ul> : <p className="muted">Нет</p>}
     </section>
   );
   return (

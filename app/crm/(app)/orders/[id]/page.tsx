@@ -9,7 +9,7 @@ import { rub } from '@/lib/money';
 import { formatPhone, freeAlternatives, returnExtras, STATUS_LABEL, type QuoteOk, type Terms } from '@/lib/orders';
 import { can } from '@/lib/permissions';
 import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
-import { assignAction, cancelOrderAction, chargeAction, commentAction, extendOrderAction, moneyAction, orderStepAction, replaceVehicleAction, reverseAction, withholdDecisionAction, withholdRequestAction } from '../../../actions';
+import { assignAction, cancelOrderAction, chargeAction, completeOrderAction, commentAction, extendOrderAction, moneyAction, orderStepAction, replaceVehicleAction, reverseAction, withholdDecisionAction, withholdRequestAction } from '../../../actions';
 
 export const metadata = { title: 'Заказ' };
 
@@ -73,10 +73,47 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   else if (write && o.status === 'negotiation') next = <ActionForm action={orderStepAction} hidden={{ id, step: 'confirm' }} submit="Подтвердить бронь" />;
   else if (o.status === 'confirmed' && can(user, 'rental.inspect')) next = <Link className="btn btn-primary btn-sm" href={`/crm/orders/${id}/inspection?kind=pickup`}>Провести выдачу</Link>;
   else if (o.status === 'issued' && can(user, 'rental.inspect')) next = <Link className="btn btn-primary btn-sm" href={`/crm/orders/${id}/inspection?kind=return`}>Принять возврат</Link>;
-  else if (o.status === 'returned') {
-    if (m.debt > 0) next = <Link className="btn btn-primary btn-sm" href={`?tab=money`}>Принять оплату · {rub(m.debt)}</Link>;
-    else if (m.depositBalance > 0) next = <Link className="btn btn-primary btn-sm" href={`?tab=money`}>Вернуть или удержать залог</Link>;
-    else if (write) next = <ActionForm action={orderStepAction} hidden={{ id, step: 'close' }} submit="Закрыть заказ" />;
+  else if (o.status === 'returned' && write) {
+    const refund = can(user, 'refund.issue');
+    const pendingWithhold = withholds.some((w) => w.status === 'pending');
+    next = (
+      <ActionDialog label="Завершить заказ" title={`Завершить заказ ${o.number}`} action={completeOrderAction} submit="Завершить заказ" variant="primary" hidden={{ id }} description="Расчёт с клиентом проводится в журнал. После завершения заказ уходит в неактивные; долг и остаток залога продолжают учитываться в финансах.">
+        <div className="box" style={{ gap: 6 }}>
+          <div className="row"><span className="muted">Начислено</span><span>{rub(m.charges)}</span></div>
+          <div className="row"><span className="muted">Оплачено</span><span>{rub(m.paid)}</span></div>
+          <div className="row" style={{ fontWeight: 600 }}><span>{m.debt >= 0 ? 'К доплате' : 'Переплата'}</span><span className={m.debt > 0 ? 'warn' : ''}>{rub(Math.abs(m.debt))}</span></div>
+          <div className="row"><span className="muted">Залог на руках</span><span>{rub(m.depositBalance)}</span></div>
+        </div>
+        {pendingWithhold ? <p className="warn small">Есть удержание из залога, ожидающее решения руководителя — завершить можно после решения.</p> : null}
+        {m.debt > 0 && can(user, 'payment.accept') ? (
+          <div className="grid-2">
+            <label className="field">Доплата клиента, ₽<input className="input" name="payment" inputMode="decimal" defaultValue={String(m.debt / 100)} /></label>
+            <label className="field">Способ<select className="input" name="paymentMethod"><option value="transfer">Перевод</option><option value="card">Карта</option><option value="cash">Наличные</option></select></label>
+          </div>
+        ) : null}
+        {m.debt > 0 ? <label className="check small"><input type="checkbox" name="allowDebt" />Завершить с долгом (останется в «Долги клиентов»)</label> : null}
+        {m.debt < 0 ? (refund ? (
+          <div className="grid-2">
+            <label className="field">Вернуть переплату, ₽<input className="input" name="overpay" inputMode="decimal" defaultValue={String(-m.debt / 100)} /></label>
+            <label className="field">Способ<select className="input" name="overpayMethod"><option value="transfer">Перевод</option><option value="card">Карта</option><option value="cash">Наличные</option></select></label>
+          </div>
+        ) : <p className="muted small">Переплату вернёт руководитель или финансист.</p>) : null}
+        {m.depositBalance > 0 ? (refund ? (
+          <>
+            <div className="grid-2">
+              <label className="field">Вернуть залог сейчас, ₽<input className="input" name="depositRefund" inputMode="decimal" defaultValue={String(Math.max(0, m.depositBalance - 2000000) / 100)} /></label>
+              <label className="field">Способ<select className="input" name="depositMethod"><option value="transfer">Перевод</option><option value="card">Карта</option><option value="cash">Наличные</option></select></label>
+            </div>
+            <label className="field">Остаток держать на проверку штрафов, дней<input className="input" name="holdDays" type="number" min={0} defaultValue={21} /></label>
+          </>
+        ) : (
+          <>
+            <input type="hidden" name="holdDays" value="21" />
+            <p className="muted small">Залог вернёт руководитель или финансист; заказ появится у них в «Залоги к возврату».</p>
+          </>
+        )) : null}
+      </ActionDialog>
+    );
   }
 
   const extras = o.status === 'issued' ? returnExtras(o, q, terms, pickupInsp?.mileageKm ?? null, o.vehicle.mileageKm, now) : null;
@@ -99,7 +136,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         <div className="facts-grid">
           <div><span className="k">Клиент</span>{can(user, 'customers.read') ? <Link href={`/crm/customers/${o.customerId}`} style={{ fontWeight: 600, color: 'var(--text)' }}>{o.customer.fullName}</Link> : <strong>{o.customer.fullName}</strong>}<a href={`tel:+${o.customer.phone}`} className="text-2">{formatPhone(o.customer.phone)}</a></div>
           <div><span className="k">Автомобиль</span><Link href={`/crm/vehicles/${o.vehicleId}`} style={{ fontWeight: 600, color: 'var(--text)' }}>{o.vehicle.title}</Link><span className="text-2">{o.vehicle.colorExterior} · {o.vehicle.year}</span></div>
-          <div><span className="k">Срок</span><strong>{fmtDateTime(o.pickupAt)} → {fmtDateTime(o.returnAt)}</strong><span className="text-2">{daysWord(q.days)}{o.actualPickupAt ? ` · выдан ${fmtDateTime(o.actualPickupAt)}` : ''}{o.actualReturnAt ? ` · возвращён ${fmtDateTime(o.actualReturnAt)}` : ''}</span></div>
+          <div><span className="k">Срок</span><strong>{fmtDateTime(o.pickupAt)} → {fmtDateTime(o.returnAt)}</strong><span className="text-2">{daysWord(q.days)}{o.actualPickupAt ? ` · выдан ${fmtDateTime(o.actualPickupAt)}` : ''}{o.actualReturnAt ? ` · возвращён ${fmtDateTime(o.actualReturnAt)}` : ''}{o.closedAt ? ` · завершён ${fmtDateTime(o.closedAt)}` : ''}</span></div>
           <div><span className="k">Стоимость</span><strong>{rub(m.charges || q.total)}</strong>{m.charges ? <span className={m.debt > 0 ? 'warn' : 'gold'}>{m.debt > 0 ? `долг ${rub(m.debt)}` : m.debt < 0 ? `переплата ${rub(-m.debt)}` : 'оплачено'}</span> : <span className="muted">начислится при подтверждении</span>}</div>
           <div><span className="k">Ответственный</span><strong>{name(o.assigneeId)}</strong><span className="text-2">выдача: {name(o.handoverId)}</span></div>
         </div>
@@ -125,7 +162,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
               <label className="field">Сотрудник выдачи<select className="input" name="handoverId" defaultValue={o.handoverId ?? ''}><option value="">—</option>{staff.map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}</select></label>
             </ActionDialog>
             {['new', 'negotiation', 'confirmed'].includes(o.status) ? (
-              <ActionDialog label="Отменить" title="Отмена заказа" action={cancelOrderAction} submit="Отменить заказ" variant="danger" hidden={{ id }} description="Бронь будет снята, начисления сторнированы. Полученные деньги и залог останутся на заказе — решение по ним во вкладке «Оплаты».">
+              <ActionDialog label="Отменить" title="Отмена заказа" action={cancelOrderAction} submit="Отменить заказ" variant="danger" hidden={{ id }} description="Бронь будет снята, начисления будут отменены возвратом. Полученные деньги и залог останутся на заказе — решение по ним во вкладке «Оплаты».">
                 {o.status === 'confirmed' ? <label className="field">Тип<select className="input" name="status"><option value="cancelled">Отмена</option><option value="no_show">Неявка клиента</option></select></label> : null}
                 <label className="field">Причина<input className="input" name="reason" required /></label>
               </ActionDialog>
@@ -172,7 +209,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
                   <div className="box"><span className="muted small">Начислено</span><b>{rub(m.charges)}</b></div>
                   <div className="box"><span className="muted small">Оплачено</span><b>{rub(m.paid)}</b></div>
                   <div className="box"><span className="muted small">{m.debt >= 0 ? 'Долг' : 'Переплата'}</span><b className={m.debt > 0 ? 'warn' : ''}>{rub(Math.abs(m.debt))}</b></div>
-                  <div className="box gold"><span className="muted small">Залог: получен / возвращён / удержан</span><b>{rub(m.depositIn)} / {rub(m.depositRefunded)} / {rub(m.depositWithheld)}</b><span className="text-2 small">Остаток {rub(m.depositBalance)} · требуется {rub(terms.tariff.deposit)}. Не является выручкой.</span></div>
+                  <div className="box gold"><span className="muted small">Залог: получен / возвращён / удержан</span><b>{rub(m.depositIn)} / {rub(m.depositRefunded)} / {rub(m.depositWithheld)}</b><span className="text-2 small">Остаток {rub(m.depositBalance)} · требуется {rub(terms.tariff.deposit)}{o.depositReleaseAt && m.depositBalance > 0 ? ` · вернуть после ${fmtDateTime(o.depositReleaseAt)}` : ''}. Не является выручкой.</span></div>
                 </div>
                 <div className="wrap-row">
                   {can(user, 'payment.accept') ? (
@@ -253,13 +290,13 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
                         return (
                           <tr key={e.id} style={reversed || e.reversesId ? { opacity: 0.6 } : undefined}>
                             <td style={{ whiteSpace: 'nowrap' }}>{fmtDateTime(e.occurredAt)}</td>
-                            <td>{e.reversesId ? 'Сторно · ' : ''}{LEDGER_LABEL[e.kind] ?? e.kind}{e.method ? <div className="muted small">{METHOD_LABEL[e.method]}</div> : null}</td>
+                            <td>{e.reversesId ? 'Возврат · ' : ''}{LEDGER_LABEL[e.kind] ?? e.kind}{e.method ? <div className="muted small">{METHOD_LABEL[e.method]}</div> : null}</td>
                             <td>{e.basis}</td>
                             <td className="num">{rub(e.amount)}</td>
                             <td className="small">{name(e.createdById)}{e.approvedById ? <div className="muted">подтв.: {name(e.approvedById)}</div> : null}</td>
                             <td>
                               {can(user, 'ledger.reverse') && !e.reversesId && !reversed ? (
-                                <ActionDialog label="Сторно" title="Сторно операции" action={reverseAction} submit="Сторнировать" hidden={{ entryId: e.id }} description={`${LEDGER_LABEL[e.kind]} ${rub(e.amount)}. Операция не удаляется — создаётся обратная запись.`}>
+                                <ActionDialog label="Возврат" title="Возврат операции" action={reverseAction} submit="Сделать возврат" hidden={{ entryId: e.id }} description={`${LEDGER_LABEL[e.kind]} ${rub(e.amount)}. Операция не удаляется — создаётся обратная запись с причиной, обе остаются в истории.`}>
                                   <label className="field">Причина<input className="input" name="basis" required /></label>
                                 </ActionDialog>
                               ) : null}

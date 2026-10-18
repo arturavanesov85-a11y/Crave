@@ -25,7 +25,8 @@ export async function debtsAndDeposits() {
   const orders = await db.rentalOrder.findMany({ where: { status: { in: ['confirmed', 'issued', 'returned', 'closed', 'cancelled', 'no_show'] } }, include: { customer: true, vehicle: true, ledger: { select: { kind: true, amount: true } } } });
   const rows = orders.map((o) => ({ o, m: summarize(o.ledger) }));
   return {
-    debts: rows.filter((r) => r.m.debt > 0 && ['issued', 'returned'].includes(r.o.status) || (r.m.debt > 0 && r.o.status === 'confirmed' && r.o.pickupAt < new Date())),
+    // Долг считается и по завершённым заказам — завершение не списывает задолженность.
+    debts: rows.filter((r) => r.m.debt > 0 && (['issued', 'returned', 'closed'].includes(r.o.status) || (r.o.status === 'confirmed' && r.o.pickupAt < new Date()))),
     deposits: rows.filter((r) => r.m.depositBalance > 0 && ['returned', 'closed', 'cancelled', 'no_show'].includes(r.o.status)),
     overpaid: rows.filter((r) => r.m.debt < 0),
   };

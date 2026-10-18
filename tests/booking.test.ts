@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { db } from '@/lib/db';
 import { addMinutes } from '@/lib/dates';
 import { BookingConflict, occupy, withBookingLock } from '@/lib/booking';
-import { cancelOrder, closeOrder, confirmOrder, createCrmOrder, extendOrder, issueOrder, returnOrder } from '@/lib/orders';
+import { cancelOrder, completeOrder, confirmOrder, createCrmOrder, extendOrder, issueOrder, returnOrder } from '@/lib/orders';
 import { orderMoney, post, reverse } from '@/lib/ledger';
 import type { SessionUser } from '@/lib/permissions';
 
@@ -99,14 +99,17 @@ describe('тарифы, статусы и финансы', () => {
     await returnOrder(manager, a.id, { mileageKm: 1700, fuelPercent: 90, checklist: {}, damages: [{ location: 'Бампер', description: 'скол' }], photos: [], chargeOvermileage: true, chargeLate: false });
     const m1 = await orderMoney(db, a.id);
     expect(m1.charges).toBeGreaterThan(0);
-    await expect(closeOrder(manager, a.id)).rejects.toThrow(/задолженность/);
-    await post(db, { kind: 'payment.in', amount: m1.debt, basis: 'оплата', createdById: manager.id, orderId: a.id });
     await post(db, { kind: 'deposit.in', amount: 5000000, basis: 'залог', createdById: manager.id, orderId: a.id });
-    await expect(closeOrder(manager, a.id)).rejects.toThrow(/залог/);
-    await post(db, { kind: 'deposit.refund', amount: 5000000, basis: 'возврат', createdById: manager.id, orderId: a.id });
-    await closeOrder(manager, a.id);
+    const opts = { holdDays: 21, allowDebt: false, canRefund: true };
+    await expect(completeOrder(manager, a.id, opts)).rejects.toThrow(/Остался долг/);
+    await expect(completeOrder(manager, a.id, { ...opts, canRefund: false, payment: { amount: m1.debt, method: 'card' }, depositRefund: { amount: 3000000, method: 'card' } })).rejects.toThrow(/руководитель или финансист/);
+    // Доплата, возврат 30 000 залога сразу, 20 000 — на проверку штрафов.
+    const m2 = await completeOrder(manager, a.id, { ...opts, payment: { amount: m1.debt, method: 'card' }, depositRefund: { amount: 3000000, method: 'card' } });
+    expect(m2.debt).toBe(0);
+    expect(m2.depositBalance).toBe(2000000);
     const o = await db.rentalOrder.findUniqueOrThrow({ where: { id: a.id } });
     expect(o.status).toBe('closed');
+    expect(o.depositReleaseAt!.getTime()).toBeGreaterThan(Date.now() + 20 * 86400000);
     const veh = await db.vehicle.findUniqueOrThrow({ where: { id: v } });
     expect(veh.condition).toBe('preparing');
     expect(await db.damage.count({ where: { vehicleId: v, status: 'open' } })).toBe(1);
@@ -118,7 +121,7 @@ describe('тарифы, статусы и финансы', () => {
     await expect(db.ledgerEntry.delete({ where: { id: e.id } })).rejects.toThrow();
     const r = await reverse(db, e.id, 'ошибка', manager.id);
     expect(r.amount).toBe(-100);
-    await expect(reverse(db, e.id, 'ещё раз', manager.id)).rejects.toThrow(/уже сторнирована/);
+    await expect(reverse(db, e.id, 'ещё раз', manager.id)).rejects.toThrow(/уже сделан возврат/);
   });
 
   it('повторное платёжное событие с тем же ключом не дублируется', async () => {

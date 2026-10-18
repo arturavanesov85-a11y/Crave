@@ -11,7 +11,7 @@ import { BookingConflict, occupy, withBookingLock } from '@/lib/booking';
 import { orderMoney, post, reverse } from '@/lib/ledger';
 import { parseRub } from '@/lib/money';
 import { can, directionsOf, Forbidden, ROLE_CODES, type Perm, type SessionUser } from '@/lib/permissions';
-import { audit, cancelOrder, closeOrder, confirmOrder, createCrmOrder, event, extendHold, extendOrder, issueOrder, normalizePhone, replaceVehicle, returnOrder, takeOrder } from '@/lib/orders';
+import { audit, cancelOrder, completeOrder, confirmOrder, createCrmOrder, event, extendHold, extendOrder, issueOrder, normalizePhone, replaceVehicle, returnOrder, takeOrder } from '@/lib/orders';
 import { saveImages } from '@/lib/files';
 import { allow } from '@/lib/ratelimit';
 
@@ -109,8 +109,36 @@ export async function orderStepAction(_: ActionState, fd: FormData): Promise<Act
     if (step === 'take') await takeOrder(user, id);
     else if (step === 'hold') await extendHold(user, id);
     else if (step === 'confirm') await confirmOrder(user, id);
-    else if (step === 'close') await closeOrder(user, id);
     else throw new Error('Неизвестное действие');
+  });
+}
+
+export async function completeOrderAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard('rental.write');
+    const amount = (k: string) => {
+      const v = str(fd, k);
+      if (!v) return 0;
+      const r = parseRub(v);
+      if (r == null) throw new Error('Проверьте суммы — только цифры');
+      return r;
+    };
+    const method = (k: string) => {
+      const m = str(fd, k) || 'transfer';
+      if (!['cash', 'card', 'transfer'].includes(m)) throw new Error('Выберите способ');
+      return m;
+    };
+    const pay = amount('payment');
+    if (pay && !can(user, 'payment.accept')) throw new Forbidden('Нет права принимать оплату');
+    const m = await completeOrder(user, str(fd, 'id'), {
+      payment: pay ? { amount: pay, method: method('paymentMethod') } : null,
+      overpayRefund: amount('overpay') ? { amount: amount('overpay'), method: method('overpayMethod') } : null,
+      depositRefund: amount('depositRefund') ? { amount: amount('depositRefund'), method: method('depositMethod') } : null,
+      holdDays: Number(str(fd, 'holdDays') || 21),
+      allowDebt: fd.get('allowDebt') === 'on',
+      canRefund: can(user, 'refund.issue'),
+    });
+    return m.depositBalance > 0 ? 'Заказ завершён. Остаток залога ждёт возврата после проверки штрафов.' : 'Заказ завершён';
   });
 }
 
@@ -243,11 +271,11 @@ export async function reverseAction(_: ActionState, fd: FormData): Promise<Actio
   return run(async () => {
     const user = await guard('ledger.reverse');
     const basis = str(fd, 'basis');
-    if (basis.length < 3) throw new Error('Укажите причину сторно');
+    if (basis.length < 3) throw new Error('Укажите причину возврата');
     const e = await reverse(db, str(fd, 'entryId'), basis, user.id);
-    if (e.orderId) await event(db, e.orderId, 'money', `Сторно операции: ${basis}`, user.id);
+    if (e.orderId) await event(db, e.orderId, 'money', `Возврат операции: ${basis}`, user.id);
     await audit(db, user.id, 'ledger.reverse', 'ledger', e.reversesId!, { basis });
-    return 'Сторно проведено';
+    return 'Возврат проведён';
   });
 }
 
@@ -342,6 +370,65 @@ export async function vehicleUpdateAction(_: ActionState, fd: FormData): Promise
     await audit(db, user.id, 'vehicle.update', 'vehicle', id);
     return 'Сохранено';
   });
+}
+
+const TRANSLIT: Record<string, string> = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' };
+function slugify(s: string) {
+  return s.toLowerCase().split('').map((c) => TRANSLIT[c] ?? c).join('').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'avto';
+}
+
+export async function vehicleCreateAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  let id = '';
+  const res = await run(async () => {
+    const user = await guard('fleet.write');
+    const make = str(fd, 'make'), model = str(fd, 'model');
+    if (!make || !model) throw new Error('Укажите марку и модель');
+    const year = Number(str(fd, 'year')), powerHp = Number(str(fd, 'powerHp'));
+    if (!Number.isInteger(year) || year < 1990 || year > 2100) throw new Error('Проверьте год выпуска');
+    if (!Number.isInteger(powerHp) || powerHp <= 0) throw new Error('Проверьте мощность');
+    if (!str(fd, 'accel')) throw new Error('Укажите разгон до 100 км/ч');
+
+    // Тариф — только с правом изменения тарифов; без тарифа машина не видна на сайте.
+    let tariff: { tiers: { minDays: number; dailyRate: number }[]; deposit: number; km: number; over: number; driver: number | null } | null = null;
+    const anyRate = [1, 3, 7, 14, 30].some((d) => str(fd, `t${d}`));
+    if (anyRate) {
+      if (!can(user, 'tariff.edit')) throw new Forbidden('Тариф задаёт руководитель');
+      const tiers = [1, 3, 7, 14, 30].map((minDays) => {
+        const rate = parseRub(fd.get(`t${minDays}`));
+        if (!rate) throw new Error(`Укажите ставку «${minDays === 1 ? '1–2 сут' : `от ${minDays} сут`}» или оставьте все ставки пустыми`);
+        return { minDays, dailyRate: rate };
+      });
+      const km = Number(str(fd, 'km'));
+      if (!Number.isInteger(km) || km <= 0) throw new Error('Км в сутки — целое число');
+      tariff = { tiers, deposit: money(fd, 'deposit'), km, over: money(fd, 'overmileage'), driver: str(fd, 'driver') ? parseRub(fd.get('driver')) : null };
+    }
+
+    const base = slugify(`${make} ${model}`);
+    let slug = base;
+    for (let i = 2; await db.vehicle.findUnique({ where: { slug } }); i++) slug = `${base}-${i}`;
+    const last = await db.vehicle.findFirst({ orderBy: { sortOrder: 'desc' }, select: { sortOrder: true } });
+    const equipment = str(fd, 'equipment').split('\n').map((l) => l.trim()).filter(Boolean);
+
+    const v = await db.$transaction(async (tx) => {
+      const v = await tx.vehicle.create({
+        data: {
+          slug, make, model, title: `${make} ${model}`, year, powerHp,
+          bodyType: str(fd, 'bodyType') || 'sedan', accel: str(fd, 'accel'), drive: str(fd, 'drive') || 'полный', fuel: str(fd, 'fuel') || 'бензин',
+          seats: str(fd, 'seats') ? Number(str(fd, 'seats')) : null, mileageKm: Number(str(fd, 'mileageKm')) || 0,
+          colorExterior: str(fd, 'colorExterior') || null, colorInterior: str(fd, 'colorInterior') || null,
+          description: str(fd, 'description') || null, equipment: equipment.length ? JSON.stringify(equipment) : null,
+          vin: can(user, 'vehicle.sensitive') ? str(fd, 'vin') || null : null, plate: can(user, 'vehicle.sensitive') ? str(fd, 'plate') || null : null,
+          isPublished: fd.get('isPublished') === 'on', sortOrder: (last?.sortOrder ?? 0) + 1,
+        },
+      });
+      if (tariff) await tx.tariffPlan.create({ data: { vehicleId: v.id, tiers: JSON.stringify(tariff.tiers), deposit: tariff.deposit, includedKmPerDay: tariff.km, overmileagePerKm: tariff.over, driverPerHour: tariff.driver, createdById: user.id } });
+      await audit(tx, user.id, 'vehicle.create', 'vehicle', v.id, { title: v.title });
+      return v;
+    });
+    id = v.id;
+  });
+  if (res?.error) return res;
+  redirect(`/crm/vehicles/${id}`);
 }
 
 export async function vehicleDocAction(_: ActionState, fd: FormData): Promise<ActionState> {

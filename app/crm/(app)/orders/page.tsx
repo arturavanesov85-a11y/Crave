@@ -11,7 +11,7 @@ import { can } from '@/lib/permissions';
 
 export const metadata = { title: 'Заказы' };
 
-const FILTERS: [string, string][] = [['active', 'Активные'], ['new', 'Новые'], ['negotiation', 'Согласование'], ['confirmed', 'Брони'], ['issued', 'Выданы'], ['returned', 'Возвращены'], ['closed', 'Закрыты'], ['cancelled', 'Отменённые'], ['all', 'Все']];
+const FILTERS: [string, string][] = [['active', 'Активные'], ['new', 'Новые'], ['negotiation', 'Согласование'], ['confirmed', 'Брони'], ['issued', 'Выданы'], ['returned', 'Ждут завершения'], ['inactive', 'Неактивные'], ['closed', 'Завершённые'], ['cancelled', 'Отменённые'], ['all', 'Все']];
 
 export default async function Orders({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await requireUser(['rental.read', 'rental.read.assigned']);
@@ -21,6 +21,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
   const where: Prisma.RentalOrderWhereInput = { ...orderScope(user) };
   if (f === 'active') where.status = { in: ['new', 'negotiation', 'confirmed', 'issued', 'returned'] };
   else if (f === 'cancelled') where.status = { in: ['cancelled', 'no_show'] };
+  else if (f === 'inactive') where.status = { in: ['closed', 'cancelled', 'no_show'] };
   else if (f !== 'all') where.status = f;
   if (q) {
     const digits = q.replace(/\D/g, '');
