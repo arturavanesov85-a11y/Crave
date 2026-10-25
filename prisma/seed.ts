@@ -4,6 +4,7 @@
 import { PrismaClient } from '@prisma/client';
 import { randomBytes, scryptSync } from 'node:crypto';
 import tariffs from '../docs/data/current-site-tariffs.json' with { type: 'json' };
+import carPhotos from './car-photos.json' with { type: 'json' };
 
 const db = new PrismaClient();
 const PASSWORD = process.env.SEED_PASSWORD || 'crave-test';
@@ -52,9 +53,46 @@ async function ensureTriggers() {
   await db.$executeRawUnsafe(`CREATE TRIGGER IF NOT EXISTS ledger_no_delete BEFORE DELETE ON LedgerEntry BEGIN SELECT RAISE(ABORT, 'Журнал операций нельзя удалять — используйте сторно'); END;`);
 }
 
+// Дополнения, которые применяются и к уже заполненной базе (не трогают данные пользователей).
+async function ensureExtras() {
+  // Фото машин проката с crave-rental.ru — только если у машины фото ещё нет.
+  for (const [slug, photos] of Object.entries(carPhotos as Record<string, string[]>)) {
+    await db.vehicle.updateMany({ where: { slug, photos: null }, data: { photos: JSON.stringify(photos) } });
+  }
+  // Тестовая машина в продаже для сайта автосалона — один раз.
+  if ((await db.saleCar.count()) === 0) {
+    const src = await db.vehicle.findUnique({ where: { slug: 'bmw-540i' } });
+    if (src) {
+      await db.saleCar.create({
+        data: {
+          slug: 'bmw-540i-2020',
+          status: 'published',
+          make: src.make,
+          model: src.model,
+          title: src.title,
+          year: src.year,
+          mileageKm: 42000,
+          price: null,
+          bodyType: src.bodyType,
+          powerHp: src.powerHp,
+          engine: 'бензин, 3.0 л',
+          transmission: 'автомат',
+          drive: src.drive,
+          color: src.colorExterior,
+          description: `Тестовое объявление для проверки сайта автосалона. ${src.description ?? ''}`.trim(),
+          equipment: src.equipment,
+          photos: src.photos ?? JSON.stringify((carPhotos as Record<string, string[]>)['bmw-540i'] ?? []),
+          note: 'Тестовое объявление — заменить реальным автомобилем',
+        },
+      });
+    }
+  }
+}
+
 async function main() {
   await ensureTriggers();
   if ((await db.user.count()) > 0) {
+    await ensureExtras();
     console.log('База уже заполнена.');
     return;
   }
@@ -111,6 +149,7 @@ async function main() {
   for (const r of RULES) await db.pricingRule.create({ data: { key: r.key, title: r.title, value: JSON.stringify(r.value), status: 'assumption' } });
   await db.extraService.create({ data: { code: 'extra_driver', name: 'Дополнительный водитель', pricing: 'fixed', amount: null } });
 
+  await ensureExtras();
   if (process.env.SEED_DEMO !== '0') await seedDemo();
   console.log(`Готово. Пользователи: ${USERS.map((u) => u.email).join(', ')}`);
 }

@@ -3,6 +3,7 @@ import { requireUser } from '@/lib/auth';
 import { can, directionsOf, roleLabel } from '@/lib/permissions';
 import { db } from '@/lib/db';
 import { logout } from '../actions';
+import { Logo } from '@/components/site/Logo';
 import { CrmNav } from './CrmNav';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +19,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
     { href: '/crm/orders', label: 'Заказы', show: can(user, 'rental.read') || can(user, 'rental.read.assigned') },
     { href: '/crm/leads', label: 'Заявки', show: dirs.length > 0 && (can(user, 'leads.rental') || can(user, 'leads.sales') || can(user, 'leads.service')), count: newLeads },
     { href: '/crm/vehicles', label: 'Автомобили', show: can(user, 'fleet.read') },
+    { href: '/crm/sales-cars', label: 'Авто в продаже', show: can(user, 'sales.catalog') },
+    { href: '/crm/sales-site', label: 'Сайт автосалона', show: can(user, 'sales.catalog') },
     { href: '/crm/customers', label: 'Клиенты', show: can(user, 'customers.read') },
     { href: '/crm/finance', label: 'Финансы', show: can(user, 'finance.view') },
     { href: '/crm/settings', label: 'Настройки', show: can(user, 'settings.manage') || can(user, 'users.manage') },
@@ -27,8 +30,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
     <div className="crm">
       <aside className="crm-side">
         <Link href="/crm" style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '0 8px' }}>
-          <span className="logo" style={{ fontSize: 24 }}>CRAVE</span>
-          <span className="muted small">CRM</span>
+          <Logo variant="crm" height={52} />
         </Link>
         <CrmNav items={items.map(({ href, label, count }) => ({ href, label, count }))} />
         <div className="small" style={{ marginTop: 'auto', padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>

@@ -1,0 +1,74 @@
+{
+  "bmw-m5-f90-competition": [
+    "/cars/bmw-m5-f90-competition/02.webp",
+    "/cars/bmw-m5-f90-competition/01.webp",
+    "/cars/bmw-m5-f90-competition/03.webp",
+    "/cars/bmw-m5-f90-competition/04.webp",
+    "/cars/bmw-m5-f90-competition/05.webp",
+    "/cars/bmw-m5-f90-competition/06.webp",
+    "/cars/bmw-m5-f90-competition/07.webp",
+    "/cars/bmw-m5-f90-competition/08.webp"
+  ],
+  "mercedes-amg-gt63-s": [
+    "/cars/mercedes-amg-gt63-s/02.webp",
+    "/cars/mercedes-amg-gt63-s/01.webp",
+    "/cars/mercedes-amg-gt63-s/03.webp",
+    "/cars/mercedes-amg-gt63-s/04.webp",
+    "/cars/mercedes-amg-gt63-s/05.webp",
+    "/cars/mercedes-amg-gt63-s/06.webp",
+    "/cars/mercedes-amg-gt63-s/07.webp",
+    "/cars/mercedes-amg-gt63-s/08.webp"
+  ],
+  "porsche-cayenne-s-iii": [
+    "/cars/porsche-cayenne-s-iii/02.webp",
+    "/cars/porsche-cayenne-s-iii/01.webp",
+    "/cars/porsche-cayenne-s-iii/03.webp",
+    "/cars/porsche-cayenne-s-iii/04.webp",
+    "/cars/porsche-cayenne-s-iii/05.webp",
+    "/cars/porsche-cayenne-s-iii/06.webp",
+    "/cars/porsche-cayenne-s-iii/07.webp",
+    "/cars/porsche-cayenne-s-iii/08.webp"
+  ],
+  "dodge-ram-trx": [
+    "/cars/dodge-ram-trx/03.webp",
+    "/cars/dodge-ram-trx/02.webp",
+    "/cars/dodge-ram-trx/01.webp",
+    "/cars/dodge-ram-trx/04.webp",
+    "/cars/dodge-ram-trx/05.webp",
+    "/cars/dodge-ram-trx/06.webp",
+    "/cars/dodge-ram-trx/07.webp",
+    "/cars/dodge-ram-trx/08.webp"
+  ],
+  "mercedes-benz-g63-first-edition": [
+    "/cars/mercedes-benz-g63-first-edition/02.webp",
+    "/cars/mercedes-benz-g63-first-edition/01.webp",
+    "/cars/mercedes-benz-g63-first-edition/03.webp",
+    "/cars/mercedes-benz-g63-first-edition/04.webp",
+    "/cars/mercedes-benz-g63-first-edition/05.webp",
+    "/cars/mercedes-benz-g63-first-edition/06.webp"
+  ],
+  "bmw-540i": [
+    "/cars/bmw-540i/02.webp",
+    "/cars/bmw-540i/01.webp",
+    "/cars/bmw-540i/03.webp",
+    "/cars/bmw-540i/04.webp",
+    "/cars/bmw-540i/05.webp",
+    "/cars/bmw-540i/06.webp"
+  ],
+  "bmw-m340i-xdrive-lci": [
+    "/cars/bmw-m340i-xdrive-lci/03.webp",
+    "/cars/bmw-m340i-xdrive-lci/01.webp",
+    "/cars/bmw-m340i-xdrive-lci/02.webp",
+    "/cars/bmw-m340i-xdrive-lci/04.webp",
+    "/cars/bmw-m340i-xdrive-lci/05.webp",
+    "/cars/bmw-m340i-xdrive-lci/06.webp"
+  ],
+  "toyota-land-cruiser-300-70th-anniversary": [
+    "/cars/toyota-land-cruiser-300-70th-anniversary/02.webp",
+    "/cars/toyota-land-cruiser-300-70th-anniversary/01.webp",
+    "/cars/toyota-land-cruiser-300-70th-anniversary/03.webp",
+    "/cars/toyota-land-cruiser-300-70th-anniversary/04.webp",
+    "/cars/toyota-land-cruiser-300-70th-anniversary/05.webp",
+    "/cars/toyota-land-cruiser-300-70th-anniversary/06.webp"
+  ]
+}

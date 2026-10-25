@@ -27,6 +27,7 @@ export const PERMS = [
   'finance.expenses',
   'finance.result',
   'export.run',
+  'sales.catalog', // автомобили в продаже и тексты сайта автосалона
   'users.manage',
   'settings.manage',
 ] as const;
@@ -54,7 +55,7 @@ const ROLES: Record<string, { label: string; directions: Direction[]; perms: Per
     directions: ['rental', 'sales', 'service'],
     perms: ['rental.read', 'customers.read', 'fleet.read', 'payment.accept', 'refund.issue', 'ledger.reverse', 'finance.view', 'finance.expenses', 'finance.result', 'export.run'],
   },
-  sales_staff: { label: 'Сотрудник автосалона', directions: ['sales'], perms: ['leads.sales', 'customers.read', 'customers.write'] },
+  sales_staff: { label: 'Сотрудник автосалона', directions: ['sales'], perms: ['leads.sales', 'customers.read', 'customers.write', 'sales.catalog'] },
   service_staff: { label: 'Сотрудник сервиса', directions: ['service'], perms: ['leads.service', 'customers.read', 'customers.write'] },
   tech_admin: { label: 'Технический администратор', directions: [], perms: ['users.manage', 'settings.manage', 'fleet.read'] },
 };

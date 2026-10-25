@@ -32,7 +32,7 @@ export default async function Home() {
         </div>
         {hero ? (
           <figure className="hero-photo">
-            <CarPhoto title={hero.title} rounded />
+            <CarPhoto title={hero.title} src={hero.photos[0]} rounded eager />
             <figcaption className="row text-2" style={{ flexWrap: 'wrap', fontSize: 14 }}>
               <span>{hero.title} · {hero.powerHp} л.с. · {hero.accel} с до 100 км/ч</span>
               {hero.from ? <Link href={`/avtopark/${hero.slug}`}>от {rub(hero.from.dailyRate)} / сутки при аренде от {hero.from.minDays} суток</Link> : null}

@@ -12,7 +12,7 @@ import { leadAction } from '../../actions';
 export const metadata = { title: 'Заявки' };
 
 const STATUS: Record<string, string> = { new: 'Новая', in_progress: 'В работе', converted: 'Заказ создан', rejected: 'Отклонена', spam: 'Спам' };
-const KIND: Record<string, string> = { booking_request: 'Бронирование', callback: 'Обратный звонок', purchase: 'Покупка', service_request: 'Запись в сервис' };
+const KIND: Record<string, string> = { booking_request: 'Бронирование', callback: 'Обратный звонок', purchase: 'Покупка', service_request: 'Запись в сервис', custom_order: 'Авто под заказ' };
 
 export default async function Leads({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await requireUser(['leads.rental', 'leads.sales', 'leads.service']);

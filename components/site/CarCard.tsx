@@ -4,7 +4,13 @@ import { BODY_LABEL } from '@/lib/site';
 import type { PublicVehicle } from '@/lib/catalog';
 import { daysWord } from '@/lib/dates';
 
-export function CarPhoto({ title, label = '3/4 спереди', rounded }: { title: string; label?: string; rounded?: boolean }) {
+export function CarPhoto({ title, src, label = '3/4 спереди', rounded, eager }: { title: string; src?: string | null; label?: string; rounded?: boolean; eager?: boolean }) {
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt={title} loading={eager ? 'eager' : 'lazy'} decoding="async" style={{ display: 'block', width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: rounded ? 16 : undefined, background: 'var(--surface-2)' }} />
+    );
+  }
   return (
     <div className="photo" role="img" aria-label={`Фото: ${title}`} style={rounded ? { borderRadius: 16 } : undefined}>
       Фото: {title}, {label}
@@ -20,7 +26,7 @@ export function CarCard({ v, calc, query }: { v: PublicVehicle; calc?: Calc; que
   const href = `/avtopark/${v.slug}${query ? `?${query}` : ''}`;
   return (
     <article className="card car">
-      <CarPhoto title={v.title} />
+      <CarPhoto title={v.title} src={v.photos[0]} />
       <div className="car-body">
         <div className="row" style={{ alignItems: 'center' }}>
           <span className="eyebrow">{BODY_LABEL[v.bodyType] ?? v.bodyType}</span>

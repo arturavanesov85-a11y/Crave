@@ -73,7 +73,7 @@ export async function submitRentalRequest(_: FormState, fd: FormData): Promise<F
 
 const Lead = z.object({
   direction: z.enum(['rental', 'sales', 'service']),
-  kind: z.enum(['callback', 'purchase', 'service_request']),
+  kind: z.enum(['callback', 'purchase', 'service_request', 'custom_order']),
   name: z.string().trim().min(2, 'Укажите имя').max(80),
   phone: z.string().trim().min(5, 'Укажите телефон'),
   message: z.string().trim().max(2000).optional(),
@@ -81,6 +81,7 @@ const Lead = z.object({
   key: z.string().min(8),
   consent: z.literal('on', { errorMap: () => ({ message: 'Нужно согласие на обработку данных' }) }),
   back: z.string().startsWith('/').max(200),
+  anchor: z.string().regex(/^[a-z0-9-]{1,40}$/).optional(),
 });
 
 export async function submitLead(_: FormState, fd: FormData): Promise<FormState> {
@@ -112,5 +113,5 @@ export async function submitLead(_: FormState, fd: FormData): Promise<FormState>
       });
     });
   }
-  redirect(`${d.back}?sent=1`);
+  redirect(`${d.back}?sent=${d.kind}${d.anchor ? `#${d.anchor}` : ""}`);
 }

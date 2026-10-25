@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { publicVehicle } from '@/lib/catalog';
-import { CarPhoto } from '@/components/site/CarCard';
+import { Gallery } from '@/components/site/Gallery';
 import { BookingPanel } from '@/components/site/BookingPanel';
 import { defaultDates } from '@/components/site/DateSearch';
 import { rub } from '@/lib/money';
@@ -31,14 +31,7 @@ export default async function CarPage({ params, searchParams }: Props) {
       <nav className="small" style={{ marginBottom: 16 }}><Link href="/avtopark">← Автопарк</Link></nav>
       <div className="layout-2">
         <div className="main stack" style={{ gap: 28 }}>
-          <div className="stack" style={{ gap: 10 }}>
-            <CarPhoto title={v.title} rounded />
-            <div className="grid-2" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
-              {['сзади', 'профиль', 'салон', 'панель'].map((a) => (
-                <div key={a} className="photo" style={{ borderRadius: 10, fontSize: 11, padding: 6 }} role="img" aria-label={`Фото: ${a}`}>{a}</div>
-              ))}
-            </div>
-          </div>
+          <Gallery title={v.title} photos={v.photos} />
           <div className="stack" style={{ gap: 8 }}>
             <span className="eyebrow">{BODY_LABEL[v.bodyType]} · {v.year}</span>
             <h1 className="page-title">{v.title}</h1>

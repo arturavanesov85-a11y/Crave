@@ -13,7 +13,7 @@ export default async function ServiceHome({ searchParams }: { searchParams: Prom
           <p className="muted small">Это заявка на запись, а не подтверждённая запись: расписание сервиса пока ведёт менеджер.</p>
         </div>
         <div className="hero-photo" id="contact">
-          <LeadForm direction="service" kind="service_request" back="/service" title="Заявка на обслуживание" carField="Марка, модель и год автомобиля" messageLabel="Какие работы нужны" submitLabel="Отправить заявку" sent={sp.sent === '1'} />
+          <LeadForm direction="service" kind="service_request" back="/service" title="Заявка на обслуживание" carField="Марка, модель и год автомобиля" messageLabel="Какие работы нужны" submitLabel="Отправить заявку" anchor="contact" sent={sp.sent === 'service_request'} />
         </div>
       </section>
       <section className="wrap section" id="services" style={{ paddingTop: 24 }}>

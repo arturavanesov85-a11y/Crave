@@ -11,7 +11,7 @@ export const CONTACTS = {
   phone: '+7 (910) 421-02-22',
   phoneHref: 'tel:+79104210222',
   telegram: 'https://t.me/crave_rental',
-  address: 'Москва, Коровинское шоссе, 10',
+  address: 'Москва, Ярославское ш., 2В, стр. 4',
   hours: 'Круглосуточно, без выходных',
 };
 

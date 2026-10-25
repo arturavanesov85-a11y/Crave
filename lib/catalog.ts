@@ -31,6 +31,7 @@ export async function publicVehicles() {
         colorInterior: v.colorInterior,
         description: v.description,
         equipment: json<string[]>(v.equipment, []),
+        photos: json<string[]>(v.photos, []),
         tariff: t,
         from: fromPrice(t.tiers),
         shortRate: [...t.tiers].sort((a: Tier, b: Tier) => a.minDays - b.minDays)[0]?.dailyRate ?? 0,

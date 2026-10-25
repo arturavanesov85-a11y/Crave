@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { currentUser } from '@/lib/auth';
 import { LoginForm } from './LoginForm';
+import { Logo } from '@/components/site/Logo';
 
 export const metadata = { title: 'Вход в CRM', robots: { index: false } };
 
@@ -9,7 +10,7 @@ export default async function Login() {
   return (
     <div className="login">
       <div className="card">
-        <div><span className="logo" style={{ fontSize: 28 }}>CRAVE</span> <span className="muted small">CRM</span></div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 4px' }}><Logo variant="crm" height={78} /></div>
         <LoginForm />
         <p className="muted small">Тестовые учётные записи — в README.md, раздел «CRM».</p>
       </div>

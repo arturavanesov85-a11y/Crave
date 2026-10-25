@@ -1,7 +1,7 @@
 import { LeadForm } from '@/components/site/LeadForm';
 import { CONTACTS } from '@/lib/site';
 
-export const metadata = { title: 'Контакты', description: 'Адрес и телефон CRAVE. Москва, Коровинское шоссе, 10.' };
+export const metadata = { title: 'Контакты', description: 'Адрес и телефон CRAVE. Москва, Ярославское ш., 2В, стр. 4.' };
 
 export default async function Contacts({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
@@ -16,7 +16,7 @@ export default async function Contacts({ searchParams }: { searchParams: Promise
         </div>
       </div>
       <div className="aside" id="help">
-        <LeadForm direction="rental" kind="callback" back="/kontakty" title="Помочь с выбором" messageLabel="Даты и пожелания" submitLabel="Перезвоните мне" sent={sp.sent === '1'} />
+        <LeadForm direction="rental" kind="callback" back="/kontakty" title="Помочь с выбором" messageLabel="Даты и пожелания" submitLabel="Перезвоните мне" anchor="help" sent={sp.sent === 'callback'} />
       </div>
     </div>
   );

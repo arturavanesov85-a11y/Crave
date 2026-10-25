@@ -33,20 +33,22 @@ export default async function Prices({ searchParams }: { searchParams: Promise<R
       ) : (
         <div className="car-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
           {cars.map((c) => (
-            <details key={c.id} className="card pad" open>
-              <summary style={{ listStyle: 'none' }}>
-                <div className="row"><strong style={{ fontSize: 17 }}>{c.title}</strong><span className="muted small">залог от {rub(c.tariff.deposit)}</span></div>
-              </summary>
-              <div className="stack" style={{ gap: 6, marginTop: 12 }}>
+            // Карточки одинаковой высоты: название занимает две строки, залог — одну, кнопка внизу.
+            <article key={c.id} className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="stack" style={{ gap: 4 }}>
+                <strong style={{ fontSize: 17, lineHeight: 1.35, minHeight: '2.7em', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{c.title}</strong>
+                <span className="muted small" style={{ whiteSpace: 'nowrap' }}>Залог от {rub(c.tariff.deposit)}</span>
+              </div>
+              <div className="stack" style={{ gap: 6, flex: 1 }}>
                 {tiersOf(c.tariff.tiers).map((t) => (
                   <div className="row" key={t.minDays}><span className="text-2">{tierLabel(t.minDays, c.tariff.tiers)}</span><span style={{ fontWeight: 600 }}>{rub(t.dailyRate)}</span></div>
                 ))}
                 <hr className="hr" />
                 <div className="row small"><span className="muted">Перепробег</span><span>{rub(c.tariff.overmileagePerKm)} / км</span></div>
                 <div className="row small"><span className="muted">С водителем</span><span>{c.tariff.driverPerHour ? `${rub(c.tariff.driverPerHour)} / час` : 'уточняйте'}</span></div>
-                <Link className="btn btn-sm" href={`/avtopark/${c.slug}`} style={{ marginTop: 8 }}>Рассчитать на мои даты</Link>
+                <Link className="btn btn-sm" href={`/avtopark/${c.slug}`} style={{ marginTop: 'auto' }}>Рассчитать на мои даты</Link>
               </div>
-            </details>
+            </article>
           ))}
         </div>
       )}
