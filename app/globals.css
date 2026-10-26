@@ -227,3 +227,15 @@ details > summary { cursor: pointer; }
 .brand-tile:hover { color: var(--gold-light); border-color: var(--gold); }
 .brand-word { display: flex; align-items: center; height: 36px; font-family: var(--font-logo), serif; font-size: 15px; letter-spacing: .12em; color: currentColor; }
 .brand-name { font-size: 11px; letter-spacing: .06em; color: var(--muted); text-align: center; }
+
+/* Группы меню CRM */
+.crm-group { display: flex; flex-direction: column; }
+.crm-group-head { display: flex; justify-content: space-between; align-items: center; min-height: 40px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font-size: 14px; text-align: left; }
+.crm-group-head:hover { color: var(--text); background: rgba(240, 236, 228, .04); }
+.crm-group-head.active { color: var(--text); font-weight: 600; }
+.crm-group-items { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 6px 10px; padding-left: 8px; border-left: 1px solid var(--line); }
+.crm-nav a.nested { min-height: 36px; font-size: 13.5px; }
+@media (max-width: 1100px) {
+  .crm-group { position: relative; }
+  .crm-group-items { position: absolute; top: 100%; left: 0; z-index: 30; min-width: 190px; margin: 4px 0 0; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+}

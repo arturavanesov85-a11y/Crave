@@ -4,7 +4,7 @@ import { can, directionsOf, roleLabel } from '@/lib/permissions';
 import { db } from '@/lib/db';
 import { logout } from '../actions';
 import { Logo } from '@/components/site/Logo';
-import { CrmNav } from './CrmNav';
+import { CrmNav, type NavEntry } from './CrmNav';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: { default: 'CRM', template: '%s — CRM CRAVE' }, robots: { index: false } };
@@ -15,22 +15,39 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   const [newRental, newSales, newService] = await Promise.all(
     (['rental', 'sales', 'service'] as const).map((d) => db.lead.count({ where: { status: 'new', direction: d } })),
   );
-  // Пункты без доступа не показываются. Порядок: работа с клиентами → справочники → сайты → настройки.
-  const items = [
-    { href: '/crm', label: 'Сегодня', show: can(user, 'rental.read') || can(user, 'rental.read.assigned') },
-    { href: '/crm/calendar', label: 'Календарь', show: can(user, 'rental.read') },
-    { href: '/crm/orders', label: 'Заказы', show: can(user, 'rental.read') || can(user, 'rental.read.assigned') },
-    { href: '/crm/leads', label: 'Заявки проката', show: can(user, 'leads.rental') && dirs.includes('rental'), count: newRental },
-    { href: '/crm/sales', label: 'Продажи', show: can(user, 'leads.sales'), count: newSales },
-    { href: '/crm/service-desk', label: 'Сервис', show: can(user, 'leads.service'), count: newService },
-    { href: '/crm/vehicles', label: 'Автомобили', show: can(user, 'fleet.read') },
-    { href: '/crm/customers', label: 'Клиенты', show: can(user, 'customers.read') },
-    { href: '/crm/finance', label: 'Финансы', show: can(user, 'finance.view') },
-    { href: '/crm/sales-cars', label: 'Авто в продаже', show: can(user, 'sales.catalog') },
-    { href: '/crm/sales-site', label: 'Сайт автосалона', show: can(user, 'sales.catalog') },
-    { href: '/crm/service-site', label: 'Сайт сервиса', show: can(user, 'service.site') },
-    { href: '/crm/settings', label: 'Настройки', show: can(user, 'settings.manage') || user.role === 'owner' },
-  ].filter((i) => i.show);
+  // Меню: «Сегодня» → направления (раскрывающиеся группы) → «Клиенты» → «Настройки».
+  // Пункты без доступа не показываются, пустые группы тоже.
+  const link = (href: string, label: string, show: boolean, count?: number) => (show ? [{ href, label, count }] : []);
+  const nav: NavEntry[] = [
+    ...link('/crm', 'Сегодня', can(user, 'rental.read') || can(user, 'rental.read.assigned')),
+    {
+      label: 'Прокат',
+      items: [
+        ...link('/crm/calendar', 'Календарь', can(user, 'rental.read')),
+        ...link('/crm/orders', 'Заказы', can(user, 'rental.read') || can(user, 'rental.read.assigned')),
+        ...link('/crm/leads', 'Заявки', can(user, 'leads.rental') && dirs.includes('rental'), newRental),
+        ...link('/crm/vehicles', 'Автомобили', can(user, 'fleet.read')),
+        ...link('/crm/finance', 'Финансы', can(user, 'finance.view')),
+      ],
+    },
+    {
+      label: 'Салон',
+      items: [
+        ...link('/crm/sales', 'Заявки', can(user, 'leads.sales'), newSales),
+        ...link('/crm/sales-cars', 'Авто в продаже', can(user, 'sales.catalog')),
+        ...link('/crm/sales-site', 'Сайт салона', can(user, 'sales.catalog')),
+      ],
+    },
+    {
+      label: 'Сервис',
+      items: [
+        ...link('/crm/service-desk', 'Заявки', can(user, 'leads.service'), newService),
+        ...link('/crm/service-site', 'Сайт сервиса', can(user, 'service.site')),
+      ],
+    },
+    ...link('/crm/customers', 'Клиенты', can(user, 'customers.read')),
+    ...link('/crm/settings', 'Настройки', can(user, 'settings.manage') || user.role === 'owner'),
+  ].filter((e) => !('items' in e) || e.items.length > 0);
 
   return (
     <div className="crm">
@@ -38,7 +55,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         <Link href="/crm" style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '0 8px' }}>
           <Logo variant="crm" height={52} />
         </Link>
-        <CrmNav items={items.map(({ href, label, count }) => ({ href, label, count }))} />
+        <CrmNav nav={nav} />
         <div className="small" style={{ marginTop: 'auto', padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           <strong>{user.fullName}</strong>
           <span className="muted">{roleLabel(user.role)}</span>

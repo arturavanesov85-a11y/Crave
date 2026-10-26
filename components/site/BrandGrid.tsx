@@ -1,31 +1,32 @@
 // Логотипы марок: премиальные мировые бренды, из китайских — только Li и Zeekr.
 // Знаки — из открытого набора Simple Icons (CC0); товарные знаки принадлежат их владельцам.
 // Для марок, которых нет в наборе, показывается название в том же стиле.
-import { siAstonmartin, siAudi, siBentley, siBmw, siCadillac, siFerrari, siJaguar, siLamborghini, siLandrover, siMaserati, siMclaren, siMercedes, siPorsche, siRollsroyce, siTesla } from 'simple-icons';
+import { siAstonmartin, siAudi, siBentley, siBmw, siCadillac, siFerrari, siJaguar, siLamborghini, siLandrover, siMclaren, siMercedes, siPorsche, siRollsroyce, siTesla, siToyota, siVolkswagen } from 'simple-icons';
 
 type Brand = { name: string; path?: string };
 
+// Показываются в алфавитном порядке.
 const BRANDS: Brand[] = [
-  { name: 'Rolls-Royce', path: siRollsroyce.path },
-  { name: 'Bentley', path: siBentley.path },
-  { name: 'Ferrari', path: siFerrari.path },
-  { name: 'Lamborghini', path: siLamborghini.path },
-  { name: 'McLaren', path: siMclaren.path },
   { name: 'Aston Martin', path: siAstonmartin.path },
-  { name: 'Maserati', path: siMaserati.path },
-  { name: 'Porsche', path: siPorsche.path },
-  { name: 'Mercedes-Benz', path: siMercedes.path },
-  { name: 'BMW', path: siBmw.path },
   { name: 'Audi', path: siAudi.path },
-  { name: 'Land Rover', path: siLandrover.path },
-  { name: 'Jaguar', path: siJaguar.path },
+  { name: 'Bentley', path: siBentley.path },
+  { name: 'BMW', path: siBmw.path },
   { name: 'Cadillac', path: siCadillac.path },
-  { name: 'Tesla', path: siTesla.path },
+  { name: 'Ferrari', path: siFerrari.path },
+  { name: 'Jaguar', path: siJaguar.path },
+  { name: 'Lamborghini', path: siLamborghini.path },
+  { name: 'Land Rover', path: siLandrover.path },
   { name: 'Lexus' },
-  { name: 'Genesis' },
-  { name: 'Zeekr' },
   { name: 'Li Auto' },
-];
+  { name: 'McLaren', path: siMclaren.path },
+  { name: 'Mercedes-Benz', path: siMercedes.path },
+  { name: 'Porsche', path: siPorsche.path },
+  { name: 'Rolls-Royce', path: siRollsroyce.path },
+  { name: 'Tesla', path: siTesla.path },
+  { name: 'Toyota', path: siToyota.path },
+  { name: 'Volkswagen', path: siVolkswagen.path },
+  { name: 'Zeekr' },
+].sort((a, b) => a.name.localeCompare(b.name, 'en'));
 
 export function BrandGrid({ title, note }: { title: string; note?: string }) {
   return (
