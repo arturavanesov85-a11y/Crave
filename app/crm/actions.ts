@@ -4,13 +4,13 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { createSession, currentUser, destroySession, hashPassword, verifyPassword } from '@/lib/auth';
+import { createSession, currentUser, destroySession, hashPassword, toSessionUser, verifyPassword } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { parseLocal } from '@/lib/dates';
 import { BookingConflict, occupy, withBookingLock } from '@/lib/booking';
 import { orderMoney, post, reverse } from '@/lib/ledger';
 import { parseRub } from '@/lib/money';
-import { can, directionsOf, Forbidden, ROLE_CODES, type Perm, type SessionUser } from '@/lib/permissions';
+import { can, directionsOf, Forbidden, homePath, ROLE_CODES, type Perm, type SessionUser } from '@/lib/permissions';
 import { audit, cancelOrder, completeOrder, confirmOrder, createCrmOrder, event, extendHold, extendOrder, issueOrder, normalizePhone, replaceVehicle, returnOrder, takeOrder } from '@/lib/orders';
 import { saveImages } from '@/lib/files';
 import { allow } from '@/lib/ratelimit';
@@ -64,9 +64,9 @@ export async function login(_: ActionState, fd: FormData): Promise<ActionState> 
   const email = str(fd, 'email').toLowerCase();
   if (!allow(`login:${email}`, 8, 15 * 60000)) return { error: 'Слишком много попыток. Подождите 15 минут.' };
   const user = await db.user.findUnique({ where: { email } });
-  if (!user || !user.isActive || !verifyPassword(str(fd, 'password'), user.passwordHash)) return { error: 'Неверный e-mail или пароль' };
+  if (!user || !user.isActive || user.deletedAt || !verifyPassword(str(fd, 'password'), user.passwordHash)) return { error: 'Неверный e-mail или пароль' };
   await createSession(user.id);
-  redirect(can({ ...user }, 'rental.read') || can({ ...user }, 'rental.read.assigned') ? '/crm' : directionsOf({ ...user }).length ? '/crm/leads' : '/crm/settings');
+  redirect(homePath(toSessionUser(user)));
 }
 
 export async function logout() {
@@ -560,27 +560,3 @@ export async function ruleAction(_: ActionState, fd: FormData): Promise<ActionSt
   });
 }
 
-export async function userCreateAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(async () => {
-    const user = await guard('users.manage');
-    const Body = z.object({ email: z.string().email('Некорректный e-mail'), fullName: z.string().min(2, 'Имя'), role: z.enum(ROLE_CODES as [string, ...string[]]), password: z.string().min(8, 'Пароль — от 8 символов') });
-    const d = Body.parse({ email: str(fd, 'email').toLowerCase(), fullName: str(fd, 'fullName'), role: str(fd, 'role'), password: str(fd, 'password') });
-    if (d.role === 'owner' && user.role !== 'owner') throw new Forbidden('Роль владельца назначает только владелец');
-    const u = await db.user.create({ data: { email: d.email, fullName: d.fullName, role: d.role, passwordHash: hashPassword(d.password) } });
-    await audit(db, user.id, 'user.create', 'user', u.id, { role: d.role });
-    return 'Пользователь создан';
-  });
-}
-
-export async function userToggleAction(_: ActionState, fd: FormData): Promise<ActionState> {
-  return run(async () => {
-    const user = await guard('users.manage');
-    const id = str(fd, 'userId');
-    if (id === user.id) throw new Error('Нельзя отключить себя');
-    const u = await db.user.findUniqueOrThrow({ where: { id } });
-    if (u.role === 'owner' && user.role !== 'owner') throw new Forbidden();
-    await db.user.update({ where: { id }, data: { isActive: !u.isActive } });
-    if (u.isActive) await db.session.deleteMany({ where: { userId: id } });
-    await audit(db, user.id, u.isActive ? 'user.disable' : 'user.enable', 'user', id);
-  });
-}

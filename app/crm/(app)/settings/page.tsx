@@ -1,10 +1,11 @@
 import { requireUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { fmtDateTime } from '@/lib/dates';
-import { can, ROLE_CODES, roleLabel } from '@/lib/permissions';
+import Link from 'next/link';
+import { can } from '@/lib/permissions';
 import { usersById } from '@/lib/crm-data';
 import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
-import { ruleAction, userCreateAction, userToggleAction } from '../../actions';
+import { ruleAction } from '../../actions';
 
 export const metadata = { title: 'Настройки' };
 
@@ -47,25 +48,10 @@ export default async function Settings() {
           </ul>
         </section>
       ) : null}
-      {can(user, 'users.manage') ? (
-        <section className="card pad stack">
-          <div className="row"><h2>Пользователи</h2>
-            <ActionDialog label="Добавить" title="Новый пользователь" action={userCreateAction} submit="Создать" variant="primary">
-              <label className="field">Имя<input className="input" name="fullName" required /></label>
-              <label className="field">E-mail<input className="input" name="email" type="email" required /></label>
-              <label className="field">Роль<select className="input" name="role">{ROLE_CODES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}</select></label>
-              <label className="field">Пароль (от 8 символов)<input className="input" name="password" type="password" minLength={8} required autoComplete="new-password" /></label>
-            </ActionDialog>
-          </div>
-          <ul className="list">
-            {users.map((u) => (
-              <li key={u.id} style={u.isActive ? undefined : { opacity: 0.55 }}>
-                <span className="grow"><strong>{u.fullName}</strong> <span className="muted small">{u.email}</span></span>
-                <span className="tag">{roleLabel(u.role)}</span>
-                {u.id !== user.id ? <ActionForm action={userToggleAction} hidden={{ userId: u.id }} submit={u.isActive ? 'Отключить' : 'Включить'} variant="quiet" /> : null}
-              </li>
-            ))}
-          </ul>
+      {user.role === 'owner' ? (
+        <section className="card pad stack" style={{ gap: 10 }}>
+          <div className="row"><h2>Сотрудники · {users.filter((u) => !u.deletedAt).length}</h2><Link className="btn btn-primary btn-sm" href="/crm/settings/staff">Управлять сотрудниками</Link></div>
+          <p className="muted small">Добавление, блокировка и удаление сотрудников, роли и отдельные права по разделам.</p>
         </section>
       ) : null}
       <section className="card pad stack">

@@ -12,18 +12,24 @@ export const metadata = { title: { default: 'CRM', template: '%s — CRM CRAVE' 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
   const dirs = directionsOf(user);
-  const newLeads = await db.lead.count({ where: { status: 'new', direction: { in: dirs } } });
+  const [newRental, newSales, newService] = await Promise.all(
+    (['rental', 'sales', 'service'] as const).map((d) => db.lead.count({ where: { status: 'new', direction: d } })),
+  );
+  // Пункты без доступа не показываются. Порядок: работа с клиентами → справочники → сайты → настройки.
   const items = [
     { href: '/crm', label: 'Сегодня', show: can(user, 'rental.read') || can(user, 'rental.read.assigned') },
     { href: '/crm/calendar', label: 'Календарь', show: can(user, 'rental.read') },
     { href: '/crm/orders', label: 'Заказы', show: can(user, 'rental.read') || can(user, 'rental.read.assigned') },
-    { href: '/crm/leads', label: 'Заявки', show: dirs.length > 0 && (can(user, 'leads.rental') || can(user, 'leads.sales') || can(user, 'leads.service')), count: newLeads },
+    { href: '/crm/leads', label: 'Заявки проката', show: can(user, 'leads.rental') && dirs.includes('rental'), count: newRental },
+    { href: '/crm/sales', label: 'Продажи', show: can(user, 'leads.sales'), count: newSales },
+    { href: '/crm/service-desk', label: 'Сервис', show: can(user, 'leads.service'), count: newService },
     { href: '/crm/vehicles', label: 'Автомобили', show: can(user, 'fleet.read') },
-    { href: '/crm/sales-cars', label: 'Авто в продаже', show: can(user, 'sales.catalog') },
-    { href: '/crm/sales-site', label: 'Сайт автосалона', show: can(user, 'sales.catalog') },
     { href: '/crm/customers', label: 'Клиенты', show: can(user, 'customers.read') },
     { href: '/crm/finance', label: 'Финансы', show: can(user, 'finance.view') },
-    { href: '/crm/settings', label: 'Настройки', show: can(user, 'settings.manage') || can(user, 'users.manage') },
+    { href: '/crm/sales-cars', label: 'Авто в продаже', show: can(user, 'sales.catalog') },
+    { href: '/crm/sales-site', label: 'Сайт автосалона', show: can(user, 'sales.catalog') },
+    { href: '/crm/service-site', label: 'Сайт сервиса', show: can(user, 'service.site') },
+    { href: '/crm/settings', label: 'Настройки', show: can(user, 'settings.manage') || user.role === 'owner' },
   ].filter((i) => i.show);
 
   return (

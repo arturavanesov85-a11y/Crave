@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
 import { fmtDateTime } from '@/lib/dates';
-import { can, directionsOf, DIRECTION_LABEL, type Direction } from '@/lib/permissions';
+import { can, homePath, DIRECTION_LABEL, type Direction } from '@/lib/permissions';
 import { formatPhone } from '@/lib/orders';
 import { usersById } from '@/lib/crm-data';
 import { ActionForm } from '@/components/crm/ActionForm';
@@ -17,9 +17,12 @@ const KIND: Record<string, string> = { booking_request: 'Бронировани�
 export default async function Leads({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await requireUser(['leads.rental', 'leads.sales', 'leads.service']);
   const sp = await searchParams;
-  const dirs = directionsOf(user).filter((d) => can(user, `leads.${d}` as never));
-  const dir = (sp.dir && dirs.includes(sp.dir as Direction) ? sp.dir : dirs[0]) as Direction;
-  if (!dir) redirect('/crm/no-access');
+  // Заявки автосалона и сервиса ведутся в своих рабочих зонах.
+  if (sp.dir === 'sales') redirect('/crm/sales');
+  if (sp.dir === 'service') redirect('/crm/service-desk');
+  if (!can(user, 'leads.rental')) redirect(homePath(user));
+  const dirs: Direction[] = ['rental'];
+  const dir: Direction = 'rental';
   const status = sp.status ?? 'open';
   const [leads, users, counts] = await Promise.all([
     db.lead.findMany({ where: { direction: dir, ...(status === 'open' ? { status: { in: ['new', 'in_progress'] } } : status === 'all' ? {} : { status }) }, orderBy: { createdAt: 'desc' }, take: 200 }),

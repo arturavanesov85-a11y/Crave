@@ -18,7 +18,10 @@ model User {
   fullName     String
   passwordHash String
   role         String // owner | rental_head | rental_manager | handover | finance | sales_staff | service_staff | tech_admin
+  perms        String? // JSON: индивидуальные права; пусто — права роли
+  directions   String? // JSON: индивидуальные направления; пусто — направления роли
   isActive     Boolean   @default(true)
+  deletedAt    DateTime? // удалённый сотрудник: скрыт, но имя остаётся в истории
   createdAt    DateTime  @default(now())
   sessions     Session[]
 }
@@ -74,7 +77,28 @@ model Lead {
   customer       Customer? @relation(fields: [customerId], references: [id])
   assigneeId     String?
   orderId        String?
+  // Рабочая зона продаж и сервиса
+  stage          String    @default("new")
+  nextActionAt   DateTime? // когда связаться / следующее действие
+  nextAction     String?
+  appointmentAt  DateTime? // сервис: время записи
+  saleCarId      String? // продажи: автомобиль из наличия
+  carInfo        String? // автомобиль клиента или желаемый
+  amount         Int? // сумма сделки или оценка работ, копейки
+  lostReason     String?
+  closedAt       DateTime?
   createdAt      DateTime  @default(now())
+  notes          LeadNote[]
+}
+
+model LeadNote {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  authorId  String?
+  kind      String   @default("comment") // comment | stage | system
+  text      String
+  createdAt DateTime @default(now())
 }
 
 // ---------- Автопарк и тарифы ----------
@@ -350,4 +374,15 @@ model SiteSetting {
   value     String
   updatedBy String?
   updatedAt DateTime @updatedAt
+}
+
+// Услуги сервиса для сайта crave-service.ru.
+model ServiceItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  priceFrom   Int? // копейки; пусто — «по запросу»
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }

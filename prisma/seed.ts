@@ -55,6 +55,11 @@ async function ensureTriggers() {
 
 // Дополнения, которые применяются и к уже заполненной базе (не трогают данные пользователей).
 async function ensureExtras() {
+  // Заявки автосалона и сервиса до появления этапов: переносим статус в этап.
+  for (const [status, sales, service] of [['in_progress', 'contacted', 'contacted'], ['converted', 'deal', 'done'], ['rejected', 'lost', 'lost'], ['spam', 'lost', 'lost']] as const) {
+    await db.lead.updateMany({ where: { direction: 'sales', stage: 'new', status }, data: { stage: sales } });
+    await db.lead.updateMany({ where: { direction: 'service', stage: 'new', status }, data: { stage: service } });
+  }
   // Фото машин проката с crave-rental.ru — только если у машины фото ещё нет.
   for (const [slug, photos] of Object.entries(carPhotos as Record<string, string[]>)) {
     await db.vehicle.updateMany({ where: { slug, photos: null }, data: { photos: JSON.stringify(photos) } });

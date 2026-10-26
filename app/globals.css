@@ -220,3 +220,10 @@ details > summary { cursor: pointer; }
 .login .card { width: min(420px, 100%); padding: 28px; display: flex; flex-direction: column; gap: 16px; }
 
 .logo-link { display: flex; align-items: center; }
+
+/* Логотипы марок */
+.brand-grid { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.brand-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 96px; padding: 12px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text-2); transition: color .15s, border-color .15s; }
+.brand-tile:hover { color: var(--gold-light); border-color: var(--gold); }
+.brand-word { display: flex; align-items: center; height: 36px; font-family: var(--font-logo), serif; font-size: 15px; letter-spacing: .12em; color: currentColor; }
+.brand-name { font-size: 11px; letter-spacing: .06em; color: var(--muted); text-align: center; }

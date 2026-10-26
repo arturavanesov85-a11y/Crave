@@ -2,7 +2,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { db } from './db';
-import { can, type Perm, type SessionUser } from './permissions';
+import { can, type Direction, type Perm, type SessionUser } from './permissions';
+
+/** Пользователь из базы → права с учётом индивидуальных настроек. */
+export function toSessionUser(u: { id: string; email: string; fullName: string; role: string; perms: string | null; directions: string | null }): SessionUser {
+  const parse = <T,>(v: string | null): T | null => { if (!v) return null; try { return JSON.parse(v) as T; } catch { return null; } };
+  return { id: u.id, email: u.email, fullName: u.fullName, role: u.role, perms: parse<Perm[]>(u.perms), directions: parse<Direction[]>(u.directions) };
+}
 
 const COOKIE = 'crave_session';
 const TTL_DAYS = 14;
@@ -41,9 +47,8 @@ export async function currentUser(): Promise<SessionUser | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   const s = await db.session.findUnique({ where: { id: sha(token) }, include: { user: true } });
-  if (!s || s.expiresAt < new Date() || !s.user.isActive) return null;
-  const { id, email, fullName, role } = s.user;
-  return { id, email, fullName, role };
+  if (!s || s.expiresAt < new Date() || !s.user.isActive || s.user.deletedAt) return null;
+  return toSessionUser(s.user);
 }
 
 /** Для страниц: без входа — на страницу входа, без права — ошибка доступа. */

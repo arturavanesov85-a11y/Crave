@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { can, directionsOf, type Perm } from '@/lib/permissions';
+import { can, directionsOf, homePath, type Perm } from '@/lib/permissions';
 
 const u = (role: string) => ({ id: 'x', email: 'x', fullName: 'x', role });
 
@@ -29,7 +29,9 @@ describe('права ролей', () => {
     ['service_staff', 'rental.read', false],
     ['tech_admin', 'customer.docs.view', false],
     ['tech_admin', 'customers.read', false],
-    ['tech_admin', 'users.manage', true],
+    ['tech_admin', 'users.manage', false],
+    ['service_staff', 'service.site', true],
+    ['sales_staff', 'service.site', false],
   ];
   it.each(cases)('%s: %s → %s', (role, perm, expected) => {
     expect(can(u(role), perm)).toBe(expected);
@@ -38,6 +40,21 @@ describe('права ролей', () => {
   it('направления: сотрудник автосалона не видит прокат и сервис', () => {
     expect(directionsOf(u('sales_staff'))).toEqual(['sales']);
     expect(directionsOf(u('tech_admin'))).toEqual([]);
+  });
+
+  it('индивидуальные права заменяют права роли, владелец всегда с полным доступом', () => {
+    const m = { ...u('rental_manager'), perms: ['rental.read' as const], directions: ['rental' as const, 'sales' as const] };
+    expect(can(m, 'rental.read')).toBe(true);
+    expect(can(m, 'rental.write')).toBe(false);
+    expect(directionsOf(m)).toEqual(['rental', 'sales']);
+    const o = { ...u('owner'), perms: [] };
+    expect(can(o, 'users.manage')).toBe(true);
+  });
+
+  it('первая страница зависит от прав', () => {
+    expect(homePath(u('rental_manager'))).toBe('/crm');
+    expect(homePath(u('sales_staff'))).toBe('/crm/sales');
+    expect(homePath(u('service_staff'))).toBe('/crm/service-desk');
   });
 
   it('неизвестная роль не получает ничего', () => {

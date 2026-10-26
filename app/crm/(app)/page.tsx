@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { addMinutes, fmtDate, fmtDateTime, fmtTime, startOfLocalDay } from '@/lib/dates';
 import { holdInfo, orderScope, usersById } from '@/lib/crm-data';
-import { can, directionsOf } from '@/lib/permissions';
+import { can, homePath } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 import { summarize } from '@/lib/ledger';
 import { rub } from '@/lib/money';
@@ -20,7 +20,7 @@ const refs = (o: O) => ({ order: { id: o.id, label: o.number }, vehicle: { id: o
 export default async function Today() {
   const user = await requireUser();
   // Сотрудники автосалона и сервиса начинают со своих заявок.
-  if (!can(user, 'rental.read') && !can(user, 'rental.read.assigned')) redirect(directionsOf(user).length ? '/crm/leads' : '/crm/settings');
+  if (!can(user, 'rental.read') && !can(user, 'rental.read.assigned')) redirect(homePath(user));
   const now = new Date();
   const dayStart = startOfLocalDay(now);
   const dayEnd = addMinutes(dayStart, 24 * 60 * 2); // сегодня и завтра

@@ -1,4 +1,5 @@
 import { LeadForm } from '@/components/site/LeadForm';
+import { BrandGrid } from '@/components/site/BrandGrid';
 import { CarPhoto } from '@/components/site/CarCard';
 import { SaleCarCard } from '@/components/site/SaleCarCard';
 import { publicSaleCars } from '@/lib/sales';
@@ -48,6 +49,7 @@ export default async function AutoHome({ searchParams }: { searchParams: Promise
           <div className="main stack" style={{ gap: 14 }}>
             <h2 className="section-title">{t['auto.orderTitle']}</h2>
             <p className="text-2" style={{ fontSize: 17, maxWidth: 560, whiteSpace: 'pre-line' }}>{t['auto.orderText']}</p>
+            <BrandGrid title={t['auto.brandsTitle']} note="И другие марки — уточните в заявке." />
           </div>
           <div className="aside">
             <LeadForm direction="sales" kind="custom_order" back="/auto" anchor="order" title="Заявка на авто под заказ" carField="Марка, модель, год" messageLabel="Комплектация, цвет, бюджет, сроки" submitLabel="Отправить заявку" sent={sp.sent === 'custom_order'} />

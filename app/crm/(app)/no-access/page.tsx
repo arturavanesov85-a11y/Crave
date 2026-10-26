@@ -7,7 +7,7 @@ export default function NoAccess() {
     <div className="stack" style={{ maxWidth: 560 }}>
       <h1>Нет доступа</h1>
       <p className="text-2">У вашей роли нет прав на этот раздел. Если доступ нужен для работы, обратитесь к владельцу или администратору.</p>
-      <Link className="btn btn-sm" href="/crm/leads" style={{ alignSelf: 'flex-start' }}>К заявкам</Link>
+      <Link className="btn btn-sm" href="/crm" style={{ alignSelf: 'flex-start' }}>На главную CRM</Link>
     </div>
   );
 }
