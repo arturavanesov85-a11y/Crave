@@ -15,6 +15,14 @@ export const CONTACTS = {
   hours: 'Круглосуточно, без выходных',
 };
 
+// Реквизиты владельца сайтов — в подвале всех направлений.
+export const COMPANY = {
+  name: 'ООО «КРЕЙВ»',
+  fullName: 'Общество с ограниченной ответственностью «КРЕЙВ»',
+  inn: '7743494031',
+  kpp: '774301001',
+};
+
 export const BODY_LABEL: Record<string, string> = { sedan: 'Седан', suv: 'Внедорожник', coupe: 'Купе', pickup: 'Пикап' };
 
 export const COND_LABEL: Record<string, string> = { ready: 'Готов', preparing: 'Подготовка', maintenance: 'Обслуживание', unavailable: 'Недоступен' };

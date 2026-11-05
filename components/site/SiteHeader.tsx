@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { CONTACTS, DIRECTION_URLS } from '@/lib/site';
+import { COMPANY, CONTACTS, DIRECTION_URLS } from '@/lib/site';
 import { Logo } from './Logo';
 
 type Dir = 'rental' | 'sales' | 'service';
@@ -77,7 +77,7 @@ export function SiteFooter({ name, links, active }: { name: string; links: NavIt
           {links.map((l) => (
             <Link key={l.href} href={l.href}>{l.label}</Link>
           ))}
-          <span className="muted small">[Реквизиты — нужны от владельца]</span>
+          <span className="muted small" title={COMPANY.fullName}>{COMPANY.name}<br />ИНН {COMPANY.inn}, КПП {COMPANY.kpp}</span>
           <span className="muted small">© {new Date().getFullYear()} CRAVE</span>
         </nav>
       </div>
