@@ -60,7 +60,6 @@ export function SiteFooter({ name, links, active }: { name: string; links: NavIt
     <footer className="site-footer">
       <div className="wrap">
         <div className="col">
-          <Logo variant={LOGO[active]} height={56} />
           <span className="text-2">{name}</span>
           <span className="text-2">{CONTACTS.address}</span>
           <a href={CONTACTS.phoneHref}>{CONTACTS.phone}</a>
