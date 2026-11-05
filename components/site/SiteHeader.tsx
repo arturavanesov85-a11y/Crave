@@ -32,7 +32,7 @@ export function SiteHeader({ active, home, nav }: { active: Dir; home: string; n
     <header className={`site-header${open ? ' open' : ''}`}>
       <div className="wrap">
         <Link className="logo-link" href={home} onClick={() => setOpen(false)}>
-          <Logo variant={LOGO[active]} height={56} />
+          <Logo variant={LOGO[active]} height={56} markOnly={active !== 'rental'} />
         </Link>
         <button className="burger" type="button" aria-label="Меню" aria-expanded={open} onClick={() => setOpen(!open)}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">

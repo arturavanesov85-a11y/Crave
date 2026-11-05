@@ -1,5 +1,6 @@
 // Начальные данные. Запускается при каждом `npm run dev`, но заполняет базу только один раз.
-// Тестовые учётные записи — ниже в USERS, общий пароль — SEED_PASSWORD (по умолчанию см. README).
+// Всегда создаётся только владелец (SEED_OWNER_EMAIL, пароль SEED_PASSWORD).
+// Сотрудники для проверки ролей — при SEED_TEST_USERS=1, демо-клиенты и заказы — при SEED_DEMO=1.
 
 import { PrismaClient } from '@prisma/client';
 import { randomBytes, scryptSync } from 'node:crypto';
@@ -8,9 +9,12 @@ import carPhotos from './car-photos.json' with { type: 'json' };
 
 const db = new PrismaClient();
 const PASSWORD = process.env.SEED_PASSWORD || 'crave-test';
+const DEMO = process.env.SEED_DEMO === '1';
+const WITH_TEST_USERS = DEMO || process.env.SEED_TEST_USERS === '1';
 
-const USERS = [
-  { email: 'owner@crave.test', fullName: 'Владелец (тест)', role: 'owner' },
+const OWNER = { email: process.env.SEED_OWNER_EMAIL || 'owner@crave.test', fullName: 'Владелец', role: 'owner' };
+
+const TEST_USERS = [
   { email: 'head@crave.test', fullName: 'Руководитель проката (тест)', role: 'rental_head' },
   { email: 'manager@crave.test', fullName: 'Менеджер проката (тест)', role: 'rental_manager' },
   { email: 'handover@crave.test', fullName: 'Сотрудник выдачи (тест)', role: 'handover' },
@@ -64,34 +68,6 @@ async function ensureExtras() {
   for (const [slug, photos] of Object.entries(carPhotos as Record<string, string[]>)) {
     await db.vehicle.updateMany({ where: { slug, photos: null }, data: { photos: JSON.stringify(photos) } });
   }
-  // Тестовая машина в продаже для сайта автосалона — один раз.
-  if ((await db.saleCar.count()) === 0) {
-    const src = await db.vehicle.findUnique({ where: { slug: 'bmw-540i' } });
-    if (src) {
-      await db.saleCar.create({
-        data: {
-          slug: 'bmw-540i-2020',
-          status: 'published',
-          make: src.make,
-          model: src.model,
-          title: src.title,
-          year: src.year,
-          mileageKm: 42000,
-          price: null,
-          bodyType: src.bodyType,
-          powerHp: src.powerHp,
-          engine: 'бензин, 3.0 л',
-          transmission: 'автомат',
-          drive: src.drive,
-          color: src.colorExterior,
-          description: `Тестовое объявление для проверки сайта автосалона. ${src.description ?? ''}`.trim(),
-          equipment: src.equipment,
-          photos: src.photos ?? JSON.stringify((carPhotos as Record<string, string[]>)['bmw-540i'] ?? []),
-          note: 'Тестовое объявление — заменить реальным автомобилем',
-        },
-      });
-    }
-  }
 }
 
 async function main() {
@@ -102,7 +78,9 @@ async function main() {
     return;
   }
 
-  for (const u of USERS) await db.user.create({ data: { ...u, passwordHash: hash(PASSWORD) } });
+  if (process.env.NODE_ENV === 'production' && PASSWORD === 'crave-test') throw new Error('Задайте свой SEED_PASSWORD в .env');
+  const users = WITH_TEST_USERS ? [OWNER, ...TEST_USERS] : [OWNER];
+  for (const u of users) await db.user.create({ data: { ...u, passwordHash: hash(PASSWORD) } });
 
   let i = 0;
   for (const t of tariffs.vehicles) {
@@ -155,8 +133,8 @@ async function main() {
   await db.extraService.create({ data: { code: 'extra_driver', name: 'Дополнительный водитель', pricing: 'fixed', amount: null } });
 
   await ensureExtras();
-  if (process.env.SEED_DEMO !== '0') await seedDemo();
-  console.log(`Готово. Пользователи: ${USERS.map((u) => u.email).join(', ')}`);
+  if (DEMO) await seedDemo();
+  console.log(`Готово. Пользователи: ${users.map((u) => u.email).join(', ')}`);
 }
 
 // Демо-заказы для проверки календаря и CRM. Клиенты помечены как демо.
@@ -165,7 +143,7 @@ async function seedDemo() {
   const { post } = await import('../lib/ledger');
   const { withBookingLock, occupy } = await import('../lib/booking');
   const manager = await db.user.findUniqueOrThrow({ where: { email: 'manager@crave.test' } });
-  const owner = await db.user.findUniqueOrThrow({ where: { email: 'owner@crave.test' } });
+  const owner = await db.user.findUniqueOrThrow({ where: { email: OWNER.email } });
   const su = { id: manager.id, email: manager.email, fullName: manager.fullName, role: manager.role };
   const v = async (slug: string) => db.vehicle.findUniqueOrThrow({ where: { slug } });
   const at = (days: number, hour: number) => {
