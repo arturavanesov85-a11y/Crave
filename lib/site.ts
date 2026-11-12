@@ -8,11 +8,19 @@ export const DIRECTION_URLS = {
 };
 
 export const CONTACTS = {
-  phone: '+7 (910) 421-02-22',
+  phone: '+7 910 421 02 22',
   phoneHref: 'tel:+79104210222',
   telegram: 'https://t.me/crave_rental',
   address: 'Москва, Ярославское ш., 2В, стр. 4',
   hours: 'Круглосуточно, без выходных',
+};
+
+// Реквизиты владельца сайтов — в подвале всех направлений.
+export const COMPANY = {
+  name: 'ООО «КРЕЙВ»',
+  fullName: 'Общество с ограниченной ответственностью «КРЕЙВ»',
+  inn: '7743494031',
+  kpp: '774301001',
 };
 
 export const BODY_LABEL: Record<string, string> = { sedan: 'Седан', suv: 'Внедорожник', coupe: 'Купе', pickup: 'Пикап' };

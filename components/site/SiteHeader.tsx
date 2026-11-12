@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { CONTACTS, DIRECTION_URLS } from '@/lib/site';
+import { COMPANY, CONTACTS, DIRECTION_URLS } from '@/lib/site';
 import { Logo } from './Logo';
 
 type Dir = 'rental' | 'sales' | 'service';
@@ -32,7 +32,7 @@ export function SiteHeader({ active, home, nav }: { active: Dir; home: string; n
     <header className={`site-header${open ? ' open' : ''}`}>
       <div className="wrap">
         <Link className="logo-link" href={home} onClick={() => setOpen(false)}>
-          <Logo variant={LOGO[active]} height={56} />
+          <Logo variant={LOGO[active]} height={56} markOnly={active !== 'rental'} />
         </Link>
         <button className="burger" type="button" aria-label="Меню" aria-expanded={open} onClick={() => setOpen(!open)}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -60,7 +60,6 @@ export function SiteFooter({ name, links, active }: { name: string; links: NavIt
     <footer className="site-footer">
       <div className="wrap">
         <div className="col">
-          <Logo variant={LOGO[active]} height={56} />
           <span className="text-2">{name}</span>
           <span className="text-2">{CONTACTS.address}</span>
           <a href={CONTACTS.phoneHref}>{CONTACTS.phone}</a>
@@ -78,7 +77,7 @@ export function SiteFooter({ name, links, active }: { name: string; links: NavIt
           {links.map((l) => (
             <Link key={l.href} href={l.href}>{l.label}</Link>
           ))}
-          <span className="muted small">[Реквизиты — нужны от владельца]</span>
+          <span className="muted small" title={COMPANY.fullName}>{COMPANY.name}<br />ИНН {COMPANY.inn}, КПП {COMPANY.kpp}</span>
           <span className="muted small">© {new Date().getFullYear()} CRAVE</span>
         </nav>
       </div>

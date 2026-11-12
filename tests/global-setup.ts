@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 export default function setup() {
   for (const f of ['test.db', 'test.db-journal']) rmSync(join(process.cwd(), 'prisma', f), { force: true });
-  const env = { ...process.env, DATABASE_URL: 'file:./test.db', SEED_DEMO: '0' };
+  const env = { ...process.env, DATABASE_URL: 'file:./test.db', SEED_DEMO: '0', SEED_TEST_USERS: '1' };
   execSync('npx prisma db push --skip-generate', { env, stdio: 'ignore' });
   execSync('npx tsx prisma/seed.ts', { env, stdio: 'ignore' });
 }
