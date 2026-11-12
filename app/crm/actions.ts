@@ -66,7 +66,8 @@ export async function login(_: ActionState, fd: FormData): Promise<ActionState> 
   const user = await db.user.findUnique({ where: { email } });
   if (!user || !user.isActive || user.deletedAt || !verifyPassword(str(fd, 'password'), user.passwordHash)) return { error: 'Неверный e-mail или пароль' };
   await createSession(user.id);
-  redirect(homePath(toSessionUser(user)));
+  const next = str(fd, 'next');
+  redirect(/^\/(tg|crm)(\/|$|\?)/.test(next) ? next : homePath(toSessionUser(user)));
 }
 
 export async function logout() {

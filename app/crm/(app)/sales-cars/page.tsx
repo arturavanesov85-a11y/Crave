@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
 import { fmtDate } from '@/lib/dates';
 import { rub } from '@/lib/money';
-import { SALE_STATUS } from '@/lib/sales';
+import { SALE_STATUS, SUPPLY } from '@/lib/sales';
 import { DIRECTION_URLS } from '@/lib/site';
 
 export const metadata = { title: 'Авто в продаже' };
@@ -33,7 +33,7 @@ export default async function SaleCars() {
                     {photo ? <img src={photo} alt="" style={{ width: 84, height: 63, objectFit: 'cover', borderRadius: 6 }} /> : <span className="muted small">нет фото</span>}
                   </td>
                   <td><Link href={`/crm/sales-cars/${c.id}`} style={{ fontWeight: 600 }}>{c.title}</Link><div className="muted small">{c.year}{c.note ? ` · ${c.note}` : ''}</div></td>
-                  <td><span className={`tag ${c.status === 'published' ? 'ok' : c.status === 'sold' ? '' : c.status === 'reserved' ? 'gold' : ''}`}>{SALE_STATUS[c.status]}</span></td>
+                  <td><span className={`tag ${c.status === 'published' ? 'ok' : c.status === 'sold' ? '' : c.status === 'reserved' ? 'gold' : ''}`}>{SALE_STATUS[c.status]}</span>{c.supply !== 'stock' ? <div className="small gold">{SUPPLY[c.supply]}{c.etaAt ? ` · ${fmtDate(c.etaAt)}` : c.etaNote ? ` · ${c.etaNote}` : ''}</div> : null}</td>
                   <td className="num">{c.price ? rub(c.price) : <span className="muted">по запросу</span>}</td>
                   <td className="num">{c.mileageKm.toLocaleString('ru-RU')} км</td>
                   <td className="small">{fmtDate(c.updatedAt ?? c.createdAt)}</td>

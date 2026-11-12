@@ -239,3 +239,17 @@ details > summary { cursor: pointer; }
   .crm-group { position: relative; }
   .crm-group-items { position: absolute; top: 100%; left: 0; z-index: 30; min-width: 190px; margin: 4px 0 0; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 }
+
+/* Мини-приложение Telegram */
+.tg-app { max-width: 640px; margin: 0 auto; min-height: 100vh; font-size: 15px; }
+.tg-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; }
+.tg-tabs a { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; color: var(--text-2); font-size: 14px; text-align: center; }
+.tg-tabs a[aria-current] { background: var(--gold); color: var(--bg); font-weight: 600; }
+.tg-tabs a[aria-current] .muted { color: rgba(10, 10, 9, .65); }
+.tg-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.tg-chips .chip { flex: none; }
+.tg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.tg-card { overflow: hidden; color: var(--text); }
+.tg-specs { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.tg-specs > div { background: var(--surface); padding: 10px 12px; }
+.tg-specs dd { margin: 0; font-weight: 600; }

@@ -29,11 +29,13 @@ export function verifyPassword(password: string, stored: string): boolean {
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 
-export async function createSession(userId: string) {
+/** embedded — вход из мини-приложения Telegram: в Telegram Web оно открыто во фрейме, нужна cookie SameSite=None (только по https). */
+export async function createSession(userId: string, opts: { embedded?: boolean } = {}) {
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + TTL_DAYS * 86400000);
   await db.session.create({ data: { id: sha(token), userId, expiresAt } });
-  (await cookies()).set(COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', expires: expiresAt, secure: process.env.NODE_ENV === 'production' });
+  const secure = process.env.NODE_ENV === 'production';
+  (await cookies()).set(COOKIE, token, { httpOnly: true, sameSite: opts.embedded && secure ? 'none' : 'lax', path: '/', expires: expiresAt, secure });
 }
 
 export async function destroySession() {

@@ -16,7 +16,7 @@ export const viewport: Viewport = { themeColor: '#0A0A09', width: 'device-width'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${sans.variable} ${serif.variable} ${logo.variable}`}>
+    <html lang="ru" className={`${sans.variable} ${serif.variable} ${logo.variable}`} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

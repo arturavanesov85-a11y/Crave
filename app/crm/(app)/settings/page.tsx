@@ -27,6 +27,7 @@ export default async function Settings() {
     db.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 50 }),
     usersById(),
   ]);
+  const pendingTg = user.role === 'owner' ? await db.telegramLink.count({ where: { status: 'pending' } }) : 0;
   return (
     <>
       <h1>Настройки</h1>
@@ -50,7 +51,7 @@ export default async function Settings() {
       ) : null}
       {user.role === 'owner' ? (
         <section className="card pad stack" style={{ gap: 10 }}>
-          <div className="row"><h2>Сотрудники · {users.filter((u) => !u.deletedAt).length}</h2><Link className="btn btn-primary btn-sm" href="/crm/settings/staff">Управлять сотрудниками</Link></div>
+          <div className="row"><h2>Сотрудники · {users.filter((u) => !u.deletedAt).length}</h2><span className="wrap-row"><Link className="btn btn-quiet btn-sm" href="/crm/settings/telegram">Доступ из Telegram{pendingTg ? ` · ${pendingTg}` : ''}</Link><Link className="btn btn-primary btn-sm" href="/crm/settings/staff">Управлять сотрудниками</Link></span></div>
           <p className="muted small">Добавление, блокировка и удаление сотрудников, роли и отдельные права по разделам.</p>
         </section>
       ) : null}

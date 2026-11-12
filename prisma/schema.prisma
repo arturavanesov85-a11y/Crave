@@ -345,6 +345,9 @@ model SaleCar {
   id           String    @id @default(cuid())
   slug         String    @unique
   status       String    @default("draft") // draft | published | reserved | sold
+  supply       String    @default("stock") // stock — в наличии | transit — в пути | order — под заказ
+  etaAt        DateTime? // ожидаемая дата прибытия (в пути)
+  etaNote      String? // срок поставки текстом: «6–8 недель»
   make         String
   model        String
   title        String
@@ -385,4 +388,19 @@ model ServiceItem {
   sortOrder   Int      @default(0)
   isPublished Boolean  @default(true)
   createdAt   DateTime @default(now())
+}
+
+// Привязка аккаунта Telegram к сотруднику (вход в мини-приложение). Подтверждает владелец.
+model TelegramLink {
+  id          String    @id @default(cuid())
+  telegramId  String    @unique
+  username    String?
+  firstName   String?
+  lastName    String?
+  status      String    @default("pending") // pending | approved | rejected
+  userId      String?
+  decidedBy   String?
+  decidedAt   DateTime?
+  lastSeenAt  DateTime?
+  createdAt   DateTime  @default(now())
 }

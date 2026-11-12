@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { currentUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
 import { parseRub } from '@/lib/money';
+import { parseLocal } from '@/lib/dates';
 import { can, Forbidden } from '@/lib/permissions';
 import { audit } from '@/lib/orders';
 import { removePublicFolder, removePublicPhoto, savePublicPhotos } from '@/lib/public-media';
@@ -87,6 +88,9 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
       vin: str(fd, 'vin') || null,
       note: str(fd, 'note') || null,
       sortOrder: Number(str(fd, 'sortOrder') || 0) || 0,
+      supply: ['stock', 'transit', 'order'].includes(str(fd, 'supply')) ? str(fd, 'supply') : 'stock',
+      etaAt: str(fd, 'etaAt') ? parseLocal(str(fd, 'etaAt') + 'T12:00') : null,
+      etaNote: str(fd, 'etaNote').slice(0, 80) || null,
     };
 
     if (existing) {

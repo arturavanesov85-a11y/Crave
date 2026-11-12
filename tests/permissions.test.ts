@@ -32,6 +32,8 @@ describe('права ролей', () => {
     ['tech_admin', 'users.manage', false],
     ['service_staff', 'service.site', true],
     ['sales_staff', 'service.site', false],
+    ['sales_staff', 'tg.app', true],
+    ['rental_manager', 'tg.app', false],
   ];
   it.each(cases)('%s: %s → %s', (role, perm, expected) => {
     expect(can(u(role), perm)).toBe(expected);

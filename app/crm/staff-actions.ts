@@ -123,3 +123,33 @@ export async function staffDeleteAction(_: ActionState, fd: FormData): Promise<A
   if (res?.error) return res;
   redirect('/crm/settings/staff');
 }
+
+/** Запросы на доступ из Telegram: привязать к сотруднику, отклонить или отключить. */
+export async function telegramDecideAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const me = await owner();
+    const link = await db.telegramLink.findUniqueOrThrow({ where: { id: str(fd, 'id') } });
+    const decision = str(fd, 'decision');
+    if (decision === 'approve') {
+      const userId = str(fd, 'userId');
+      const u = userId ? await db.user.findUnique({ where: { id: userId } }) : null;
+      if (!u || !u.isActive || u.deletedAt) throw new Error('Выберите активного сотрудника');
+      await db.telegramLink.update({ where: { id: link.id }, data: { status: 'approved', userId: u.id, decidedBy: me.id, decidedAt: new Date() } });
+      await audit(db, me.id, 'telegram.approve', 'user', u.id, { telegramId: link.telegramId });
+      return `Доступ открыт: ${u.fullName}. Сотруднику нужно заново открыть мини-приложение.`;
+    }
+    if (decision === 'reject') {
+      await db.telegramLink.update({ where: { id: link.id }, data: { status: 'rejected', userId: null, decidedBy: me.id, decidedAt: new Date() } });
+      // Сеансы, открытые через этот аккаунт, неотличимы от обычных — закрываем сеансы привязанного сотрудника только при отключении ниже.
+      await audit(db, me.id, 'telegram.reject', 'telegram', link.id, { telegramId: link.telegramId });
+      return 'Запрос отклонён';
+    }
+    if (decision === 'unlink') {
+      if (link.userId) await db.session.deleteMany({ where: { userId: link.userId } });
+      await db.telegramLink.update({ where: { id: link.id }, data: { status: 'rejected', decidedBy: me.id, decidedAt: new Date() } });
+      await audit(db, me.id, 'telegram.unlink', 'user', link.userId ?? '-', { telegramId: link.telegramId });
+      return 'Доступ из Telegram отключён, сеансы сотрудника завершены';
+    }
+    throw new Error('Неизвестное действие');
+  });
+}

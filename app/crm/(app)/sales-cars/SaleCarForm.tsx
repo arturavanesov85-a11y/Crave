@@ -1,6 +1,7 @@
 import { ActionForm } from '@/components/crm/ActionForm';
 import { json } from '@/lib/db';
-import { SALE_STATUS } from '@/lib/sales';
+import { SALE_STATUS, SUPPLY } from '@/lib/sales';
+import { toLocalInput } from '@/lib/dates';
 import { saleCarSaveAction } from '../../sales-actions';
 import { db } from '@/lib/db';
 import { CAR_MODELS, COLOR_HINTS, DRIVE_HINTS, ENGINE_HINTS, TRANSMISSION_HINTS } from '@/lib/car-models';
@@ -27,7 +28,7 @@ async function hints() {
   };
 }
 
-type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; sortOrder: number } | null;
+type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; sortOrder: number; supply: string; etaAt: Date | null; etaNote: string | null } | null;
 
 export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id: string; title: string }[] }) {
   const v = (x: string | number | null | undefined) => (x == null ? '' : String(x));
@@ -57,7 +58,17 @@ export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id
           </label>
           <label className="field">Цена, ₽ (пусто — «цена по запросу»)<input className="input" name="price" inputMode="decimal" defaultValue={car?.price ? String(car.price / 100) : ''} /></label>
         </div>
-        <p className="muted small">На сайте видны статусы «В продаже» и «Забронирован». Черновик и «Продан» скрыты.</p>
+        <div className="grid-2 stack-sm">
+          <label className="field">Наличие
+            <select className="input" name="supply" defaultValue={car?.supply ?? 'stock'}>
+              {Object.entries(SUPPLY).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </label>
+          <label className="field">Ожидаемая дата прибытия (для «в пути»)<input className="input" type="date" name="etaAt" defaultValue={car?.etaAt ? toLocalInput(car.etaAt).slice(0, 10) : ''} /></label>
+          <label className="field">Срок поставки текстом<input className="input" name="etaNote" list="dl-eta" placeholder="6–8 недель" defaultValue={v(car?.etaNote)} /></label>
+        </div>
+        <datalist id="dl-eta"><option value="2–4 недели" /><option value="4–6 недель" /><option value="6–8 недель" /><option value="8–12 недель" /></datalist>
+        <p className="muted small">На сайте автосалона видны только машины «В наличии» со статусом «В продаже» или «Забронирован». «В пути» и «Под заказ» — для сотрудников в мини-приложении Telegram.</p>
       </section>
 
       <section className="card pad stack">
