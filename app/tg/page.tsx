@@ -25,7 +25,7 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
   const q = (sp.q ?? '').trim();
   const make = sp.make ?? '';
 
-  const base: Prisma.SaleCarWhereInput = { status: { in: ['published', 'reserved'] } };
+  const base: Prisma.SaleCarWhereInput = { status: { in: ['draft', 'published', 'reserved'] } };
   const [counts, all] = await Promise.all([
     db.saleCar.groupBy({ by: ['supply'], where: base, _count: true }),
     db.saleCar.findMany({ where: { ...base, supply: tab }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] }),
@@ -77,7 +77,7 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
                 <div className="stack" style={{ gap: 4, padding: '10px 12px 12px' }}>
                   <div className="row" style={{ alignItems: 'center' }}>
                     <strong style={{ fontSize: 15 }}>{c.title}</strong>
-                    {c.status === 'reserved' ? <span className="tag">бронь</span> : null}
+                    {c.status === 'reserved' ? <span className="tag">бронь</span> : c.status === 'draft' ? <span className="tag">черновик</span> : null}
                   </div>
                   <span className="text-2 small">{c.year} · {c.mileageKm.toLocaleString('ru-RU')} км{c.color ? ` · ${c.color}` : ''}</span>
                   {c.supply !== 'stock' ? <span className="gold small">{c.etaAt ? `Прибытие ${fmtDate(c.etaAt)}` : c.etaNote ? `Срок: ${c.etaNote}` : SUPPLY[c.supply]}</span> : null}

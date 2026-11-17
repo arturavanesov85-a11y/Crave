@@ -15,7 +15,7 @@ export default async function TgCar({ params }: { params: Promise<{ id: string }
   const user = await currentUser();
   if (!user || !can(user, 'tg.app')) redirect('/tg');
   const c = await db.saleCar.findUnique({ where: { id: (await params).id } });
-  if (!c || !['published', 'reserved'].includes(c.status)) notFound();
+  if (!c || !['draft', 'published', 'reserved'].includes(c.status)) notFound();
   const photos = json<string[]>(c.photos, []);
   const equipment = json<string[]>(c.equipment, []);
   const specs: [string, string | null][] = [
@@ -37,7 +37,7 @@ export default async function TgCar({ params }: { params: Promise<{ id: string }
       <Link href="/tg" className="small">← Каталог</Link>
       <Gallery title={c.title} photos={photos} />
       <div className="stack" style={{ gap: 4 }}>
-        <span className="eyebrow">{c.status === 'reserved' ? 'Забронирован' : SUPPLY[c.supply]}</span>
+        <span className="eyebrow">{c.status === 'reserved' ? 'Забронирован' : c.status === 'draft' ? `Черновик · ${SUPPLY[c.supply]}` : SUPPLY[c.supply]}</span>
         <h1 style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.2 }}>{c.title}, {c.year}</h1>
         <div style={{ fontSize: 24, fontWeight: 600 }}>{c.price ? rub(c.price) : 'Цена по запросу'}</div>
       </div>
