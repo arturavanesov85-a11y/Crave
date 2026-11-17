@@ -36,6 +36,9 @@ export default async function TgOrder({ params }: { params: Promise<{ id: string
   const inspect = can(user, 'rental.inspect');
   const pay = can(user, 'payment.accept');
   const done = new Set(o.inspections.map((i) => i.kind));
+  // Каждому своё: деньги видят менеджеры, руководители и финансы; сотрудник выдачи — только осмотр и звонок.
+  const seeMoney = write || pay || can(user, 'finance.view');
+  const canWithhold = can(user, 'deposit.withhold.request') && ['issued', 'returned'].includes(o.status) && m.depositBalance > 0;
   const hid = { id: o.id };
 
   return (
@@ -67,6 +70,7 @@ export default async function TgOrder({ params }: { params: Promise<{ id: string
         {o.status === 'returned' ? <p className="muted small">Машина возвращена. Завершить заказ и вернуть залог — в CRM.</p> : null}
       </section>
 
+      {seeMoney ? (
       <section className="card pad stack" style={{ gap: 6 }}>
         <h2 style={{ fontSize: 16 }}>Деньги</h2>
         <div className="row"><span className="muted">Начислено</span><span>{rub(m.charges)}</span></div>
@@ -85,13 +89,15 @@ export default async function TgOrder({ params }: { params: Promise<{ id: string
             </ActionDialog>
           </div>
         ) : null}
-        {can(user, 'deposit.withhold.request') && ['issued', 'returned'].includes(o.status) && m.depositBalance > 0 ? (
+      </section>
+      ) : null}
+
+        {canWithhold ? (
           <ActionDialog label="Удержать из залога" title="Запрос на удержание" action={withholdRequestAction} submit="Отправить руководителю" hidden={hid} description="Руководитель получит запрос в Telegram и подтвердит его.">
             <label className="field">Сумма, ₽<input className="input" name="amount" inputMode="numeric" required /></label>
             <label className="field">Основание<textarea className="input" name="basis" rows={2} placeholder="Скол на бампере, см. фото возврата" required /></label>
           </ActionDialog>
         ) : null}
-      </section>
 
       {write && ['confirmed', 'issued'].includes(o.status) ? (
         <ActionDialog label="Продлить аренду" title="Продление" action={extendOrderAction} submit="Продлить" hidden={hid} description="CRM проверит, свободна ли машина, и досчитает стоимость.">
