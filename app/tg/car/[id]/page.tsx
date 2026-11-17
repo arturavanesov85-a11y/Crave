@@ -27,7 +27,8 @@ export default async function TgCar({ params }: { params: Promise<{ id: string }
     ['Мощность', c.powerHp ? `${c.powerHp} л.с.` : null],
     ['Коробка', c.transmission],
     ['Привод', c.drive],
-    ['Цвет', c.color],
+    ['Цвет кузова', c.color],
+    ['Цвет салона', c.colorInterior],
     ['VIN', can(user, 'vehicle.sensitive') || can(user, 'sales.catalog') ? c.vin : null],
   ];
 

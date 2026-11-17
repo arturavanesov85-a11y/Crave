@@ -4,14 +4,14 @@ import { SALE_STATUS, SUPPLY } from '@/lib/sales';
 import { toLocalInput } from '@/lib/dates';
 import { saleCarSaveAction } from '../../sales-actions';
 import { db } from '@/lib/db';
-import { CAR_MODELS, COLOR_HINTS, DRIVE_HINTS, ENGINE_HINTS, TRANSMISSION_HINTS } from '@/lib/car-models';
+import { CAR_MODELS, COLOR_HINTS, DRIVE_HINTS, INTERIOR_HINTS, ENGINE_HINTS, TRANSMISSION_HINTS } from '@/lib/car-models';
 import { MakeModelFields } from './MakeModelFields';
 
 /** Подсказки: справочник + всё, что уже вводилось в объявлениях и автопарке. */
 async function hints() {
   const [sale, fleet] = await Promise.all([
-    db.saleCar.findMany({ select: { make: true, model: true, engine: true, transmission: true, drive: true, color: true } }),
-    db.vehicle.findMany({ select: { make: true, model: true, drive: true, colorExterior: true } }),
+    db.saleCar.findMany({ select: { make: true, model: true, engine: true, transmission: true, drive: true, color: true, colorInterior: true } }),
+    db.vehicle.findMany({ select: { make: true, model: true, drive: true, colorExterior: true, colorInterior: true } }),
   ]);
   const models: Record<string, string[]> = Object.fromEntries(Object.entries(CAR_MODELS).map(([k, v]) => [k, [...v]]));
   for (const c of [...sale, ...fleet]) {
@@ -25,10 +25,11 @@ async function hints() {
     transmission: uniq(TRANSMISSION_HINTS, sale.map((c) => c.transmission)),
     drive: uniq(DRIVE_HINTS, [...sale.map((c) => c.drive), ...fleet.map((c) => c.drive)]),
     color: uniq(COLOR_HINTS, [...sale.map((c) => c.color), ...fleet.map((c) => c.colorExterior)]),
+    interior: uniq(INTERIOR_HINTS, [...sale.map((c) => c.colorInterior), ...fleet.map((c) => c.colorInterior)]),
   };
 }
 
-type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; sortOrder: number; supply: string; etaAt: Date | null; etaNote: string | null } | null;
+type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; sortOrder: number; supply: string; etaAt: Date | null; etaNote: string | null } | null;
 
 export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id: string; title: string }[] }) {
   const v = (x: string | number | null | undefined) => (x == null ? '' : String(x));
@@ -87,12 +88,14 @@ export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id
           <label className="field">Двигатель<input className="input" name="engine" list="dl-engine" autoComplete="off" placeholder="бензин, 3.0 л" defaultValue={v(car?.engine)} /></label>
           <label className="field">Коробка<input className="input" name="transmission" list="dl-transmission" autoComplete="off" placeholder="автомат" defaultValue={v(car?.transmission)} /></label>
           <label className="field">Привод<input className="input" name="drive" list="dl-drive" autoComplete="off" placeholder="полный" defaultValue={v(car?.drive)} /></label>
-          <label className="field">Цвет<input className="input" name="color" list="dl-color" autoComplete="off" defaultValue={v(car?.color)} /></label>
+          <label className="field">Цвет кузова<input className="input" name="color" list="dl-color" autoComplete="off" defaultValue={v(car?.color)} /></label>
+          <label className="field">Цвет салона<input className="input" name="colorInterior" list="dl-interior" autoComplete="off" placeholder="бежевый" defaultValue={v(car?.colorInterior)} /></label>
         </div>
         <datalist id="dl-engine">{h.engine.map((x) => <option key={x} value={x} />)}</datalist>
         <datalist id="dl-transmission">{h.transmission.map((x) => <option key={x} value={x} />)}</datalist>
         <datalist id="dl-drive">{h.drive.map((x) => <option key={x} value={x} />)}</datalist>
         <datalist id="dl-color">{h.color.map((x) => <option key={x} value={x} />)}</datalist>
+        <datalist id="dl-interior">{h.interior.map((x) => <option key={x} value={x} />)}</datalist>
         <label className="field">Описание<textarea className="input" name="description" rows={4} defaultValue={v(car?.description)} /></label>
         <label className="field">Комплектация — по одному пункту в строке<textarea className="input" name="equipment" rows={5} defaultValue={car ? json<string[]>(car.equipment, []).join('\n') : ''} /></label>
       </section>

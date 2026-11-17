@@ -83,6 +83,7 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
       transmission: str(fd, 'transmission') || (src ? 'автомат' : null),
       drive: str(fd, 'drive') || src?.drive || null,
       color: str(fd, 'color') || src?.colorExterior || null,
+      colorInterior: str(fd, 'colorInterior') || src?.colorInterior || null,
       description: str(fd, 'description') || src?.description || null,
       equipment: equipment.length ? JSON.stringify(equipment) : null,
       vin: str(fd, 'vin') || null,

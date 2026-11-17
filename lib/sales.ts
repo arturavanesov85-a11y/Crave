@@ -21,6 +21,7 @@ export function toPublic(c: Awaited<ReturnType<typeof db.saleCar.findFirstOrThro
     transmission: c.transmission,
     drive: c.drive,
     color: c.color,
+    colorInterior: c.colorInterior,
     description: c.description,
     equipment: json<string[]>(c.equipment, []),
     photos: json<string[]>(c.photos, []),

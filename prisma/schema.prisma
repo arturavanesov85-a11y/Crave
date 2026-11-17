@@ -359,7 +359,8 @@ model SaleCar {
   engine       String? // «бензин, 3.0 л»
   transmission String?
   drive        String?
-  color        String?
+  color        String? // цвет кузова
+  colorInterior String? // цвет салона
   description  String?
   equipment    String? // JSON-массив строк
   photos       String? // JSON-массив путей, первое — обложка

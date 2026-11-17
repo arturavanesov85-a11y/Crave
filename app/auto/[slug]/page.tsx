@@ -27,7 +27,8 @@ export default async function SaleCarPage({ params, searchParams }: Props) {
     ['Мощность', c.powerHp ? `${c.powerHp} л.с.` : null],
     ['Коробка', c.transmission],
     ['Привод', c.drive],
-    ['Цвет', c.color],
+    ['Цвет кузова', c.color],
+    ['Цвет салона', c.colorInterior],
   ];
   return (
     <div className="wrap" style={{ paddingTop: 24, paddingBottom: 72 }}>
