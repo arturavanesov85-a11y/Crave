@@ -9,7 +9,6 @@ import { parseLocal } from '@/lib/dates';
 import { BookingConflict } from '@/lib/booking';
 import { createSiteRequest, normalizePhone, upsertCustomer } from '@/lib/orders';
 import { allow } from '@/lib/ratelimit';
-import { fire, notifyNewLead, notifyNewRentalRequest } from '@/lib/notify';
 
 export type FormState = { error?: string } | undefined;
 
@@ -64,8 +63,6 @@ export async function submitRentalRequest(_: FormState, fd: FormData): Promise<F
       utm: utmFrom(fd),
     });
     orderId = r.orderId;
-    // Менеджерам — сообщение в Telegram с кнопкой «Взять в работу».
-    if (!r.duplicate && r.orderId) { const id = r.orderId; fire(() => notifyNewRentalRequest(id)); }
   } catch (e) {
     if (e instanceof BookingConflict) return { error: 'К сожалению, автомобиль уже занят на эти даты. Выберите другие даты или автомобиль.' };
     return { error: e instanceof Error ? e.message : 'Не удалось отправить заявку' };
@@ -98,9 +95,9 @@ export async function submitLead(_: FormState, fd: FormData): Promise<FormState>
 
   const exists = await db.lead.findUnique({ where: { idempotencyKey: d.key } });
   if (!exists) {
-    const lead = await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx) => {
       const customer = await upsertCustomer(tx, { name: d.name, phone }, d.direction);
-      return tx.lead.create({
+      await tx.lead.create({
         data: {
           direction: d.direction,
           site: d.direction,
@@ -115,7 +112,6 @@ export async function submitLead(_: FormState, fd: FormData): Promise<FormState>
         },
       });
     });
-    fire(() => notifyNewLead(lead.id));
   }
   redirect(`${d.back}?sent=${d.kind}${d.anchor ? `#${d.anchor}` : ""}`);
 }

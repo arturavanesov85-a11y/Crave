@@ -29,8 +29,7 @@ export async function POST(req: Request) {
 
   const user = await db.user.findUnique({ where: { id: link.userId } });
   if (!user || !user.isActive || user.deletedAt) return NextResponse.json({ status: 'blocked' });
-  const su = toSessionUser(user);
-  if (!can(su, 'tg.app') && !can(su, 'tg.rental')) return NextResponse.json({ status: 'no_access' });
+  if (!can(toSessionUser(user), 'tg.app')) return NextResponse.json({ status: 'no_access' });
   await createSession(user.id, { embedded: true });
   return NextResponse.json({ status: 'ok' });
 }

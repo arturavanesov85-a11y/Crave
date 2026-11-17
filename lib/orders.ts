@@ -325,7 +325,7 @@ export async function replaceVehicle(user: SessionUser, id: string, newVehicleId
 
 // ---------- Выдача и возврат ----------
 
-export type InspectionInput = { mileageKm: number; fuelPercent: number; checklist: Record<string, boolean>; notes?: string; damages: { location: string; description: string }[]; photos: { path: string; mime: string; caption?: string | null }[] };
+export type InspectionInput = { mileageKm: number; fuelPercent: number; checklist: Record<string, boolean>; notes?: string; damages: { location: string; description: string }[]; photos: { path: string; mime: string }[] };
 
 export async function issueOrder(user: SessionUser, id: string, insp: InspectionInput) {
   return withBookingLock(async (tx) => {

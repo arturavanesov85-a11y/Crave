@@ -8,7 +8,7 @@ type Q = { ok: boolean; error?: string; days?: number; tier?: { label: string };
 
 const rub = (k: number) => `${(k / 100).toLocaleString('ru-RU')} ₽`;
 
-export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initial: { vehicleId: string; from: string; to: string; name: string; phone: string; leadId: string }; back?: 'tg' }) {
+export function NewOrderForm({ vehicles, initial }: { vehicles: V[]; initial: { vehicleId: string; from: string; to: string; name: string; phone: string; leadId: string } }) {
   const [state, action, pending] = useActionState(createOrderAction, undefined);
   const [vehicleId, setVehicleId] = useState(initial.vehicleId);
   const [from, setFrom] = useState(initial.from);
@@ -31,7 +31,6 @@ export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initi
     <form action={action} className="cols">
       <div className="main card pad stack">
         {initial.leadId ? <input type="hidden" name="leadId" value={initial.leadId} /> : null}
-        {back ? <input type="hidden" name="back" value={back} /> : null}
         <label className="field">Автомобиль
           <select className="input" name="vehicleId" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
             {vehicles.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}

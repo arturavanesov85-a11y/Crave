@@ -41,75 +41,31 @@ export function signInitDataForTest(fields: Record<string, string>, botToken: st
 
 export const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || '';
 
-// ---------- Bot API ----------
-// Два бота: «staff» — @Crave_auto_bot для сотрудников (TELEGRAM_BOT_TOKEN),
-// «client» — бот проката для клиентов (TELEGRAM_CLIENT_BOT_TOKEN).
-// С сервера Telegram иногда отвечает не с первого раза — до трёх попыток.
-
-export type Bot = 'staff' | 'client';
-export type Button = { text: string; data?: string; url?: string; app?: string };
-export type ApiResult = { ok: true; result: unknown } | { ok: false; code: number; error: string; blocked: boolean };
-
-export const botToken = (bot: Bot) => (bot === 'client' ? process.env.TELEGRAM_CLIENT_BOT_TOKEN : process.env.TELEGRAM_BOT_TOKEN) || '';
-export const CLIENT_BOT_USERNAME = process.env.TELEGRAM_CLIENT_BOT_USERNAME || '';
-
-/** Адрес сайта для кнопок «Открыть в приложении» (Telegram открывает только https). */
-export const appUrl = (path: string) => `${(process.env.NEXT_PUBLIC_URL_RENTAL || 'https://crave-rental.ru').replace(/\/$/, '')}${path}`;
-
-function keyboard(rows?: Button[][]) {
-  if (!rows?.length) return undefined;
-  return JSON.stringify({
-    inline_keyboard: rows.map((r) => r.map((b) => (b.app ? { text: b.text, web_app: { url: b.app } } : b.url ? { text: b.text, url: b.url } : { text: b.text, callback_data: (b.data ?? '').slice(0, 64) }))),
-  });
-}
-
-export async function tgApi(bot: Bot, method: string, params: Record<string, string | Blob | undefined>, timeoutMs = 20_000): Promise<ApiResult> {
-  const token = botToken(bot);
-  if (!token) return { ok: false, code: 0, error: 'Бот не подключён', blocked: false };
-  let last: ApiResult = { ok: false, code: 0, error: 'Telegram не ответил', blocked: false };
+/**
+ * Отправка файла сотруднику в чат с ботом. Возвращает 'ok', 'need_start' (бот ещё не может
+ * писать этому человеку — нужно разрешение в приложении или «Старт» в боте) или текст ошибки.
+ * С сервера Telegram иногда отвечает не с первого раза — до трёх попыток.
+ */
+export async function sendDocument(chatId: string, file: Buffer, fileName: string, caption?: string): Promise<'ok' | 'need_start' | string> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return 'Бот не подключён';
+  let last = 'Telegram не ответил';
   for (let attempt = 0; attempt < 3; attempt++) {
     const fd = new FormData();
-    for (const [k, v] of Object.entries(params)) if (v !== undefined) fd.set(k, v as string | Blob);
+    fd.set('chat_id', chatId);
+    if (caption) fd.set('caption', caption.slice(0, 1000));
+    fd.set('document', new Blob([new Uint8Array(file)], { type: 'application/pdf' }), fileName);
     try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', body: fd, signal: AbortSignal.timeout(timeoutMs) });
-      const body = (await res.json().catch(() => null)) as { ok?: boolean; result?: unknown; error_code?: number; description?: string } | null;
-      if (body?.ok) return { ok: true, result: body.result };
-      const desc = body?.description ?? `Telegram ответил ${res.status}`;
-      last = { ok: false, code: body?.error_code ?? res.status, error: desc, blocked: body?.error_code === 403 || /chat not found/i.test(desc) };
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: 'POST', body: fd, signal: AbortSignal.timeout(45_000) });
+      const body = (await res.json().catch(() => null)) as { ok?: boolean; error_code?: number; description?: string } | null;
+      if (body?.ok) return 'ok';
+      if (body?.error_code === 403 || /chat not found/i.test(body?.description ?? '')) return 'need_start';
+      last = body?.description ?? `Telegram ответил ${res.status}`;
       if (res.status < 500 && res.status !== 429) return last;
     } catch (e) {
-      last = { ok: false, code: 0, error: e instanceof Error && e.name === 'TimeoutError' ? 'Telegram не ответил вовремя' : 'Нет связи с Telegram', blocked: false };
+      last = e instanceof Error && e.name === 'TimeoutError' ? 'Telegram не ответил вовремя' : 'Нет связи с Telegram';
     }
     await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
   }
   return last;
-}
-
-/** Сообщение в чат (разметка HTML: <b>, <i>, <a>). Кнопки — строки кнопок. */
-export function sendMessage(bot: Bot, chatId: string, html: string, buttons?: Button[][], extra: Record<string, string> = {}) {
-  return tgApi(bot, 'sendMessage', { chat_id: chatId, text: html.slice(0, 4000), parse_mode: 'HTML', disable_web_page_preview: 'true', reply_markup: keyboard(buttons), ...extra });
-}
-
-export function sendFile(bot: Bot, chatId: string, file: Buffer, fileName: string, mime: string, caption?: string, buttons?: Button[][]) {
-  return tgApi(bot, 'sendDocument', { chat_id: chatId, caption: caption?.slice(0, 1000), parse_mode: 'HTML', document: new File([new Uint8Array(file)], fileName, { type: mime }), reply_markup: keyboard(buttons) }, 60_000);
-}
-
-export function answerCallback(bot: Bot, callbackId: string, text: string, alert = false) {
-  return tgApi(bot, 'answerCallbackQuery', { callback_query_id: callbackId, text: text.slice(0, 190), show_alert: alert ? 'true' : undefined });
-}
-
-/** Заменить текст сообщения (например, после нажатия «Подтвердить») и убрать кнопки. */
-export function editMessage(bot: Bot, chatId: string, messageId: number, html: string, buttons?: Button[][]) {
-  return tgApi(bot, 'editMessageText', { chat_id: chatId, message_id: String(messageId), text: html.slice(0, 4000), parse_mode: 'HTML', disable_web_page_preview: 'true', reply_markup: keyboard(buttons) ?? JSON.stringify({ inline_keyboard: [] }) });
-}
-
-export const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-/**
- * Отправка PDF сотруднику в чат с ботом. 'ok', 'need_start' (бот ещё не может писать этому человеку —
- * нужно разрешение в приложении или «Старт» в боте) или текст ошибки.
- */
-export async function sendDocument(chatId: string, file: Buffer, fileName: string, caption?: string): Promise<'ok' | 'need_start' | string> {
-  const r = await sendFile('staff', chatId, file, fileName, 'application/pdf', caption);
-  return r.ok ? 'ok' : r.blocked ? 'need_start' : r.error;
 }

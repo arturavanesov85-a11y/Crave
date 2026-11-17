@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
-import { CustomerDocs } from '@/components/crm/CustomerDocs';
 import { db } from '@/lib/db';
 import { fmtDate, fmtDateTime, toLocalInput } from '@/lib/dates';
 import { eligibility, experienceText, MIN_AGE_YEARS, MIN_EXPERIENCE_YEARS } from '@/lib/customers';
@@ -60,15 +59,12 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
           <div><span className="k">Возраст</span><span className={el.age != null && el.age < MIN_AGE_YEARS ? 'warn' : ''}>{el.age != null ? `${el.age} лет · ${fmtDate(c.birthDate)}` : '—'}</span></div>
           <div><span className="k">Водительский стаж</span><span className={el.exp != null && el.exp < MIN_EXPERIENCE_YEARS ? 'warn' : ''}>{experienceText(el.exp)}{c.drivingSince ? ` · с ${fmtDate(c.drivingSince)}` : ''}</span></div>
           <div><span className="k">Направления</span><span>{c.directions.filter((d) => dirs.includes(d.direction as never)).map((d) => DIRECTION_LABEL[d.direction as keyof typeof DIRECTION_LABEL]).join(', ')}</span></div>
-          <div><span className="k">Telegram-бот</span><span>{c.telegramChatId ? 'подключён — получает подтверждения и акты' : 'не подключён'}</span></div>
           <div><span className="k">В базе с</span><span>{fmtDate(c.createdAt)}{c.updatedAt ? ` · изменено ${fmtDate(c.updatedAt)}` : ''}</span></div>
         </div>
         {c.notes ? <p className="text-2" style={{ whiteSpace: 'pre-line' }}>{c.notes}</p> : null}
         {el.unknown.length && showRental ? <p className="muted small">Не заполнено: {el.unknown.join(', ')} — нужно для проверки требований к арендатору.</p> : null}
+        {can(user, 'customer.docs.view') ? <span className="muted small">Документы клиента: загрузка — в следующей версии.</span> : null}
       </section>
-
-      <CustomerDocs user={user} customerId={c.id} />
-
       {showRental ? (
         <section className="card pad stack">
           <h2>Аренда</h2>

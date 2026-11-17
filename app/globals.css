@@ -268,17 +268,3 @@ details > summary { cursor: pointer; }
 .row-handle { width: 32px; cursor: grab; touch-action: none; user-select: none; color: var(--text-2); font-size: 18px; text-align: center; }
 .row-handle:active { cursor: grabbing; }
 tr.row-dragging { opacity: .55; background: var(--surface-2, rgba(200, 169, 106, .08)); }
-
-/* Мини-приложение: шапка с переключателем «Салон / Прокат» */
-.tg-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.tg-switch { display: inline-grid; grid-auto-flow: column; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; }
-.tg-switch a { min-height: 38px; min-width: 84px; padding: 0 12px; display: flex; align-items: center; justify-content: center; border-radius: 9px; color: var(--text-2); font-size: 14px; }
-.tg-switch a[aria-current] { background: var(--gold); color: var(--bg); font-weight: 600; }
-.tg-tabs { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
-.tg-list { display: grid; gap: 8px; }
-.tg-item { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--text); background: var(--surface); }
-.tg-item.warn { border-color: var(--danger, #c0392b); }
-.tg-section-title { font-size: 15px; font-weight: 600; margin-top: 6px; }
-.tg-tabs a { flex-direction: column; gap: 0; padding: 4px 2px; font-size: 13px; line-height: 1.15; min-height: 50px; }
-.tg-tabs a .muted { font-size: 12px; }
-.tg-app .card h2 { font-size: 17px; font-weight: 600; }

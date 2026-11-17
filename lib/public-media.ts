@@ -41,14 +41,9 @@ const shrink = (img: ReturnType<typeof sharp>) => img.resize({ width: 1600, with
 /** Контейнер ISO BMFF (HEIC/HEIF/AVIF): со смещения 4 идёт «ftyp». */
 const isHeifContainer = (b: Buffer) => b.length > 12 && b.toString('latin1', 4, 8) === 'ftyp';
 
-/** Открывает фото для sharp: обычные форматы напрямую, HEIC с iPhone — через libheif. */
-export async function openImage(input: Buffer, fileName: string): Promise<ReturnType<typeof sharp>> {
+async function toWebp(input: Buffer, fileName: string): Promise<Buffer> {
   try {
-    const img = sharp(input, OPTS).rotate();
-    await img.clone().metadata().then((m) => { if (!m.width) throw new Error(); });
-    // Метаданные читаются и у HEIC, а пиксели — нет: проверяем декодирование на крошечной копии.
-    await img.clone().resize(8).raw().toBuffer();
-    return img;
+    return await shrink(sharp(input, OPTS).rotate());
   } catch {
     if (!isHeifContainer(input)) throw new Error(`Файл «${fileName}» не удалось открыть как фотографию`);
     // HEIC: поворот из метаданных libheif применяет сам при декодировании.
@@ -58,16 +53,8 @@ export async function openImage(input: Buffer, fileName: string): Promise<Return
     } catch {
       throw new Error(`Файл «${fileName}» не удалось открыть как фотографию (HEIC)`);
     }
-    return sharp(Buffer.from(img.data.buffer, img.data.byteOffset, img.data.byteLength), { raw: { width: img.width, height: img.height, channels: 4 } });
+    return shrink(sharp(Buffer.from(img.data.buffer, img.data.byteOffset, img.data.byteLength), { raw: { width: img.width, height: img.height, channels: 4 } }));
   }
-}
-
-const toWebp = async (input: Buffer, fileName: string) => shrink(await openImage(input, fileName));
-
-/** JPEG для документов и закрытого хранилища: длинная сторона до maxSide. */
-export async function toJpeg(input: Buffer, fileName: string, maxSide = 2000, quality = 85) {
-  const img = await openImage(input, fileName);
-  return img.resize({ width: maxSide, height: maxSide, fit: 'inside', withoutEnlargement: true }).flatten({ background: '#ffffff' }).jpeg({ quality }).toBuffer({ resolveWithObject: true });
 }
 
 /** Удаляет файл, если он лежит в публичном хранилище (фото из public/cars не трогаем). */

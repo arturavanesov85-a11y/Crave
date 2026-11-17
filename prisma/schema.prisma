@@ -17,7 +17,7 @@ model User {
   email        String    @unique
   fullName     String
   passwordHash String
-  role         String // owner | rental_head | rental_manager | handover | finance | sales_head | sales_staff | service_staff | tech_admin
+  role         String // owner | rental_head | rental_manager | handover | finance | sales_staff | service_staff | tech_admin
   perms        String? // JSON: индивидуальные права; пусто — права роли
   directions   String? // JSON: индивидуальные направления; пусто — направления роли
   isActive     Boolean   @default(true)
@@ -45,15 +45,11 @@ model Customer {
   drivingSince DateTime? // дата начала водительского стажа
   isForeign   Boolean             @default(false)
   notes       String?
-  telegramChatId String? // клиентский бот: чат, куда слать подтверждения и акты
   createdAt   DateTime            @default(now())
   updatedAt   DateTime?
   directions  CustomerDirection[]
-  documents   CustomerDocument[]
   orders      RentalOrder[]
   leads       Lead[]
-
-  @@index([telegramChatId])
 }
 
 model CustomerDirection {
@@ -281,26 +277,7 @@ model InspectionPhoto {
   inspection   Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
   path         String
   mime         String
-  caption      String? // фото повреждения: «Передний бампер — скол»
   createdAt    DateTime   @default(now())
-}
-
-// Фото документов клиента (паспорт, права). Закрытое хранилище, доступ — право «Документы клиентов».
-model CustomerDocument {
-  id         String   @id @default(cuid())
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  kind       String // passport | license | other
-  path       String
-  mime       String
-  uploadedBy String
-  createdAt  DateTime @default(now())
-}
-
-// Отправленные уведомления в Telegram: ключ не даёт прислать одно и то же дважды.
-model Notification {
-  key       String   @id // например «rem-pickup:<orderId>»
-  sentAt    DateTime @default(now())
 }
 
 model Damage {
@@ -451,6 +428,5 @@ model TelegramLink {
   decidedBy   String?
   decidedAt   DateTime?
   lastSeenAt  DateTime?
-  blockedAt   DateTime? // бот не может писать этому человеку (не разрешил или заблокировал)
   createdAt   DateTime  @default(now())
 }

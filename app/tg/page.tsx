@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import type { Prisma } from '@prisma/client';
 import { currentUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
@@ -7,37 +6,30 @@ import { fmtDate } from '@/lib/dates';
 import { rub } from '@/lib/money';
 import { can } from '@/lib/permissions';
 import { SUPPLY } from '@/lib/sales';
-import { TgTop } from '@/components/tg/TgTop';
+import { Logo } from '@/components/site/Logo';
 import { CarPhoto } from '@/components/site/CarCard';
 import { TgLogin } from '@/components/tg/TgLogin';
 
 export const dynamic = 'force-dynamic';
 
-const TABS = ['stock', 'transit', 'order', 'drafts'] as const;
-const TAB_LABEL: Record<string, string> = { ...SUPPLY, drafts: 'Черновики' };
+const TABS = ['stock', 'transit', 'order'] as const;
 
 export default async function TgCatalog({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await currentUser();
   if (!user) return <TgLogin />;
   if (!can(user, 'tg.app')) {
-    if (can(user, 'tg.rental')) redirect('/tg/rental');
     return <div className="card pad stack" style={{ margin: 16 }}><h1 style={{ fontSize: 20 }}>Нет доступа</h1><p className="text-2">У вашей учётной записи нет права «Мини-приложение Telegram».</p></div>;
   }
   const sp = await searchParams;
-  // Черновики — отдельной вкладкой и только руководителю автосалона и владельцу (право «Черновики»).
-  const drafts = can(user, 'tg.drafts');
-  const tabs = TABS.filter((t) => t !== 'drafts' || drafts);
-  const tab = (tabs as readonly string[]).includes(sp.tab ?? '') ? (sp.tab as (typeof TABS)[number]) : 'stock';
+  const tab = (TABS as readonly string[]).includes(sp.tab ?? '') ? (sp.tab as (typeof TABS)[number]) : 'stock';
   const q = (sp.q ?? '').trim();
   const make = sp.make ?? '';
 
-  const base: Prisma.SaleCarWhereInput = { status: { in: ['published', 'reserved'] } };
-  const draftWhere: Prisma.SaleCarWhereInput = { status: 'draft' };
-  const [counts, draftCount, all] = await Promise.all([
+  const base: Prisma.SaleCarWhereInput = { status: { in: ['draft', 'published', 'reserved'] } };
+  const [counts, all] = await Promise.all([
     db.saleCar.groupBy({ by: ['supply'], where: base, _count: true }),
-    drafts ? db.saleCar.count({ where: draftWhere }) : 0,
     // При поиске — по всем вкладкам сразу: менеджеру важнее найти машину, чем помнить, где она.
-    db.saleCar.findMany({ where: tab === 'drafts' ? draftWhere : q ? base : { ...base, supply: tab }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] }),
+    db.saleCar.findMany({ where: q ? base : { ...base, supply: tab }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] }),
   ]);
   const makes = [...new Set(all.map((c) => c.make))].sort();
   // Каждое слово запроса должно встретиться: «bmw x5», «x5 2023», «камри черный».
@@ -55,12 +47,15 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
 
   return (
     <div className="stack" style={{ gap: 14, padding: '12px 14px 32px' }}>
-      <TgTop user={user} active="sales" />
+      <header className="row" style={{ alignItems: 'center' }}>
+        <Logo variant="auto" height={40} />
+        <span className="muted small" style={{ textAlign: 'right' }}>{user.fullName}</span>
+      </header>
 
       <nav className="tg-tabs" aria-label="Наличие">
-        {tabs.map((t) => (
+        {TABS.map((t) => (
           <Link key={t} href={link({ tab: t, make: '' })} aria-current={t === tab ? 'page' : undefined}>
-            {TAB_LABEL[t]} <span className="muted">{t === 'drafts' ? draftCount : counts.find((c) => c.supply === t)?._count ?? 0}</span>
+            {SUPPLY[t]} <span className="muted">{counts.find((c) => c.supply === t)?._count ?? 0}</span>
           </Link>
         ))}
       </nav>
@@ -92,7 +87,7 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
                     {c.status === 'reserved' ? <span className="tag">бронь</span> : c.status === 'draft' ? <span className="tag">черновик</span> : null}
                   </div>
                   <span className="text-2 small">{c.year} · {c.mileageKm.toLocaleString('ru-RU')} км{c.color ? ` · ${c.color}` : ''}</span>
-                  {q && tab !== 'drafts' && c.supply !== tab ? <span className="muted small">{SUPPLY[c.supply]}</span> : null}
+                  {q && c.supply !== tab ? <span className="muted small">{SUPPLY[c.supply]}</span> : null}
                   {c.supply !== 'stock' ? <span className="gold small">{c.etaAt ? `Прибытие ${fmtDate(c.etaAt)}` : c.etaNote ? `Срок: ${c.etaNote}` : SUPPLY[c.supply]}</span> : null}
                   <span style={{ fontWeight: 600, fontSize: 16 }}>{c.price ? `${rub(c.price)}${c.priceVat ? ' с НДС' : ''}` : 'Цена по запросу'}</span>
                 </div>
@@ -101,7 +96,7 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
           })}
         </div>
       ) : (
-        <div className="empty">{q || make ? 'Ничего не найдено — измените поиск.' : `В разделе «${TAB_LABEL[tab]}» пока пусто. Машины добавляются в CRM → «Авто в продаже».`}</div>
+        <div className="empty">{q || make ? 'Ничего не найдено — измените поиск.' : `В разделе «${SUPPLY[tab]}» пока пусто. Машины добавляются в CRM → «Авто в продаже».`}</div>
       )}
     </div>
   );

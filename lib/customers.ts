@@ -24,6 +24,3 @@ export function experienceText(exp: number | null) {
   const m = Math.floor((exp - y) * 12);
   return `${y} г.${m ? ` ${m} мес.` : ''}`;
 }
-
-/** Виды документов клиента (фото в закрытом хранилище). */
-export const DOC_KIND: Record<string, string> = { passport: 'Паспорт', license: 'Водительское удостоверение', other: 'Другое' };
