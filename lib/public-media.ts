@@ -7,7 +7,7 @@ import sharp from 'sharp';
 
 export const PUBLIC_MEDIA_DIR = join(process.cwd(), 'storage', 'public');
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/avif']);
-const MAX = 25 * 1024 * 1024;
+const MAX = 50 * 1024 * 1024;
 
 /** Сохраняет фото в WebP до 1600 px по ширине. Возвращает публичные адреса /media/... */
 export async function savePublicPhotos(files: File[], folder: string): Promise<string[]> {
@@ -17,7 +17,7 @@ export async function savePublicPhotos(files: File[], folder: string): Promise<s
   for (const f of files) {
     if (!f || typeof f === 'string' || f.size === 0) continue;
     if (!ALLOWED.has(f.type)) throw new Error(`Файл «${f.name}»: допустимы только фотографии (JPEG, PNG, WebP, HEIC)`);
-    if (f.size > MAX) throw new Error(`Файл «${f.name}» больше 25 МБ`);
+    if (f.size > MAX) throw new Error(`Файл «${f.name}» больше 50 МБ`);
     const name = `${randomBytes(10).toString('hex')}.webp`;
     const buf = await sharp(Buffer.from(await f.arrayBuffer())).rotate().resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
     await writeFile(join(dir, name), buf);

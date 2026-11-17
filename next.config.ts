@@ -24,7 +24,7 @@ const config: NextConfig = {
   },
   // Фото с телефона весят 5–10 МБ: без этих лимитов форма с несколькими фото обрезается
   // (middleware по умолчанию пропускает только 10 МБ тела запроса — ошибка «Unexpected end of form»).
-  experimental: { serverActions: { bodySizeLimit: '100mb' }, middlewareClientMaxBodySize: '100mb' },
+  experimental: { serverActions: { bodySizeLimit: '300mb' }, middlewareClientMaxBodySize: '300mb' },
 };
 
 export default config;
