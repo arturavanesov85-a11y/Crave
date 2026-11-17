@@ -8,7 +8,8 @@ import { useRef, useState } from 'react';
 
 const MAX_SIDE = 2000;
 
-async function shrink(file: File): Promise<File> {
+/** Уменьшает фото в браузере (до 2000 px, JPEG 90%); если формат не открывается — возвращает как есть. */
+export async function shrink(file: File): Promise<File> {
   if (!file.type.startsWith('image/') || file.size < 600 * 1024) return file;
   try {
     const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' } as ImageBitmapOptions);

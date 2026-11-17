@@ -37,7 +37,7 @@ export function TgShell({ children }: { children: React.ReactNode }) {
     const back = tg()?.BackButton;
     if (!back) return;
     const onBack = () => router.back();
-    if (path !== '/tg') {
+    if (path !== '/tg' && path !== '/tg/rental') {
       back.show();
       back.onClick(onBack);
     } else back.hide();

@@ -2,10 +2,15 @@
 
 import { startTransition, useActionState, useEffect, useRef, useState } from 'react';
 import { inspectionAction } from '../../../../actions';
+import { shrink } from '@/components/crm/PhotoInput';
 
 const CHECKS: [string, string][] = [['docs', 'Документы на автомобиль'], ['keys', 'Ключи'], ['clean', 'Чистота'], ['kit', 'Комплектность'], ['tires', 'Шины и диски'], ['lights', 'Световые приборы']];
 
 type Shot = { file: File; url: string };
+type DamageItem = { text: string; shot: Shot | null };
+
+// Быстрый выбор зоны кузова для повреждения.
+const ZONES = ['Передний бампер', 'Капот', 'Лобовое стекло', 'Крыша', 'Задний бампер', 'Крышка багажника', 'Левый бок', 'Правый бок', 'Левое переднее колесо', 'Правое переднее колесо', 'Левое заднее колесо', 'Правое заднее колесо', 'Салон', 'Зеркала'];
 
 /** Камера в браузере: живое превью и съёмка подряд. Нужен https или localhost. */
 function CameraPanel({ onShot }: { onShot: (f: File) => void }) {
@@ -64,10 +69,11 @@ function CameraPanel({ onShot }: { onShot: (f: File) => void }) {
   );
 }
 
-export function InspectionForm({ id, kind, mileage, damageHints, locationHints, descriptionHints, noteHints }: { id: string; kind: 'pickup' | 'return'; mileage: number; damageHints: string[]; locationHints: string[]; descriptionHints: string[]; noteHints: string[] }) {
+export function InspectionForm({ id, kind, mileage, damageHints, locationHints, descriptionHints, noteHints, back }: { id: string; kind: 'pickup' | 'return'; mileage: number; damageHints: string[]; locationHints: string[]; descriptionHints: string[]; noteHints: string[]; back?: string }) {
   const [state, action, pending] = useActionState(inspectionAction, undefined);
   const [shots, setShots] = useState<Shot[]>([]);
-  const [damages, setDamages] = useState<string[]>([]);
+  const [damages, setDamages] = useState<DamageItem[]>([]);
+  const [busy, setBusy] = useState(0);
   const [loc, setLoc] = useState('');
   const [desc, setDesc] = useState('');
   const [notes, setNotes] = useState('');
@@ -75,14 +81,26 @@ export function InspectionForm({ id, kind, mileage, damageHints, locationHints, 
   shotsRef.current = shots;
   useEffect(() => () => shotsRef.current.forEach((s) => URL.revokeObjectURL(s.url)), []);
 
-  const addFiles = (files: FileList | File[] | null) => {
+  // Фото с телефона уменьшаются перед отправкой: осмотр из 20 снимков уходит за секунды, а не минуты.
+  const addFiles = async (files: FileList | File[] | null) => {
     if (!files) return;
-    setShots((prev) => [...prev, ...Array.from(files).map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+    const list = Array.from(files);
+    setBusy((n) => n + list.length);
+    for (const f of list) {
+      const file = await shrink(f);
+      setShots((prev) => [...prev, { file, url: URL.createObjectURL(file) }]);
+      setBusy((n) => n - 1);
+    }
   };
   const removeShot = (i: number) => setShots((prev) => prev.filter((s, idx) => (idx === i ? (URL.revokeObjectURL(s.url), false) : true)));
   const addDamage = (line: string) => {
     const l = line.trim();
-    if (l && !damages.includes(l)) setDamages([...damages, l]);
+    if (l && !damages.some((d) => d.text === l)) setDamages([...damages, { text: l, shot: null }]);
+  };
+  const damagePhoto = async (i: number, f: File | undefined) => {
+    if (!f) return;
+    const file = await shrink(f);
+    setDamages((prev) => prev.map((d, idx) => (idx === i ? { ...d, shot: { file, url: URL.createObjectURL(file) } } : d)));
   };
   const appendNote = (n: string) => setNotes((prev) => (prev.trim() ? `${prev.trim()}. ${n}` : n));
 
@@ -91,7 +109,8 @@ export function InspectionForm({ id, kind, mileage, damageHints, locationHints, 
     const fd = new FormData(e.currentTarget);
     fd.delete('photos');
     for (const s of shots) fd.append('photos', s.file);
-    fd.set('damages', damages.join('\n'));
+    fd.set('damages', damages.map((d) => d.text).join('\n'));
+    damages.forEach((d, i) => { if (d.shot) fd.append(`dphoto_${i}`, d.shot.file); });
     fd.set('notes', notes);
     startTransition(() => action(fd));
   }
@@ -100,6 +119,7 @@ export function InspectionForm({ id, kind, mileage, damageHints, locationHints, 
     <form onSubmit={submit} className="card pad stack">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="kind" value={kind} />
+      {back ? <input type="hidden" name="back" value={back} /> : null}
       <div className="grid-2">
         <label className="field">Пробег, км<input className="input" name="mileageKm" type="number" inputMode="numeric" min={0} defaultValue={mileage || ''} required /></label>
         <label className="field">Топливо, %<input className="input" name="fuelPercent" type="number" inputMode="numeric" min={0} max={100} defaultValue={kind === 'pickup' ? 100 : ''} required /></label>
@@ -114,17 +134,18 @@ export function InspectionForm({ id, kind, mileage, damageHints, locationHints, 
 
       <section className="stack" style={{ gap: 10 }}>
         <h2>Фотофиксация · {shots.length}</h2>
-        <CameraPanel onShot={(f) => addFiles([f])} />
+        <CameraPanel onShot={(f) => void addFiles([f])} />
         <div className="wrap-row">
           <label className="btn btn-quiet btn-sm" style={{ cursor: 'pointer' }}>
             Сфотографировать
-            <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
+            <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { void addFiles(e.target.files); e.target.value = ''; }} />
           </label>
           <label className="btn btn-quiet btn-sm" style={{ cursor: 'pointer' }}>
             Из галереи
-            <input type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} />
+            <input type="file" accept="image/*" multiple hidden onChange={(e) => { void addFiles(e.target.files); e.target.value = ''; }} />
           </label>
         </div>
+        {busy ? <p className="muted small">Подготовка фото: осталось {busy}…</p> : null}
         {shots.length ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: 8 }}>
             {shots.map((s, i) => (
@@ -141,8 +162,19 @@ export function InspectionForm({ id, kind, mileage, damageHints, locationHints, 
       <section className="stack" style={{ gap: 8 }}>
         <h2>Новые повреждения · {damages.length}</h2>
         {damages.length ? (
-          <ul className="list">{damages.map((d) => <li key={d}><span className="grow">{d}</span><button type="button" className="btn btn-quiet btn-sm" onClick={() => setDamages(damages.filter((x) => x !== d))}>Убрать</button></li>)}</ul>
+          <ul className="list">{damages.map((d, i) => (
+            <li key={d.text} style={{ gap: 8, alignItems: 'center' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {d.shot ? <img src={d.shot.url} alt="" style={{ width: 56, height: 42, objectFit: 'cover', borderRadius: 6 }} /> : null}
+              <span className="grow">{d.text}</span>
+              <label className="btn btn-quiet btn-sm" style={{ cursor: 'pointer' }}>{d.shot ? 'Другое фото' : 'Фото'}
+                <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { void damagePhoto(i, e.target.files?.[0]); e.target.value = ''; }} />
+              </label>
+              <button type="button" className="btn btn-quiet btn-sm" onClick={() => setDamages(damages.filter((x) => x !== d))}>Убрать</button>
+            </li>
+          ))}</ul>
         ) : null}
+        <div className="wrap-row" style={{ gap: 6 }}>{ZONES.map((z) => <button key={z} type="button" className={`chip${loc === z ? ' on' : ''}`} style={{ minHeight: 34, fontSize: 13 }} onClick={() => setLoc(z)}>{z}</button>)}</div>
         <div className="grid-2 stack-sm">
           <label className="field">Место<input className="input" list="dmg-locations" value={loc} onChange={(e) => setLoc(e.target.value)} placeholder="Передний бампер справа" /></label>
           <label className="field">Описание<input className="input" list="dmg-descriptions" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="скол 2 см" /></label>
@@ -174,7 +206,7 @@ export function InspectionForm({ id, kind, mileage, damageHints, locationHints, 
         </div>
       ) : null}
       {state?.error ? <p className="error-text" role="alert">{state.error}</p> : null}
-      <button className="btn btn-primary btn-block" type="submit" disabled={pending || !shots.length}>{pending ? 'Сохраняем…' : kind === 'pickup' ? 'Выдать автомобиль' : 'Принять автомобиль'}</button>
+      <button className="btn btn-primary btn-block" type="submit" disabled={pending || busy > 0 || !shots.length}>{pending ? 'Сохраняем…' : kind === 'pickup' ? 'Выдать автомобиль' : 'Принять автомобиль'}</button>
     </form>
   );
 }

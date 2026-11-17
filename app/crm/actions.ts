@@ -15,6 +15,8 @@ import { can, directionsOf, Forbidden, homePath, ROLE_CODES, type Perm, type Ses
 import { audit, cancelOrder, completeOrder, confirmOrder, createCrmOrder, event, extendHold, extendOrder, issueOrder, normalizePhone, replaceVehicle, returnOrder, takeOrder } from '@/lib/orders';
 import { saveImages } from '@/lib/files';
 import { allow } from '@/lib/ratelimit';
+import { decideWithhold } from '@/lib/rental-ops';
+import { fire, notifyClientConfirmed, notifyWithholdRequest, sendClientAct } from '@/lib/notify';
 
 export type ActionState = { error?: string; ok?: string } | undefined;
 
@@ -35,7 +37,7 @@ async function orderAccess(user: SessionUser, orderId: string) {
   throw new Forbidden();
 }
 
-async function run(fn: () => Promise<string | void>, paths: string[] = ['/crm']): Promise<ActionState> {
+async function run(fn: () => Promise<string | void>, paths: string[] = ['/crm', '/tg']): Promise<ActionState> {
   try {
     const ok = await fn();
     for (const p of paths) revalidatePath(p, 'layout');
@@ -100,7 +102,7 @@ export async function createOrderAction(_: ActionState, fd: FormData): Promise<A
     id = o.id;
   });
   if (res?.error) return res;
-  redirect(`/crm/orders/${id}`);
+  redirect(str(fd, 'back') === 'tg' ? `/tg/rental/order/${id}` : `/crm/orders/${id}`);
 }
 
 export async function orderStepAction(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -110,7 +112,10 @@ export async function orderStepAction(_: ActionState, fd: FormData): Promise<Act
     const step = str(fd, 'step');
     if (step === 'take') await takeOrder(user, id);
     else if (step === 'hold') await extendHold(user, id);
-    else if (step === 'confirm') await confirmOrder(user, id);
+    else if (step === 'confirm') {
+      await confirmOrder(user, id);
+      fire(() => notifyClientConfirmed(id));
+    }
     else throw new Error('Неизвестное действие');
   });
 }
@@ -242,7 +247,8 @@ export async function withholdRequestAction(_: ActionState, fd: FormData): Promi
     if (basis.length < 5) throw new Error('Опишите основание удержания');
     const m = await orderMoney(db, id);
     if (amount > m.depositBalance) throw new Error(`Сумма больше остатка залога (${m.depositBalance / 100} ₽)`);
-    await db.withholdRequest.create({ data: { orderId: id, amount, basis, requestedBy: user.id } });
+    const req = await db.withholdRequest.create({ data: { orderId: id, amount, basis, requestedBy: user.id } });
+    fire(() => notifyWithholdRequest(req.id));
     await event(db, id, 'withhold', `Запрошено удержание ${amount / 100} ₽: ${basis}. Ждёт подтверждения.`, user.id);
     return 'Запрос отправлен на подтверждение';
   });
@@ -251,21 +257,7 @@ export async function withholdRequestAction(_: ActionState, fd: FormData): Promi
 export async function withholdDecisionAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const user = await guard('deposit.withhold.approve');
-    const r = await db.withholdRequest.findUniqueOrThrow({ where: { id: str(fd, 'requestId') } });
-    if (r.status !== 'pending') throw new Error('Запрос уже рассмотрен');
-    const approve = str(fd, 'decision') === 'approve';
-    await withBookingLock(async (tx) => {
-      if (approve) {
-        const m = await orderMoney(tx, r.orderId);
-        if (r.amount > m.depositBalance) throw new Error('Остаток залога меньше суммы удержания');
-        const o = await tx.rentalOrder.findUniqueOrThrow({ where: { id: r.orderId } });
-        await post(tx, { kind: 'charge.extra', amount: r.amount, basis: `Удержание: ${r.basis}`, createdById: r.requestedBy, approvedById: user.id, orderId: r.orderId, vehicleId: o.vehicleId, customerId: o.customerId });
-        await post(tx, { kind: 'deposit.withhold', amount: r.amount, basis: r.basis, createdById: r.requestedBy, approvedById: user.id, orderId: r.orderId, vehicleId: o.vehicleId, customerId: o.customerId });
-      }
-      await tx.withholdRequest.update({ where: { id: r.id }, data: { status: approve ? 'approved' : 'rejected', decidedBy: user.id, decidedAt: new Date() } });
-      await event(tx, r.orderId, 'withhold', `Удержание ${r.amount / 100} ₽ ${approve ? 'подтверждено' : 'отклонено'}.`, user.id);
-      await audit(tx, user.id, approve ? 'deposit.withhold.approve' : 'deposit.withhold.reject', 'order', r.orderId, { amount: r.amount });
-    });
+    await decideWithhold(user, str(fd, 'requestId'), str(fd, 'decision') === 'approve');
   });
 }
 
@@ -303,18 +295,51 @@ function inspectionFrom(fd: FormData) {
 
 export async function inspectionAction(_: ActionState, fd: FormData): Promise<ActionState> {
   let id = '';
+  let kind: 'pickup' | 'return' = 'pickup';
   const res = await run(async () => {
     const user = await guard('rental.inspect');
     id = str(fd, 'id');
+    kind = str(fd, 'kind') === 'return' ? 'return' : 'pickup';
     await orderAccess(user, id);
     const data = inspectionFrom(fd);
-    const photos = await saveImages(fd.getAll('photos') as File[], `inspections/${id}`);
+    const photos: { path: string; mime: string; caption?: string | null }[] = await saveImages(fd.getAll('photos') as File[], `inspections/${id}`);
+    // Фото к повреждениям: поле dphoto_<номер строки повреждения>, подпись — само повреждение.
+    const lines = str(fd, 'damages').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    for (let i = 0; i < lines.length; i++) {
+      const saved = await saveImages(fd.getAll(`dphoto_${i}`) as File[], `inspections/${id}`);
+      photos.push(...saved.map((p) => ({ ...p, caption: lines[i].slice(0, 160) })));
+    }
     if (photos.length < 1) throw new Error('Добавьте хотя бы одну фотографию');
-    if (str(fd, 'kind') === 'pickup') await issueOrder(user, id, { ...data, photos });
+    if (kind === 'pickup') await issueOrder(user, id, { ...data, photos });
     else await returnOrder(user, id, { ...data, photos, chargeOvermileage: fd.get('chargeOver') === 'on', chargeLate: fd.get('chargeLate') === 'on' });
+    fire(() => sendClientAct(id, kind));
   });
   if (res?.error) return res;
-  redirect(`/crm/orders/${id}?tab=handover`);
+  const back = str(fd, 'back');
+  redirect(back.startsWith('/tg/') ? back : `/crm/orders/${id}?tab=handover`);
+}
+
+// ---------- Документы клиента ----------
+
+export async function customerDocAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard(['customers.write', 'rental.write']);
+    const customerId = str(fd, 'customerId');
+    if (str(fd, 'op') === 'remove') {
+      if (!can(user, 'customer.docs.view')) throw new Forbidden();
+      const d = await db.customerDocument.findFirstOrThrow({ where: { id: str(fd, 'docId'), customerId } });
+      await db.customerDocument.delete({ where: { id: d.id } });
+      await audit(db, user.id, 'customer.doc.remove', 'customer', customerId, { kind: d.kind });
+      return 'Удалено';
+    }
+    const kind = ['passport', 'license', 'other'].includes(str(fd, 'kind')) ? str(fd, 'kind') : 'other';
+    await db.customer.findUniqueOrThrow({ where: { id: customerId } });
+    const saved = await saveImages(fd.getAll('files') as File[], `customers/${customerId}`);
+    if (!saved.length) throw new Error('Выберите фото документа');
+    await db.customerDocument.createMany({ data: saved.map((f) => ({ customerId, kind, path: f.path, mime: f.mime, uploadedBy: user.id })) });
+    await audit(db, user.id, 'customer.doc.add', 'customer', customerId, { kind, count: saved.length });
+    return `Загружено: ${saved.length}`;
+  }, ['/crm', '/tg']);
 }
 
 // ---------- Автопарк ----------
