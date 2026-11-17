@@ -15,7 +15,9 @@ type Update = {
   };
 };
 
-const ASK = JSON.stringify({ keyboard: [[{ text: 'Поделиться номером', request_contact: true }]], resize_keyboard: true, one_time_keyboard: true });
+// Постоянная кнопка «Старт» под полем ввода: одно нажатие — клиент делится номером и подключается.
+// Она остаётся на экране, пока клиент не подключится (кнопку «Старт» самого Telegram видят только новые собеседники).
+const ASK = JSON.stringify({ keyboard: [[{ text: 'Старт', request_contact: true }]], resize_keyboard: true, is_persistent: true, input_field_placeholder: 'Нажмите «Старт» ниже' });
 const REMOVE = JSON.stringify({ remove_keyboard: true });
 
 export async function POST(req: Request) {
@@ -29,7 +31,7 @@ export async function POST(req: Request) {
   if (msg.contact) {
     // Принимаем только собственный номер отправителя, а не пересланный чужой контакт.
     if (msg.contact.user_id !== msg.from?.id) {
-      await sendMessage('client', chat, 'Пожалуйста, отправьте свой номер кнопкой «Поделиться номером».', undefined, { reply_markup: ASK });
+      await sendMessage('client', chat, 'Пожалуйста, нажмите кнопку «Старт» внизу — она отправит ваш номер.', undefined, { reply_markup: ASK });
       return NextResponse.json({ ok: true });
     }
     const phone = normalizePhone(msg.contact.phone_number);
@@ -51,7 +53,7 @@ export async function POST(req: Request) {
     if (linked && !msg.text.startsWith('/start')) {
       await sendMessage('client', chat, 'Этот бот присылает подтверждения, напоминания и акты. По вопросам брони позвоните нам — ответим сразу.');
     } else {
-      await sendMessage('client', chat, 'Здравствуйте! Это бот проката CRAVE. Чтобы получать подтверждения брони, напоминания и акты приёма-передачи, поделитесь номером телефона, указанным при бронировании.', undefined, { reply_markup: ASK });
+      await sendMessage('client', chat, 'Здравствуйте! Это бот проката CRAVE. Чтобы получать подтверждения брони, напоминания и акты приёма-передачи, нажмите кнопку «Старт» внизу экрана — бот найдёт вашу бронь по номеру телефона.', undefined, { reply_markup: ASK });
     }
   }
   return NextResponse.json({ ok: true });
