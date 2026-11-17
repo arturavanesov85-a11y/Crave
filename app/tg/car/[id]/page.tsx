@@ -8,6 +8,8 @@ import { can } from '@/lib/permissions';
 import { SUPPLY } from '@/lib/sales';
 import { BODY_LABEL } from '@/lib/site';
 import { Gallery } from '@/components/site/Gallery';
+import { TgKpButton } from '@/components/tg/TgKpButton';
+import { equipmentGroups } from '@/lib/sales';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,8 +41,9 @@ export default async function TgCar({ params }: { params: Promise<{ id: string }
       <div className="stack" style={{ gap: 4 }}>
         <span className="eyebrow">{c.status === 'reserved' ? 'Забронирован' : c.status === 'draft' ? `Черновик · ${SUPPLY[c.supply]}` : SUPPLY[c.supply]}</span>
         <h1 style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.2 }}>{c.title}, {c.year}</h1>
-        <div style={{ fontSize: 24, fontWeight: 600 }}>{c.price ? rub(c.price) : 'Цена по запросу'}</div>
+        <div style={{ fontSize: 24, fontWeight: 600 }}>{c.price ? `${rub(c.price)}${c.priceVat ? ' с НДС' : ''}` : 'Цена по запросу'}</div>
       </div>
+      <TgKpButton carId={c.id} price={c.price} vat={c.priceVat} />
       <dl className="tg-specs">
         {specs.filter(([, v]) => v).map(([k, v]) => (
           <div key={k}><dt className="muted small">{k}</dt><dd>{v}</dd></div>
@@ -50,7 +53,12 @@ export default async function TgCar({ params }: { params: Promise<{ id: string }
       {equipment.length ? (
         <section className="stack" style={{ gap: 6 }}>
           <h2 style={{ fontSize: 17, fontWeight: 600 }}>Комплектация</h2>
-          <ul className="text-2" style={{ margin: 0, paddingLeft: 20 }}>{equipment.map((e) => <li key={e}>{e}</li>)}</ul>
+          {equipmentGroups(equipment).map((g, i) => (
+            <div key={i} className="stack" style={{ gap: 2 }}>
+              {g.title ? <span className="eyebrow" style={{ marginTop: 6 }}>{g.title}</span> : null}
+              <ul className="text-2" style={{ margin: 0, paddingLeft: 20 }}>{g.items.map((e) => <li key={e}>{e}</li>)}</ul>
+            </div>
+          ))}
         </section>
       ) : null}
       {c.note ? <div className="notice"><span className="muted small">Заметка для сотрудников</span><div style={{ whiteSpace: 'pre-line' }}>{c.note}</div></div> : null}

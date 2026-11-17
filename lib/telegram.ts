@@ -40,3 +40,32 @@ export function signInitDataForTest(fields: Record<string, string>, botToken: st
 }
 
 export const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || '';
+
+/**
+ * Отправка файла сотруднику в чат с ботом. Возвращает 'ok', 'need_start' (бот ещё не может
+ * писать этому человеку — нужно разрешение в приложении или «Старт» в боте) или текст ошибки.
+ * С сервера Telegram иногда отвечает не с первого раза — до трёх попыток.
+ */
+export async function sendDocument(chatId: string, file: Buffer, fileName: string, caption?: string): Promise<'ok' | 'need_start' | string> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return 'Бот не подключён';
+  let last = 'Telegram не ответил';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const fd = new FormData();
+    fd.set('chat_id', chatId);
+    if (caption) fd.set('caption', caption.slice(0, 1000));
+    fd.set('document', new Blob([new Uint8Array(file)], { type: 'application/pdf' }), fileName);
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: 'POST', body: fd, signal: AbortSignal.timeout(45_000) });
+      const body = (await res.json().catch(() => null)) as { ok?: boolean; error_code?: number; description?: string } | null;
+      if (body?.ok) return 'ok';
+      if (body?.error_code === 403 || /chat not found/i.test(body?.description ?? '')) return 'need_start';
+      last = body?.description ?? `Telegram ответил ${res.status}`;
+      if (res.status < 500 && res.status !== 429) return last;
+    } catch (e) {
+      last = e instanceof Error && e.name === 'TimeoutError' ? 'Telegram не ответил вовремя' : 'Нет связи с Telegram';
+    }
+    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+  }
+  return last;
+}

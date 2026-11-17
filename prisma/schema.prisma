@@ -354,6 +354,7 @@ model SaleCar {
   year         Int
   mileageKm    Int       @default(0)
   price        Int? // копейки; пусто — «цена по запросу»
+  priceVat     Boolean   @default(false) // цена с НДС — так и пишется в объявлении
   bodyType     String    @default("sedan")
   powerHp      Int?
   engine       String? // «бензин, 3.0 л»
@@ -370,6 +371,30 @@ model SaleCar {
   createdById  String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime?
+  deals        SaleDeal[]
+}
+
+// Бронь или продажа машины из «Авто в продаже»: клиент, цена, кто оформил.
+// Активная сделка у машины одна; при «Вернуть в продажу» она отменяется, но остаётся в истории.
+model SaleDeal {
+  id            String    @id @default(cuid())
+  saleCarId     String
+  saleCar       SaleCar   @relation(fields: [saleCarId], references: [id], onDelete: Cascade)
+  kind          String // reserved — бронь | sold — продажа
+  status        String    @default("active") // active | done — бронь перешла в продажу | cancelled
+  customerId    String?
+  clientName    String
+  clientPhone   String // только цифры, 7XXXXXXXXXX
+  price         Int // копейки
+  priceVat      Boolean   @default(false)
+  buyer         String? // JSON: паспортные данные покупателя для ДКП
+  note          String?
+  managerId     String // кто поставил бронь или продажу
+  createdAt     DateTime  @default(now())
+  closedAt      DateTime?
+  closedById    String?
+
+  @@index([saleCarId, status])
 }
 
 // Редактируемые тексты сайтов (ключ — например, auto.heroTitle).

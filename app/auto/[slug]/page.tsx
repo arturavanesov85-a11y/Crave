@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Gallery } from '@/components/site/Gallery';
 import { LeadForm } from '@/components/site/LeadForm';
 import { salePrice } from '@/components/site/SaleCarCard';
-import { publicSaleCar } from '@/lib/sales';
+import { equipmentGroups, publicSaleCar } from '@/lib/sales';
 import { BODY_LABEL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<s
 
 export async function generateMetadata({ params }: Props) {
   const c = await publicSaleCar((await params).slug);
-  return c ? { title: `${c.title}, ${c.year}`, description: `${c.title} ${c.year} г., пробег ${c.mileageKm.toLocaleString('ru-RU')} км. ${salePrice(c.price)}.` } : {};
+  return c ? { title: `${c.title}, ${c.year}`, description: `${c.title} ${c.year} г., пробег ${c.mileageKm.toLocaleString('ru-RU')} км. ${salePrice(c.price, c.priceVat)}.` } : {};
 }
 
 export default async function SaleCarPage({ params, searchParams }: Props) {
@@ -39,7 +39,7 @@ export default async function SaleCarPage({ params, searchParams }: Props) {
           <div className="stack" style={{ gap: 8 }}>
             <span className="eyebrow">{BODY_LABEL[c.bodyType] ?? c.bodyType} · {c.year}{c.status === 'reserved' ? ' · забронирован' : ''}</span>
             <h1 className="page-title">{c.title}</h1>
-            <div style={{ fontSize: 28, fontWeight: 600 }}>{salePrice(c.price)}</div>
+            <div style={{ fontSize: 28, fontWeight: 600 }}>{salePrice(c.price, c.priceVat)}</div>
           </div>
           <section className="stack" style={{ gap: 12 }}>
             <h2 className="section-title" style={{ fontSize: 28 }}>Характеристики</h2>
@@ -51,12 +51,17 @@ export default async function SaleCarPage({ params, searchParams }: Props) {
           {c.equipment.length ? (
             <section className="stack" style={{ gap: 8 }}>
               <h2 className="section-title" style={{ fontSize: 28 }}>Комплектация</h2>
-              <ul className="text-2" style={{ margin: 0, paddingLeft: 20, columns: '2 260px' }}>{c.equipment.map((e) => <li key={e}>{e}</li>)}</ul>
+              {equipmentGroups(c.equipment).map((g, i) => (
+                <div key={i} className="stack" style={{ gap: 4 }}>
+                  {g.title ? <h3 style={{ fontSize: 15, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', marginTop: 8 }}>{g.title}</h3> : null}
+                  <ul className="text-2" style={{ margin: 0, paddingLeft: 20, columns: '2 260px' }}>{g.items.map((e) => <li key={e}>{e}</li>)}</ul>
+                </div>
+              ))}
             </section>
           ) : null}
         </div>
         <aside className="aside" id="request" style={{ position: 'sticky', top: 90 }}>
-          <LeadForm direction="sales" kind="purchase" back={`/auto/${c.slug}`} anchor="request" title="Узнать о покупке" intro={`${c.title}, ${c.year} · ${salePrice(c.price)}`} carValue={`${c.title}, ${c.year} (${c.slug})`} messageLabel="Вопрос или удобное время для звонка" submitLabel="Отправить заявку" sent={sp.sent === 'purchase'} />
+          <LeadForm direction="sales" kind="purchase" back={`/auto/${c.slug}`} anchor="request" title="Узнать о покупке" intro={`${c.title}, ${c.year} · ${salePrice(c.price, c.priceVat)}`} carValue={`${c.title}, ${c.year} (${c.slug})`} messageLabel="Вопрос или удобное время для звонка" submitLabel="Отправить заявку" sent={sp.sent === 'purchase'} />
         </aside>
       </div>
     </div>

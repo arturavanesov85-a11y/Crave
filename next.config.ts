@@ -16,8 +16,8 @@ const config: NextConfig = {
   // На сервере новая версия собирается в отдельную папку (NEXT_DIST_DIR=.next-new) и подменяет .next
   // только при перезапуске — пока идёт сборка, работающий сайт не теряет свои файлы.
   distDir: process.env.NEXT_DIST_DIR || '.next',
-  // Декодер HEIC (libheif на WebAssembly) грузится из node_modules как есть, без упаковки в бандл.
-  serverExternalPackages: ['heic-decode', 'libheif-js'],
+  // Эти пакеты читают свои файлы с диска (декодер HEIC, шрифты PDF, Excel) — грузятся из node_modules как есть.
+  serverExternalPackages: ['heic-decode', 'libheif-js', 'pdfkit', 'exceljs'],
   async redirects() {
     return [
       { source: '/prajs', destination: '/ceny', permanent: true },

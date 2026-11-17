@@ -9,6 +9,8 @@ import { ActionForm } from '@/components/crm/ActionForm';
 import { PhotoSorter } from '@/components/crm/PhotoSorter';
 import { saleCarDeleteAction, saleCarPhotoAction } from '../../../sales-actions';
 import { SaleCarForm } from '../SaleCarForm';
+import { DealSection } from '../DealSection';
+import { KpForm } from '../KpForm';
 
 export const metadata = { title: 'Автомобиль в продаже' };
 
@@ -29,6 +31,10 @@ export default async function EditSaleCar({ params }: { params: Promise<{ id: st
         <div className="grow" />
         {onSite ? <a className="btn btn-quiet btn-sm" href={`${siteBase}/${car.slug}`} target="_blank" rel="noreferrer">Открыть на сайте</a> : <span className="muted small">не показывается на сайте</span>}
       </div>
+
+      <DealSection car={car} />
+
+      <KpForm carId={car.id} price={car.price} vat={car.priceVat} />
 
       <section className="card pad stack">
         <h2>Фото · {photos.length}</h2>

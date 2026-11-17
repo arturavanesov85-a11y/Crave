@@ -8,7 +8,8 @@ import { db, json } from '@/lib/db';
 import { parseRub } from '@/lib/money';
 import { parseLocal } from '@/lib/dates';
 import { can, Forbidden } from '@/lib/permissions';
-import { audit } from '@/lib/orders';
+import { audit, normalizePhone } from '@/lib/orders';
+import { BUYER_FIELDS, type Buyer } from '@/lib/sales';
 import { removePublicFolder, removePublicPhoto, savePublicPhotos } from '@/lib/public-media';
 import { AUTO_FIELDS } from '@/lib/site-settings';
 
@@ -63,8 +64,12 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
     const priceRaw = str(fd, 'price');
     const price = priceRaw ? parseRub(priceRaw) : null;
     if (priceRaw && !price) throw new Error('Цена — только цифры, в рублях');
-    const status = str(fd, 'status') || 'draft';
-    if (!SALE_STATUSES.includes(status)) throw new Error('Неизвестный статус');
+    // Бронь и продажу ставят только через «Сделку» (с клиентом и ценой) — форма меняет лишь черновик ↔ в продаже.
+    const asked = str(fd, 'status') || 'draft';
+    if (!SALE_STATUSES.includes(asked)) throw new Error('Неизвестный статус');
+    const locked = existing && ['reserved', 'sold'].includes(existing.status);
+    if (!locked && ['reserved', 'sold'].includes(asked)) throw new Error('Бронь и продажа оформляются кнопками «Забронировать» и «Продано» — с клиентом и ценой');
+    const status = locked ? existing.status : asked;
     const powerRaw = str(fd, 'powerHp') || (src ? String(src.powerHp) : '');
     const eqText = str(fd, 'equipment');
     const equipment = eqText ? eqText.split('\n').map((l) => l.trim()).filter(Boolean) : src ? json<string[]>(src.equipment, []) : [];
@@ -76,6 +81,7 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
       year,
       mileageKm,
       price,
+      priceVat: fd.get('priceVat') === 'on',
       status,
       bodyType: str(fd, 'bodyType') || src?.bodyType || 'sedan',
       powerHp: powerRaw ? Number(powerRaw) || null : null,
@@ -88,7 +94,6 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
       equipment: equipment.length ? JSON.stringify(equipment) : null,
       vin: str(fd, 'vin') || null,
       note: str(fd, 'note') || null,
-      sortOrder: Number(str(fd, 'sortOrder') || 0) || 0,
       supply: ['stock', 'transit', 'order'].includes(str(fd, 'supply')) ? str(fd, 'supply') : 'stock',
       etaAt: str(fd, 'etaAt') ? parseLocal(str(fd, 'etaAt') + 'T12:00') : null,
       etaNote: str(fd, 'etaNote').slice(0, 80) || null,
@@ -105,7 +110,10 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
     const base = slugify(`${make} ${model} ${year}`);
     let slug = base;
     for (let i = 2; await db.saleCar.findUnique({ where: { slug } }); i++) slug = `${base}-${i}`;
-    const car = await db.saleCar.create({ data: { ...data, slug, createdById: user.id, photos: src?.photos ?? null } });
+    // Новая машина — первой в списке; дальше порядок меняют перетаскиванием.
+    const top = await db.saleCar.aggregate({ _min: { sortOrder: true } });
+    const sortOrder = (top._min.sortOrder ?? 1) - 1;
+    const car = await db.saleCar.create({ data: { ...data, slug, sortOrder, createdById: user.id, photos: src?.photos ?? null } });
     const uploaded = await savePublicPhotos(fd.getAll('photos') as File[], `sales/${car.id}`);
     if (uploaded.length) await db.saleCar.update({ where: { id: car.id }, data: { photos: JSON.stringify([...json<string[]>(car.photos, []), ...uploaded]) } });
     await audit(db, user.id, 'salecar.create', 'salecar', car.id, { title: car.title, copyFrom: src?.slug });
@@ -145,6 +153,94 @@ export async function saleCarPhotoAction(_: ActionState, fd: FormData): Promise<
     else if (op === 'right' && i < photos.length - 1) [photos[i + 1], photos[i]] = [photos[i], photos[i + 1]];
     await db.saleCar.update({ where: { id: car.id }, data: { photos: JSON.stringify(photos), updatedAt: new Date() } });
     return op === 'remove' ? 'Фото удалено' : 'Порядок обновлён';
+  });
+}
+
+/** Порядок машин в каталоге (сайт и мини-приложение): список id сверху вниз. */
+export async function saleCarOrderAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard();
+    let order: unknown;
+    try { order = JSON.parse(str(fd, 'order')); } catch { throw new Error('Не удалось прочитать порядок'); }
+    const ids = (await db.saleCar.findMany({ select: { id: true } })).map((c) => c.id);
+    if (!Array.isArray(order) || order.length !== ids.length || !ids.every((id) => order.includes(id))) throw new Error('Список изменился — обновите страницу');
+    await db.$transaction((order as string[]).map((id, i) => db.saleCar.update({ where: { id }, data: { sortOrder: i } })));
+    await audit(db, user.id, 'salecar.order', 'salecar', 'all', { count: ids.length });
+    return 'Порядок сохранён';
+  });
+}
+
+function dealFields(fd: FormData) {
+  const clientName = str(fd, 'clientName').slice(0, 120);
+  if (!clientName) throw new Error('Укажите имя клиента');
+  const clientPhone = normalizePhone(str(fd, 'clientPhone'));
+  if (!clientPhone) throw new Error('Телефон клиента — 10 цифр, например +7 999 123-45-67');
+  const price = parseRub(str(fd, 'price'));
+  if (!price) throw new Error('Укажите стоимость, ₽');
+  return { clientName, clientPhone, price, priceVat: fd.get('priceVat') === 'on', note: str(fd, 'note').slice(0, 500) || null };
+}
+
+/** Клиент сделки попадает в общую базу клиентов (направление «Продажи»). */
+async function saleCustomer(name: string, phone: string) {
+  const c = await db.customer.upsert({ where: { phone }, update: {}, create: { fullName: name, phone } });
+  await db.customerDirection.upsert({ where: { customerId_direction: { customerId: c.id, direction: 'sales' } }, update: {}, create: { customerId: c.id, direction: 'sales' } });
+  return c.id;
+}
+
+/**
+ * Бронь и продажа. op: reserve | sell — новая сделка (имя, телефон, цена обязательны);
+ * update — поправить клиента и цену; buyer — паспортные данные для ДКП; release — вернуть в продажу.
+ */
+export async function saleDealAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard();
+    const car = await db.saleCar.findUniqueOrThrow({ where: { id: str(fd, 'id') } });
+    const active = await db.saleDeal.findFirst({ where: { saleCarId: car.id, status: 'active' }, orderBy: { createdAt: 'desc' } });
+    const op = str(fd, 'op');
+
+    if (op === 'reserve' || op === 'sell') {
+      const kind = op === 'reserve' ? 'reserved' : 'sold';
+      if (active?.kind === 'sold') throw new Error('Машина уже продана');
+      if (active && kind === 'reserved') throw new Error('Машина уже забронирована');
+      const f = dealFields(fd);
+      const customerId = await saleCustomer(f.clientName, f.clientPhone);
+      await db.$transaction(async (tx) => {
+        if (active) await tx.saleDeal.update({ where: { id: active.id }, data: { status: 'done', closedAt: new Date(), closedById: user.id } });
+        await tx.saleDeal.create({ data: { ...f, kind, saleCarId: car.id, customerId, managerId: user.id, buyer: active?.buyer ?? null } });
+        await tx.saleCar.update({ where: { id: car.id }, data: { status: kind, updatedAt: new Date() } });
+        await audit(tx, user.id, `salecar.${kind}`, 'salecar', car.id, { client: f.clientName, price: f.price });
+      });
+      return kind === 'reserved' ? 'Забронировано' : 'Отмечено как продано';
+    }
+
+    if (op === 'release') {
+      // Машины, забронированные до появления сделок, могут быть без записи — тогда просто меняем статус.
+      await db.$transaction(async (tx) => {
+        if (active) await tx.saleDeal.update({ where: { id: active.id }, data: { status: 'cancelled', closedAt: new Date(), closedById: user.id } });
+        await tx.saleCar.update({ where: { id: car.id }, data: { status: 'published', updatedAt: new Date() } });
+        await audit(tx, user.id, 'salecar.release', 'salecar', car.id, { was: active?.kind ?? car.status });
+      });
+      return 'Машина снова в продаже';
+    }
+    if (!active) throw new Error('Активной брони или продажи нет — обновите страницу');
+    if (op === 'update') {
+      const f = dealFields(fd);
+      const customerId = await saleCustomer(f.clientName, f.clientPhone);
+      await db.saleDeal.update({ where: { id: active.id }, data: { ...f, customerId } });
+      await audit(db, user.id, 'salecar.deal.update', 'salecar', car.id, { client: f.clientName, price: f.price });
+      return 'Сохранено';
+    }
+    if (op === 'buyer') {
+      const buyer: Buyer = {};
+      for (const [k] of BUYER_FIELDS) {
+        const v = str(fd, k).slice(0, 300);
+        if (v) buyer[k] = v;
+      }
+      await db.saleDeal.update({ where: { id: active.id }, data: { buyer: Object.keys(buyer).length ? JSON.stringify(buyer) : null } });
+      await audit(db, user.id, 'salecar.deal.buyer', 'salecar', car.id);
+      return 'Данные покупателя сохранены';
+    }
+    throw new Error('Неизвестное действие');
   });
 }
 

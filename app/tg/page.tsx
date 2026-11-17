@@ -28,10 +28,17 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
   const base: Prisma.SaleCarWhereInput = { status: { in: ['draft', 'published', 'reserved'] } };
   const [counts, all] = await Promise.all([
     db.saleCar.groupBy({ by: ['supply'], where: base, _count: true }),
-    db.saleCar.findMany({ where: { ...base, supply: tab }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] }),
+    // При поиске — по всем вкладкам сразу: менеджеру важнее найти машину, чем помнить, где она.
+    db.saleCar.findMany({ where: q ? base : { ...base, supply: tab }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] }),
   ]);
   const makes = [...new Set(all.map((c) => c.make))].sort();
-  const cars = all.filter((c) => (!make || c.make === make) && (!q || `${c.title} ${c.year} ${c.color ?? ''}`.toLowerCase().includes(q.toLowerCase())));
+  // Каждое слово запроса должно встретиться: «bmw x5», «x5 2023», «камри черный».
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const cars = all.filter((c) => {
+    if (make && c.make !== make) return false;
+    const hay = `${c.make} ${c.model} ${c.title} ${c.year} ${c.color ?? ''} ${c.colorInterior ?? ''}`.toLowerCase();
+    return words.every((w) => hay.includes(w));
+  });
   const link = (patch: Record<string, string>) => {
     const p = new URLSearchParams({ tab, ...(q ? { q } : {}), ...(make ? { make } : {}) });
     for (const [k, v] of Object.entries(patch)) (v ? p.set(k, v) : p.delete(k));
@@ -56,7 +63,7 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
       <form className="wrap-row" style={{ gap: 8 }}>
         <input type="hidden" name="tab" value={tab} />
         {make ? <input type="hidden" name="make" value={make} /> : null}
-        <input className="input grow" name="q" defaultValue={q} placeholder="Марка, модель, год, цвет" style={{ minHeight: 44, flex: '1 1 200px' }} />
+        <input className="input grow" name="q" defaultValue={q} placeholder="Поиск: марка, модель, год, цвет" style={{ minHeight: 44, flex: '1 1 200px' }} />
         <button className="btn btn-quiet btn-sm" type="submit" style={{ minHeight: 44 }}>Найти</button>
       </form>
 
@@ -80,8 +87,9 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
                     {c.status === 'reserved' ? <span className="tag">бронь</span> : c.status === 'draft' ? <span className="tag">черновик</span> : null}
                   </div>
                   <span className="text-2 small">{c.year} · {c.mileageKm.toLocaleString('ru-RU')} км{c.color ? ` · ${c.color}` : ''}</span>
+                  {q && c.supply !== tab ? <span className="muted small">{SUPPLY[c.supply]}</span> : null}
                   {c.supply !== 'stock' ? <span className="gold small">{c.etaAt ? `Прибытие ${fmtDate(c.etaAt)}` : c.etaNote ? `Срок: ${c.etaNote}` : SUPPLY[c.supply]}</span> : null}
-                  <span style={{ fontWeight: 600, fontSize: 16 }}>{c.price ? rub(c.price) : 'Цена по запросу'}</span>
+                  <span style={{ fontWeight: 600, fontSize: 16 }}>{c.price ? `${rub(c.price)}${c.priceVat ? ' с НДС' : ''}` : 'Цена по запросу'}</span>
                 </div>
               </Link>
             );

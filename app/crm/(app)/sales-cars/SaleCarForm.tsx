@@ -30,7 +30,7 @@ async function hints() {
   };
 }
 
-type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; sortOrder: number; supply: string; etaAt: Date | null; etaNote: string | null } | null;
+type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; priceVat: boolean; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; supply: string; etaAt: Date | null; etaNote: string | null } | null;
 
 export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id: string; title: string }[] }) {
   const v = (x: string | number | null | undefined) => (x == null ? '' : String(x));
@@ -53,12 +53,23 @@ export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id
       <section className="card pad stack">
         <h2>Объявление</h2>
         <div className="grid-2 stack-sm">
-          <label className="field">Статус
-            <select className="input" name="status" defaultValue={car?.status ?? 'draft'}>
-              {Object.entries(SALE_STATUS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-            </select>
-          </label>
-          <label className="field">Цена, ₽ (пусто — «цена по запросу»)<input className="input" name="price" inputMode="decimal" defaultValue={car?.price ? String(car.price / 100) : ''} /></label>
+          {car && ['reserved', 'sold'].includes(car.status) ? (
+            <label className="field">Статус
+              <input className="input" value={SALE_STATUS[car.status]} readOnly disabled />
+              <span className="muted small">Меняется в блоке «Сделка» выше</span>
+            </label>
+          ) : (
+            <label className="field">Статус
+              <select className="input" name="status" defaultValue={car?.status ?? 'draft'}>
+                <option value="draft">{SALE_STATUS.draft}</option>
+                <option value="published">{SALE_STATUS.published}</option>
+              </select>
+            </label>
+          )}
+          <div className="stack" style={{ gap: 4 }}>
+            <label className="field">Цена, ₽ (пусто — «цена по запросу»)<input className="input" name="price" inputMode="decimal" defaultValue={car?.price ? String(car.price / 100) : ''} /></label>
+            <label className="check"><input type="checkbox" name="priceVat" defaultChecked={!!car?.priceVat} />Цена с НДС — на сайте будет «Цена с НДС» перед суммой</label>
+          </div>
         </div>
         <div className="grid-2 stack-sm">
           <label className="field">Наличие
@@ -98,7 +109,7 @@ export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id
         <datalist id="dl-color">{h.color.map((x) => <option key={x} value={x} />)}</datalist>
         <datalist id="dl-interior">{h.interior.map((x) => <option key={x} value={x} />)}</datalist>
         <label className="field">Описание<textarea className="input" name="description" rows={4} defaultValue={v(car?.description)} /></label>
-        <label className="field">Комплектация — по одному пункту в строке<textarea className="input" name="equipment" rows={5} defaultValue={car ? json<string[]>(car.equipment, []).join('\n') : ''} /></label>
+        <label className="field">Комплектация — по одному пункту в строке. Строка с двоеточием на конце — заголовок группы («Салон и комфорт:»)<textarea className="input" name="equipment" rows={8} defaultValue={car ? json<string[]>(car.equipment, []).join('\n') : ''} /></label>
       </section>
 
       <section className="card pad stack">
@@ -110,7 +121,6 @@ export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id
         <h2>Внутреннее</h2>
         <div className="grid-2 stack-sm">
           <label className="field">VIN (на сайте не показывается)<input className="input" name="vin" defaultValue={v(car?.vin)} /></label>
-          <label className="field">Порядок в каталоге (меньше — выше)<input className="input" name="sortOrder" type="number" defaultValue={v(car?.sortOrder ?? 0)} /></label>
         </div>
         <label className="field">Заметка для сотрудников<textarea className="input" name="note" rows={2} defaultValue={v(car?.note)} /></label>
       </section>

@@ -6,8 +6,9 @@ import type { toPublic } from '@/lib/sales';
 
 type Car = ReturnType<typeof toPublic>;
 
-export function salePrice(price: number | null) {
-  return price ? rub(price) : 'Цена по запросу';
+/** Цена объявления; если в CRM отмечено «с НДС» — так и пишем перед суммой. */
+export function salePrice(price: number | null, vat = false) {
+  return price ? `${vat ? 'Цена с НДС ' : ''}${rub(price)}` : 'Цена по запросу';
 }
 
 export function SaleCarCard({ c }: { c: Car }) {
@@ -23,7 +24,7 @@ export function SaleCarCard({ c }: { c: Car }) {
         <span className="text-2" style={{ fontSize: 14 }}>
           {c.mileageKm.toLocaleString('ru-RU')} км{c.powerHp ? ` · ${c.powerHp} л.с.` : ''}{c.engine ? ` · ${c.engine}` : ''}
         </span>
-        <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--line)', fontSize: 20, fontWeight: 600 }}>{salePrice(c.price)}</div>
+        <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--line)', fontSize: 20, fontWeight: 600 }}>{salePrice(c.price, c.priceVat)}</div>
         <Link className="btn btn-primary btn-sm" href={`/auto/${c.slug}`} style={{ minHeight: 46 }}>Подробнее</Link>
       </div>
     </article>
