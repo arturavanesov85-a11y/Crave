@@ -22,7 +22,9 @@ const config: NextConfig = {
       ...legacyCars.map(([from, slug]) => ({ source: from, destination: `/avtopark/${slug}`, permanent: true })),
     ];
   },
-  experimental: { serverActions: { bodySizeLimit: '100mb' } },
+  // Фото с телефона весят 5–10 МБ: без этих лимитов форма с несколькими фото обрезается
+  // (middleware по умолчанию пропускает только 10 МБ тела запроса — ошибка «Unexpected end of form»).
+  experimental: { serverActions: { bodySizeLimit: '100mb' }, middlewareClientMaxBodySize: '100mb' },
 };
 
 export default config;
