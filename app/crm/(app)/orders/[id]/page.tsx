@@ -333,10 +333,11 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
                             {insp.photos.map((p) => (
                               <a key={p.id} href={`/api/files/${p.id}`} target="_blank" rel="noreferrer">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={`/api/files/${p.id}`} alt="Фото осмотра" style={{ width: 96, height: 72, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--line)' }} />
+                                <img src={`/api/files/${p.id}`} alt={p.caption ?? 'Фото осмотра'} title={p.caption ?? undefined} style={{ width: 96, height: 72, objectFit: 'cover', borderRadius: 6, border: `1px solid ${p.caption ? 'var(--gold)' : 'var(--line)'}` }} />
                               </a>
                             ))}
                           </div>
+                          <a className="btn btn-quiet btn-sm" style={{ alignSelf: 'flex-start' }} href={`/api/orders/${o.id}/act?kind=${k}`} target="_blank" rel="noreferrer">{k === 'pickup' ? 'Акт выдачи (PDF)' : 'Акт возврата (PDF)'}</a>
                         </>
                       ) : (
                         <span className="muted">{k === 'pickup' ? `Не проведена · план ${fmtDateTime(o.pickupAt)}` : `План ${fmtDateTime(o.returnAt)}`}</span>

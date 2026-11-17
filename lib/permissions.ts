@@ -30,7 +30,9 @@ export const PERMS = [
   'export.run',
   'sales.catalog', // автомобили в продаже и тексты сайта автосалона
   'service.site', // услуги и тексты сайта сервиса
-  'tg.app', // мини-приложение Telegram: каталог машин
+  'tg.app', // мини-приложение Telegram: раздел «Салон» (каталог машин, КП)
+  'tg.rental', // мини-приложение Telegram: раздел «Прокат» (дела, выдачи, возвраты, брони)
+  'tg.drafts', // мини-приложение: вкладка «Черновики» в «Салоне»
   'users.manage', // сотрудники и их доступы (только владелец)
   'settings.manage',
 ] as const;
@@ -38,8 +40,8 @@ export type Perm = (typeof PERMS)[number];
 
 /** Подписи прав для экрана «Сотрудники», по разделам. */
 export const PERM_GROUPS: { title: string; perms: [Perm, string][] }[] = [
-  { title: 'Прокат', perms: [['rental.read', 'Все заказы, календарь, «Сегодня»'], ['rental.read.assigned', 'Только назначенные выдачи и возвраты'], ['rental.write', 'Создание и изменение заказов, брони'], ['rental.inspect', 'Осмотры при выдаче и возврате'], ['leads.rental', 'Заявки проката']] },
-  { title: 'Продажи и сервис', perms: [['leads.sales', 'Рабочая зона «Продажи»'], ['leads.service', 'Рабочая зона «Сервис»'], ['sales.catalog', 'Авто в продаже и сайт автосалона'], ['service.site', 'Сайт сервиса: услуги и тексты'], ['tg.app', 'Мини-приложение Telegram']] },
+  { title: 'Прокат', perms: [['rental.read', 'Все заказы, календарь, «Сегодня»'], ['rental.read.assigned', 'Только назначенные выдачи и возвраты'], ['rental.write', 'Создание и изменение заказов, брони'], ['rental.inspect', 'Осмотры при выдаче и возврате'], ['leads.rental', 'Заявки проката'], ['tg.rental', 'Приложение Telegram: «Прокат»']] },
+  { title: 'Продажи и сервис', perms: [['leads.sales', 'Рабочая зона «Продажи»'], ['leads.service', 'Рабочая зона «Сервис»'], ['sales.catalog', 'Авто в продаже и сайт автосалона'], ['service.site', 'Сайт сервиса: услуги и тексты'], ['tg.app', 'Приложение Telegram: «Салон»'], ['tg.drafts', 'Приложение Telegram: вкладка «Черновики»']] },
   { title: 'Клиенты', perms: [['customers.read', 'Просмотр клиентов'], ['customers.write', 'Редактирование клиентов'], ['customer.docs.view', 'Документы клиентов']] },
   { title: 'Автопарк', perms: [['fleet.read', 'Просмотр автомобилей'], ['fleet.write', 'Изменение автомобилей, блокировки, ТО'], ['vehicle.sensitive', 'VIN и госномер'], ['tariff.edit', 'Изменение тарифов']] },
   { title: 'Деньги', perms: [['payment.accept', 'Приём оплат и залогов'], ['refund.issue', 'Возвраты денег и залогов'], ['discount.apply', 'Скидки'], ['deposit.withhold.request', 'Запрос удержания из залога'], ['deposit.withhold.approve', 'Подтверждение удержаний'], ['ledger.reverse', 'Возврат (отмена) операций']] },
@@ -52,23 +54,24 @@ const ROLES: Record<string, { label: string; directions: Direction[]; perms: Per
   rental_head: {
     label: 'Руководитель проката',
     directions: ['rental'],
-    perms: ['rental.read', 'rental.write', 'rental.inspect', 'leads.rental', 'customers.read', 'customers.write', 'customer.docs.view', 'fleet.read', 'fleet.write', 'vehicle.sensitive', 'tariff.edit', 'discount.apply', 'payment.accept', 'refund.issue', 'deposit.withhold.request', 'deposit.withhold.approve', 'ledger.reverse', 'finance.view', 'export.run'],
+    perms: ['rental.read', 'rental.write', 'rental.inspect', 'leads.rental', 'customers.read', 'customers.write', 'customer.docs.view', 'fleet.read', 'fleet.write', 'vehicle.sensitive', 'tariff.edit', 'discount.apply', 'payment.accept', 'refund.issue', 'deposit.withhold.request', 'deposit.withhold.approve', 'ledger.reverse', 'finance.view', 'export.run', 'tg.rental'],
   },
   rental_manager: {
     label: 'Менеджер проката',
     directions: ['rental'],
-    perms: ['rental.read', 'rental.write', 'rental.inspect', 'leads.rental', 'customers.read', 'customers.write', 'fleet.read', 'payment.accept', 'deposit.withhold.request'],
+    perms: ['rental.read', 'rental.write', 'rental.inspect', 'leads.rental', 'customers.read', 'customers.write', 'fleet.read', 'payment.accept', 'deposit.withhold.request', 'tg.rental'],
   },
   handover: {
     label: 'Сотрудник выдачи',
     directions: ['rental'],
-    perms: ['rental.read.assigned', 'rental.inspect', 'fleet.read', 'deposit.withhold.request'],
+    perms: ['rental.read.assigned', 'rental.inspect', 'fleet.read', 'deposit.withhold.request', 'tg.rental'],
   },
   finance: {
     label: 'Финансист',
     directions: ['rental', 'sales', 'service'],
     perms: ['rental.read', 'customers.read', 'fleet.read', 'payment.accept', 'refund.issue', 'ledger.reverse', 'finance.view', 'finance.expenses', 'finance.result', 'export.run'],
   },
+  sales_head: { label: 'Руководитель автосалона', directions: ['sales'], perms: ['leads.sales', 'customers.read', 'customers.write', 'customer.docs.view', 'sales.catalog', 'tg.app', 'tg.drafts'] },
   sales_staff: { label: 'Сотрудник автосалона', directions: ['sales'], perms: ['leads.sales', 'customers.read', 'customers.write', 'sales.catalog', 'tg.app'] },
   service_staff: { label: 'Сотрудник сервиса', directions: ['service'], perms: ['leads.service', 'customers.read', 'customers.write', 'service.site'] },
   tech_admin: { label: 'Технический администратор', directions: [], perms: ['settings.manage', 'fleet.read'] },
