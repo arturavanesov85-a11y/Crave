@@ -10,7 +10,6 @@ const NAV = [
 export default function RentalLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="proto-note"><div className="wrap">Тестовая версия. Тарифы перенесены с текущего сайта и ожидают подтверждения.</div></div>
       <SiteHeader active="rental" home="/" nav={NAV} />
       <main>{children}</main>
       <SiteFooter active="rental" name="Прокат премиальных автомобилей" links={[{ href: '/usloviya-arendy', label: 'Условия аренды' }, { href: '/politika-konfidencialnosti', label: 'Политика конфиденциальности' }]} />

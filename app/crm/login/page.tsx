@@ -16,7 +16,6 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 4px' }}><Logo variant="crm" height={78} /></div>
         <LoginForm next={next} />
-        <p className="muted small">Тестовые учётные записи — в README.md, раздел «CRM».</p>
       </div>
     </div>
   );

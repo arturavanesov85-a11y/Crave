@@ -89,8 +89,6 @@ dialog::backdrop { background: rgba(0, 0, 0, .65); }
 details > summary { cursor: pointer; }
 
 /* ---------- Публичные сайты ---------- */
-.proto-note { background: var(--gold-12); border-bottom: 1px solid var(--line); font-size: 13px; color: var(--text-2); }
-.proto-note .wrap { padding-top: 6px; padding-bottom: 6px; }
 .site-header { border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; background: rgba(10, 10, 9, .96); backdrop-filter: blur(6px); }
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; min-height: 72px; padding-top: 8px; padding-bottom: 8px; }
 .logo { font-family: var(--serif); font-size: 30px; font-weight: 600; letter-spacing: .18em; color: var(--text); }

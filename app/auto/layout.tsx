@@ -11,7 +11,6 @@ const NAV = [
 export default function AutoLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="proto-note"><div className="wrap">Тестовая версия. Название «CRAVE Auto» — рабочее.</div></div>
       <SiteHeader active="sales" home="/auto" nav={NAV} />
       <main>{children}</main>
       <SiteFooter active="sales" name="Продажа автомобилей" links={[{ href: '/politika-konfidencialnosti', label: 'Политика конфиденциальности' }]} />

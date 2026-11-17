@@ -5,7 +5,6 @@ export const metadata = { title: { absolute: 'CRAVE Service — автосерв
 export default function ServiceLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="proto-note"><div className="wrap">Тестовая версия. Название «CRAVE Service» — рабочее.</div></div>
       <SiteHeader active="service" home="/service" nav={[{ href: '/service', label: 'Главная' }, { href: '/service#services', label: 'Услуги' }, { href: '/service#contact', label: 'Записаться' }]} />
       <main>{children}</main>
       <SiteFooter active="service" name="Автосервис" links={[{ href: '/politika-konfidencialnosti', label: 'Политика конфиденциальности' }]} />
