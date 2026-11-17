@@ -11,6 +11,8 @@ export const CONTACTS = {
   phone: '+7 910 421 02 22',
   phoneHref: 'tel:+79104210222',
   telegram: 'https://t.me/crave_rental',
+  // Бот для клиентов проката: подтверждение брони, напоминание о выдаче и акты с фото.
+  clientBot: 'https://t.me/Crave_rentalbot',
   address: 'Москва, Ярославское ш., 2В, стр. 4',
   hours: 'Круглосуточно, без выходных',
 };

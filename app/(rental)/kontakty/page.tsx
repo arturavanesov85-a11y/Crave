@@ -13,6 +13,7 @@ export default async function Contacts({ searchParams }: { searchParams: Promise
           <div><b style={{ fontSize: 18 }}>{CONTACTS.address}</b><span className="muted small">адрес выдачи</span></div>
           <div><b style={{ fontSize: 18 }}><a href={CONTACTS.phoneHref} style={{ color: 'var(--text)' }}>{CONTACTS.phone}</a></b><span className="muted small">{CONTACTS.hours}</span></div>
           <div><b style={{ fontSize: 18 }}><a href={CONTACTS.telegram}>Telegram</a></b><span className="muted small">@crave_rental</span></div>
+          <div><b style={{ fontSize: 18 }}><a href={CONTACTS.clientBot} target="_blank" rel="noreferrer">Бот для клиентов</a></b><span className="muted small">подтверждения брони, напоминания и акты с фото</span></div>
         </div>
       </div>
       <div className="aside" id="help">

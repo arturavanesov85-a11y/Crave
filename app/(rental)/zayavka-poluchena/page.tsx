@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CONTACTS } from '@/lib/site';
 
 export const metadata = { title: 'Заявка получена', robots: { index: false } };
 
@@ -11,8 +12,13 @@ export default async function Sent({ searchParams }: { searchParams: Promise<Rec
       <p className="text-2" style={{ fontSize: 17 }}>
         Менеджер проверит даты и условия и свяжется с вами. До подтверждения автомобиль закреплён за вами временно — бронь станет окончательной после звонка менеджера.
       </p>
+      <div className="card pad stack" style={{ gap: 10 }}>
+        <strong style={{ fontSize: 18 }}>Подтверждение и акт — в Telegram</strong>
+        <p className="text-2">Подключите нашего бота: пришлём подтверждение брони, напомним о выдаче и отправим акт приёма-передачи с фотографиями автомобиля. Нажмите «Старт» и поделитесь номером, который указали в заявке.</p>
+        <a className="btn btn-primary" href={CONTACTS.clientBot} target="_blank" rel="noreferrer" style={{ alignSelf: 'flex-start' }}>Открыть бота в Telegram</a>
+      </div>
       <div className="wrap-row">
-        <Link className="btn btn-primary" href="/avtopark">Вернуться в автопарк</Link>
+        <Link className="btn" href="/avtopark">Вернуться в автопарк</Link>
         <Link className="btn" href="/usloviya-arendy">Условия аренды</Link>
       </div>
     </div>
