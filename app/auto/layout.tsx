@@ -1,4 +1,6 @@
 import { SiteFooter, SiteHeader } from '@/components/site/SiteHeader';
+import { YandexMetrika } from '@/components/site/YandexMetrika';
+import { METRIKA } from '@/lib/metrika';
 
 export const metadata = { title: { absolute: 'CRAVE Auto — покупка автомобиля', template: '%s — CRAVE Auto' }, description: 'CRAVE Auto: автомобили в наличии и поставка под заказ.' };
 
@@ -14,6 +16,7 @@ export default function AutoLayout({ children }: { children: React.ReactNode }) 
       <SiteHeader active="sales" home="/auto" nav={NAV} />
       <main>{children}</main>
       <SiteFooter active="sales" name="Продажа автомобилей" links={[{ href: '/politika-konfidencialnosti', label: 'Политика конфиденциальности' }]} />
+      <YandexMetrika id={METRIKA.auto} />
     </>
   );
 }
