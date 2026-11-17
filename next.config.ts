@@ -22,7 +22,7 @@ const config: NextConfig = {
       ...legacyCars.map(([from, slug]) => ({ source: from, destination: `/avtopark/${slug}`, permanent: true })),
     ];
   },
-  experimental: { serverActions: { bodySizeLimit: '25mb' } },
+  experimental: { serverActions: { bodySizeLimit: '100mb' } },
 };
 
 export default config;

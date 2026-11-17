@@ -5,7 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { createSession, currentUser, destroySession, hashPassword, toSessionUser, verifyPassword } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { db, json } from '@/lib/db';
+import { removePublicPhoto, savePublicPhotos } from '@/lib/public-media';
 import { parseLocal } from '@/lib/dates';
 import { BookingConflict, occupy, withBookingLock } from '@/lib/booking';
 import { orderMoney, post, reverse } from '@/lib/ledger';
@@ -371,6 +372,46 @@ export async function vehicleUpdateAction(_: ActionState, fd: FormData): Promise
     await audit(db, user.id, 'vehicle.update', 'vehicle', id);
     return 'Сохранено';
   });
+}
+
+/** Фото машины проката для сайта: загрузка новых (добавляются в конец). */
+export async function vehiclePhotosUploadAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard('fleet.write');
+    const v = await db.vehicle.findUniqueOrThrow({ where: { id: str(fd, 'vehicleId') } });
+    const files = (fd.getAll('photos') as File[]).filter((f) => f && typeof f !== 'string' && f.size > 0);
+    if (!files.length) throw new Error('Выберите фото');
+    const uploaded = await savePublicPhotos(files, `rental/${v.id}`);
+    const photos = [...json<string[]>(v.photos, []), ...uploaded];
+    await db.vehicle.update({ where: { id: v.id }, data: { photos: JSON.stringify(photos) } });
+    await audit(db, user.id, 'vehicle.photos.add', 'vehicle', v.id, { count: uploaded.length });
+    return `Добавлено фото: ${uploaded.length}`;
+  }, ['/crm', '/']);
+}
+
+/** Фото машины проката: обложка, порядок, удаление. Файл удаляется, только если он больше нигде не используется. */
+export async function vehiclePhotoAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard('fleet.write');
+    const v = await db.vehicle.findUniqueOrThrow({ where: { id: str(fd, 'vehicleId') } });
+    const photos = json<string[]>(v.photos, []);
+    const url = str(fd, 'photo');
+    const i = photos.indexOf(url);
+    if (i < 0) throw new Error('Фото не найдено — обновите страницу');
+    const op = str(fd, 'op');
+    if (op === 'remove') photos.splice(i, 1);
+    else if (op === 'cover') photos.unshift(...photos.splice(i, 1));
+    else if (op === 'left' && i > 0) [photos[i - 1], photos[i]] = [photos[i], photos[i - 1]];
+    else if (op === 'right' && i < photos.length - 1) [photos[i + 1], photos[i]] = [photos[i], photos[i + 1]];
+    await db.vehicle.update({ where: { id: v.id }, data: { photos: JSON.stringify(photos) } });
+    if (op === 'remove') {
+      const used = (await db.vehicle.count({ where: { id: { not: v.id }, photos: { contains: url } } })) + (await db.saleCar.count({ where: { photos: { contains: url } } }));
+      if (!used) await removePublicPhoto(url);
+      await audit(db, user.id, 'vehicle.photos.remove', 'vehicle', v.id, { url });
+      return 'Фото удалено';
+    }
+    return op === 'cover' ? 'Обложка изменена' : 'Порядок обновлён';
+  }, ['/crm', '/']);
 }
 
 const TRANSLIT: Record<string, string> = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' };
