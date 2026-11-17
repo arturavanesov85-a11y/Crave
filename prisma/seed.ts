@@ -59,6 +59,8 @@ async function ensureTriggers() {
 
 // Дополнения, которые применяются и к уже заполненной базе (не трогают данные пользователей).
 async function ensureExtras() {
+  // Убираем служебную пометку первых тарифов (раньше показывалась в CRM).
+  await db.tariffPlan.updateMany({ where: { note: 'Перенесено с crave-rental.ru, требует проверки владельцем' }, data: { note: null } });
   // Заявки автосалона и сервиса до появления этапов: переносим статус в этап.
   for (const [status, sales, service] of [['in_progress', 'contacted', 'contacted'], ['converted', 'deal', 'done'], ['rejected', 'lost', 'lost'], ['spam', 'lost', 'lost']] as const) {
     await db.lead.updateMany({ where: { direction: 'sales', stage: 'new', status }, data: { stage: sales } });
@@ -124,7 +126,6 @@ async function main() {
         includedKmPerDay: tariffs.includedKmPerDay,
         overmileagePerKm: t.overmileagePerKm * 100,
         driverPerHour: t.driverPerHour ? t.driverPerHour * 100 : null,
-        note: 'Перенесено с crave-rental.ru, требует проверки владельцем',
       },
     });
   }

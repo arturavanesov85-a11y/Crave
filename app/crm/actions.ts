@@ -491,26 +491,48 @@ export async function damageRepairedAction(_: ActionState, fd: FormData): Promis
   });
 }
 
+type TariffTerms = { deposit: number; includedKmPerDay: number; overmileagePerKm: number; driverPerHour: number | null };
+
+/** Новая версия тарифа: меняются только переданные части, остальное берётся из действующего тарифа. */
+async function newTariffVersion(userId: string, vehicleId: string, patch: { tiers?: { minDays: number; dailyRate: number }[]; terms?: TariffTerms }, note: string | null) {
+  await db.$transaction(async (tx) => {
+    const cur = await tx.tariffPlan.findFirst({ where: { vehicleId, status: 'active' } });
+    const tiers = patch.tiers ?? (cur ? JSON.parse(cur.tiers) : null);
+    const terms = patch.terms ?? (cur ? { deposit: cur.deposit, includedKmPerDay: cur.includedKmPerDay, overmileagePerKm: cur.overmileagePerKm, driverPerHour: cur.driverPerHour } : null);
+    if (!tiers) throw new Error('Сначала задайте ставки тарифа');
+    if (!terms) throw new Error('Сначала задайте залог и пробег');
+    await tx.tariffPlan.updateMany({ where: { vehicleId, status: 'active' }, data: { status: 'archived' } });
+    await tx.tariffPlan.create({ data: { vehicleId, tiers: JSON.stringify(tiers), ...terms, createdById: userId, note } });
+    await audit(tx, userId, patch.tiers ? 'tariff.change' : 'tariff.terms', 'vehicle', vehicleId, { tiers: patch.tiers, terms: patch.terms });
+  });
+}
+
+function tariffTerms(fd: FormData): TariffTerms {
+  const km = Number(str(fd, 'km'));
+  if (!Number.isInteger(km) || km <= 0) throw new Error('Включённый пробег — целое число км');
+  return { deposit: money(fd, 'deposit'), includedKmPerDay: km, overmileagePerKm: money(fd, 'overmileage'), driverPerHour: str(fd, 'driver') ? parseRub(fd.get('driver')) : null };
+}
+
+/** Ставки по срокам аренды. Если в форме есть поля условий (машина без тарифа) — сохраняются и они. */
 export async function tariffAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const user = await guard('tariff.edit');
-    const vehicleId = str(fd, 'vehicleId');
     const tiers = [1, 3, 7, 14, 30].map((minDays) => {
       const rate = parseRub(fd.get(`t${minDays}`));
       if (!rate) throw new Error(`Укажите ставку для ступени от ${minDays} сут.`);
       return { minDays, dailyRate: rate };
     });
-    const deposit = money(fd, 'deposit');
-    const over = money(fd, 'overmileage');
-    const km = Number(str(fd, 'km'));
-    if (!Number.isInteger(km) || km <= 0) throw new Error('Включённый пробег — целое число км');
-    const driver = str(fd, 'driver') ? parseRub(fd.get('driver')) : null;
-    await db.$transaction(async (tx) => {
-      await tx.tariffPlan.updateMany({ where: { vehicleId, status: 'active' }, data: { status: 'archived' } });
-      await tx.tariffPlan.create({ data: { vehicleId, tiers: JSON.stringify(tiers), deposit, includedKmPerDay: km, overmileagePerKm: over, driverPerHour: driver, createdById: user.id, note: str(fd, 'note') || null } });
-      await audit(tx, user.id, 'tariff.change', 'vehicle', vehicleId, { tiers, deposit });
-    });
-    return 'Новый тариф действует для новых расчётов. Существующие заказы не пересчитаны.';
+    await newTariffVersion(user.id, str(fd, 'vehicleId'), { tiers, terms: fd.has('deposit') ? tariffTerms(fd) : undefined }, str(fd, 'note') || null);
+    return 'Новые ставки действуют для новых расчётов. Существующие заказы не пересчитаны.';
+  });
+}
+
+/** Залог, включённый пробег, перепробег и водитель — без изменения ставок. */
+export async function tariffTermsAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard('tariff.edit');
+    await newTariffVersion(user.id, str(fd, 'vehicleId'), { terms: tariffTerms(fd) }, str(fd, 'note') || null);
+    return 'Условия сохранены для новых расчётов. Существующие заказы не пересчитаны.';
   });
 }
 
