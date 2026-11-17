@@ -6,6 +6,7 @@ import { saleCarSaveAction } from '../../sales-actions';
 import { db } from '@/lib/db';
 import { CAR_MODELS, COLOR_HINTS, DRIVE_HINTS, INTERIOR_HINTS, ENGINE_HINTS, TRANSMISSION_HINTS } from '@/lib/car-models';
 import { MakeModelFields } from './MakeModelFields';
+import { PhotoInput } from '@/components/crm/PhotoInput';
 
 /** Подсказки: справочник + всё, что уже вводилось в объявлениях и автопарке. */
 async function hints() {
@@ -102,9 +103,7 @@ export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id
 
       <section className="card pad stack">
         <h2>Фото</h2>
-        <label className="field">Добавить фото (можно несколько; сохраняются в WebP до 1600 px)
-          <input className="input" style={{ paddingTop: 10 }} type="file" name="photos" accept="image/*" multiple />
-        </label>
+        <PhotoInput label="Добавить фото — можно несколько сразу. Перед отправкой фото уменьшаются прямо на телефоне или компьютере." />
       </section>
 
       <section className="card pad stack">

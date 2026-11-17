@@ -9,6 +9,11 @@ export const PUBLIC_MEDIA_DIR = join(process.cwd(), 'storage', 'public');
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/avif']);
 const MAX = 50 * 1024 * 1024;
 
+// Сервер небольшой (4 ГБ): обрабатываем по одному фото, без кэша и в один поток,
+// чтобы пачка больших снимков не съела всю память.
+sharp.cache(false);
+sharp.concurrency(1);
+
 /** Сохраняет фото в WebP до 1600 px по ширине. Возвращает публичные адреса /media/... */
 export async function savePublicPhotos(files: File[], folder: string): Promise<string[]> {
   const dir = join(PUBLIC_MEDIA_DIR, folder);
@@ -19,7 +24,7 @@ export async function savePublicPhotos(files: File[], folder: string): Promise<s
     if (!ALLOWED.has(f.type)) throw new Error(`Файл «${f.name}»: допустимы только фотографии (JPEG, PNG, WebP, HEIC)`);
     if (f.size > MAX) throw new Error(`Файл «${f.name}» больше 50 МБ`);
     const name = `${randomBytes(10).toString('hex')}.webp`;
-    const buf = await sharp(Buffer.from(await f.arrayBuffer())).rotate().resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
+    const buf = await sharp(Buffer.from(await f.arrayBuffer()), { limitInputPixels: 120_000_000, sequentialRead: true }).rotate().resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
     await writeFile(join(dir, name), buf);
     out.push(`/media/${folder}/${name}`);
   }

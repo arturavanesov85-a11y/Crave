@@ -11,6 +11,7 @@ import { STATUS_LABEL } from '@/lib/orders';
 import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
 import { damageRepairedAction, expenseAction, releaseBlockAction, tariffAction, tariffTermsAction, vehicleBlockAction, vehicleConditionAction, vehicleDocAction, vehiclePhotoAction, vehiclePhotosUploadAction, vehicleUpdateAction } from '../../../actions';
 import { PhotoSorter } from '@/components/crm/PhotoSorter';
+import { PhotoInput } from '@/components/crm/PhotoInput';
 import { COND_LABEL } from '@/lib/site';
 
 export const metadata = { title: 'Автомобиль' };
@@ -83,9 +84,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
             ) : <p className="muted">Фото нет — на сайте будет заглушка.</p>}
             {fw ? (
               <ActionForm action={vehiclePhotosUploadAction} hidden={{ vehicleId: id }} submit="Загрузить" className="wrap-row" style={{ gap: 8, alignItems: 'flex-end' }}>
-                <label className="field grow">Добавить фото — можно несколько сразу. Первое фото — обложка в каталоге; лучше ракурс спереди три четверти.
-                  <input className="input" style={{ paddingTop: 10 }} type="file" name="photos" accept="image/*" multiple required />
-                </label>
+                <div className="grow"><PhotoInput required label="Добавить фото — можно несколько сразу. Первое фото — обложка в каталоге; лучше ракурс спереди три четверти." /></div>
               </ActionForm>
             ) : null}
           </section>
