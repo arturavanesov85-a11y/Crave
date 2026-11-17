@@ -13,6 +13,9 @@ const legacyCars = [
 ];
 
 const config: NextConfig = {
+  // На сервере новая версия собирается в отдельную папку (NEXT_DIST_DIR=.next-new) и подменяет .next
+  // только при перезапуске — пока идёт сборка, работающий сайт не теряет свои файлы.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   async redirects() {
     return [
       { source: '/prajs', destination: '/ceny', permanent: true },
