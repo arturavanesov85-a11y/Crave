@@ -4,6 +4,10 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join, normalize } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import sharp from 'sharp';
+// Декодер HEIC/HEIF (фото с iPhone): сборка sharp не умеет HEVC, поэтому такие
+// файлы раскрываем отдельно (libheif на WebAssembly) и отдаём sharp готовые пиксели.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const decodeHeic: (o: { buffer: Uint8Array }) => Promise<{ width: number; height: number; data: Uint8ClampedArray }> = require('heic-decode');
 
 export const PUBLIC_MEDIA_DIR = join(process.cwd(), 'storage', 'public');
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/avif']);
@@ -21,14 +25,36 @@ export async function savePublicPhotos(files: File[], folder: string): Promise<s
   const out: string[] = [];
   for (const f of files) {
     if (!f || typeof f === 'string' || f.size === 0) continue;
-    if (!ALLOWED.has(f.type)) throw new Error(`Файл «${f.name}»: допустимы только фотографии (JPEG, PNG, WebP, HEIC)`);
+    if (!ALLOWED.has(f.type) && !/\.(heic|heif)$/i.test(f.name)) throw new Error(`Файл «${f.name}»: допустимы только фотографии (JPEG, PNG, WebP, HEIC)`);
     if (f.size > MAX) throw new Error(`Файл «${f.name}» больше 50 МБ`);
     const name = `${randomBytes(10).toString('hex')}.webp`;
-    const buf = await sharp(Buffer.from(await f.arrayBuffer()), { limitInputPixels: 120_000_000, sequentialRead: true }).rotate().resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
+    const buf = await toWebp(Buffer.from(await f.arrayBuffer()), f.name);
     await writeFile(join(dir, name), buf);
     out.push(`/media/${folder}/${name}`);
   }
   return out;
+}
+
+const OPTS = { limitInputPixels: 120_000_000, sequentialRead: true };
+const shrink = (img: ReturnType<typeof sharp>) => img.resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
+
+/** Контейнер ISO BMFF (HEIC/HEIF/AVIF): со смещения 4 идёт «ftyp». */
+const isHeifContainer = (b: Buffer) => b.length > 12 && b.toString('latin1', 4, 8) === 'ftyp';
+
+async function toWebp(input: Buffer, fileName: string): Promise<Buffer> {
+  try {
+    return await shrink(sharp(input, OPTS).rotate());
+  } catch {
+    if (!isHeifContainer(input)) throw new Error(`Файл «${fileName}» не удалось открыть как фотографию`);
+    // HEIC: поворот из метаданных libheif применяет сам при декодировании.
+    let img: { width: number; height: number; data: Uint8ClampedArray };
+    try {
+      img = await decodeHeic({ buffer: input });
+    } catch {
+      throw new Error(`Файл «${fileName}» не удалось открыть как фотографию (HEIC)`);
+    }
+    return shrink(sharp(Buffer.from(img.data.buffer, img.data.byteOffset, img.data.byteLength), { raw: { width: img.width, height: img.height, channels: 4 } }));
+  }
 }
 
 /** Удаляет файл, если он лежит в публичном хранилище (фото из public/cars не трогаем). */
