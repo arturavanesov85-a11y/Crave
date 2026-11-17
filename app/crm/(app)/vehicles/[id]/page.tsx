@@ -10,6 +10,7 @@ import { tierLabel, type Tier } from '@/lib/pricing';
 import { STATUS_LABEL } from '@/lib/orders';
 import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
 import { damageRepairedAction, expenseAction, releaseBlockAction, tariffAction, tariffTermsAction, vehicleBlockAction, vehicleConditionAction, vehicleDocAction, vehiclePhotoAction, vehiclePhotosUploadAction, vehicleUpdateAction } from '../../../actions';
+import { PhotoSorter } from '@/components/crm/PhotoSorter';
 import { COND_LABEL } from '@/lib/site';
 
 export const metadata = { title: 'Автомобиль' };
@@ -78,22 +79,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
           <section className="card pad stack">
             <div className="row"><h2>Фото на сайте · {photos.length}</h2>{v.isPublished ? <a className="small" href={`/avtopark/${v.slug}`} target="_blank" rel="noreferrer">Открыть на сайте</a> : <span className="muted small">не показывается на сайте</span>}</div>
             {photos.length ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 }}>
-                {photos.map((p, i) => (
-                  <figure key={p} style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p} alt={`Фото ${i + 1}`} loading="lazy" style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 8, border: `2px solid ${i === 0 ? 'var(--gold)' : 'var(--line)'}` }} />
-                    {fw ? (
-                      <figcaption className="wrap-row" style={{ gap: 4 }}>
-                        {i === 0 ? <span className="tag gold">обложка</span> : <ActionForm action={vehiclePhotoAction} hidden={{ vehicleId: id, photo: p, op: 'cover' }} submit="Обложка" variant="quiet" />}
-                        {i > 0 ? <ActionForm action={vehiclePhotoAction} hidden={{ vehicleId: id, photo: p, op: 'left' }} submit="←" variant="quiet" /> : null}
-                        {i < photos.length - 1 ? <ActionForm action={vehiclePhotoAction} hidden={{ vehicleId: id, photo: p, op: 'right' }} submit="→" variant="quiet" /> : null}
-                        <ActionForm action={vehiclePhotoAction} hidden={{ vehicleId: id, photo: p, op: 'remove' }} submit="Удалить" variant="danger" confirm="Удалить это фото с сайта?" />
-                      </figcaption>
-                    ) : i === 0 ? <span className="tag gold">обложка</span> : null}
-                  </figure>
-                ))}
-              </div>
+              <PhotoSorter photos={photos} action={vehiclePhotoAction} hidden={{ vehicleId: id }} editable={fw} />
             ) : <p className="muted">Фото нет — на сайте будет заглушка.</p>}
             {fw ? (
               <ActionForm action={vehiclePhotosUploadAction} hidden={{ vehicleId: id }} submit="Загрузить" className="wrap-row" style={{ gap: 8, alignItems: 'flex-end' }}>

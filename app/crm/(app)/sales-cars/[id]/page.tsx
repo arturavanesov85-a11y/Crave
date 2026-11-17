@@ -6,6 +6,7 @@ import { fmtDateTime } from '@/lib/dates';
 import { SALE_STATUS } from '@/lib/sales';
 import { DIRECTION_URLS } from '@/lib/site';
 import { ActionForm } from '@/components/crm/ActionForm';
+import { PhotoSorter } from '@/components/crm/PhotoSorter';
 import { saleCarDeleteAction, saleCarPhotoAction } from '../../../sales-actions';
 import { SaleCarForm } from '../SaleCarForm';
 
@@ -32,20 +33,7 @@ export default async function EditSaleCar({ params }: { params: Promise<{ id: st
       <section className="card pad stack">
         <h2>Фото · {photos.length}</h2>
         {photos.length ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 }}>
-            {photos.map((p, i) => (
-              <figure key={p} style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p} alt={`Фото ${i + 1}`} style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 8, border: `2px solid ${i === 0 ? 'var(--gold)' : 'var(--line)'}` }} />
-                <figcaption className="wrap-row" style={{ gap: 4 }}>
-                  {i === 0 ? <span className="tag gold">обложка</span> : <ActionForm action={saleCarPhotoAction} hidden={{ id: car.id, photo: p, op: 'cover' }} submit="Обложка" variant="quiet" />}
-                  {i > 0 ? <ActionForm action={saleCarPhotoAction} hidden={{ id: car.id, photo: p, op: 'left' }} submit="←" variant="quiet" /> : null}
-                  {i < photos.length - 1 ? <ActionForm action={saleCarPhotoAction} hidden={{ id: car.id, photo: p, op: 'right' }} submit="→" variant="quiet" /> : null}
-                  <ActionForm action={saleCarPhotoAction} hidden={{ id: car.id, photo: p, op: 'remove' }} submit="Удалить" variant="danger" confirm="Удалить это фото?" />
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+          <PhotoSorter photos={photos} action={saleCarPhotoAction} hidden={{ id: car.id }} />
         ) : <p className="muted">Фото нет — добавьте ниже, в разделе «Фото».</p>}
       </section>
 

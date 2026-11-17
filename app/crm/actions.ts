@@ -395,6 +395,13 @@ export async function vehiclePhotoAction(_: ActionState, fd: FormData): Promise<
     const user = await guard('fleet.write');
     const v = await db.vehicle.findUniqueOrThrow({ where: { id: str(fd, 'vehicleId') } });
     const photos = json<string[]>(v.photos, []);
+    if (str(fd, 'op') === 'reorder') {
+      let order: unknown;
+      try { order = JSON.parse(str(fd, 'order')); } catch { throw new Error('Не удалось прочитать порядок фото'); }
+      if (!Array.isArray(order) || order.length !== photos.length || !photos.every((p) => order.includes(p))) throw new Error('Фото изменились — обновите страницу');
+      await db.vehicle.update({ where: { id: v.id }, data: { photos: JSON.stringify(order) } });
+      return 'Порядок сохранён';
+    }
     const url = str(fd, 'photo');
     const i = photos.indexOf(url);
     if (i < 0) throw new Error('Фото не найдено — обновите страницу');

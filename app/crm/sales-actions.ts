@@ -115,11 +115,24 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
   redirect(`/crm/sales-cars/${newId}`);
 }
 
+/** Новый порядок фото: тот же набор, что сейчас, иначе страница устарела. */
+function reorder(current: string[], raw: string): string[] {
+  let order: unknown;
+  try { order = JSON.parse(raw); } catch { throw new Error('Не удалось прочитать порядок фото'); }
+  if (!Array.isArray(order) || order.length !== current.length || !current.every((p) => order.includes(p))) throw new Error('Фото изменились — обновите страницу');
+  return order as string[];
+}
+
 export async function saleCarPhotoAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     await guard();
     const car = await db.saleCar.findUniqueOrThrow({ where: { id: str(fd, 'id') } });
     const photos = json<string[]>(car.photos, []);
+    if (str(fd, 'op') === 'reorder') {
+      const order = reorder(photos, str(fd, 'order'));
+      await db.saleCar.update({ where: { id: car.id }, data: { photos: JSON.stringify(order), updatedAt: new Date() } });
+      return 'Порядок сохранён';
+    }
     const url = str(fd, 'photo');
     const i = photos.indexOf(url);
     if (i < 0) throw new Error('Фото не найдено');
