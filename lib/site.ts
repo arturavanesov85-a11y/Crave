@@ -8,8 +8,8 @@ export const DIRECTION_URLS = {
 };
 
 export const CONTACTS = {
-  phone: '+7 910 421 02 22',
-  phoneHref: 'tel:+79104210222',
+  phone: '+7 495 141 02 20',
+  phoneHref: 'tel:+74951410220',
   telegram: 'https://t.me/crave_rental',
   // Бот для клиентов проката: подтверждение брони, напоминание о выдаче и акты с фото.
   clientBot: 'https://t.me/Crave_rentalbot',
