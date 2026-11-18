@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { can } from '@/lib/permissions';
 import { allow } from '@/lib/ratelimit';
 import { verifyInitData } from '@/lib/telegram';
+import { fire, notifyAccessRequest } from '@/lib/notify';
 
 export async function POST(req: Request) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -25,7 +26,10 @@ export async function POST(req: Request) {
     create: { telegramId, username: tg.username ?? null, firstName: tg.first_name ?? null, lastName: tg.last_name ?? null, lastSeenAt: new Date() },
   });
   if (link.status === 'rejected') return NextResponse.json({ status: 'rejected' });
-  if (link.status !== 'approved' || !link.userId) return NextResponse.json({ status: 'pending' });
+  if (link.status !== 'approved' || !link.userId) {
+    if (link.status === 'pending') fire(() => notifyAccessRequest(link.id));
+    return NextResponse.json({ status: 'pending' });
+  }
 
   const user = await db.user.findUnique({ where: { id: link.userId } });
   if (!user || !user.isActive || user.deletedAt) return NextResponse.json({ status: 'blocked' });

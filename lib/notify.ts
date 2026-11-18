@@ -237,3 +237,14 @@ export async function sendClientAct(orderId: string, kind: 'pickup' | 'return') 
   if (!r.ok && r.blocked) await db.customer.update({ where: { id: o.customerId }, data: { telegramChatId: null } });
 }
 
+
+/** Новый аккаунт Telegram просит доступ к приложению — сообщаем владельцам (они подтверждают в CRM). */
+export async function notifyAccessRequest(linkId: string) {
+  const l = await db.telegramLink.findUnique({ where: { id: linkId } });
+  if (!l || l.status !== 'pending' || !(await claim(`tg-access:${linkId}`))) return;
+  const owners = await db.user.findMany({ where: { role: 'owner', isActive: true, deletedAt: null }, select: { id: true } });
+  const to = (await staffWith(['users.manage'], owners.map((o) => o.id)));
+  const name = [l.firstName, l.lastName].filter(Boolean).join(' ') || 'Без имени';
+  const text = `<b>Запрос доступа к приложению</b>\n${esc(name)}${l.username ? ` (@${esc(l.username)})` : ''}\nПривяжите аккаунт к сотруднику в CRM.`;
+  await deliver('staff', to, text, [[{ text: 'Открыть запросы', url: appUrl('/crm/settings/telegram') }]]);
+}
