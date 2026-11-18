@@ -16,22 +16,44 @@ const TEXT: Record<string, { title: string; text: string }> = {
   error: { title: 'Ошибка связи', text: 'Проверьте интернет и попробуйте ещё раз.' },
 };
 
+const KEY = 'tg-init-data';
+
+/** initData из адреса (#tgWebAppData=...); запоминаем на время сессии — после переходов адрес меняется. */
+function hashInitData(): string {
+  try {
+    const v = new URLSearchParams(window.location.hash.slice(1)).get('tgWebAppData');
+    if (v) sessionStorage.setItem(KEY, v);
+    return v || sessionStorage.getItem(KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function userName(initData: string): string {
+  try {
+    return (JSON.parse(new URLSearchParams(initData).get('user') ?? '{}') as { first_name?: string }).first_name ?? '';
+  } catch {
+    return '';
+  }
+}
+
 export function TgLogin() {
   const router = useRouter();
   const [state, setState] = useState<'loading' | 'browser' | keyof typeof TEXT>('loading');
   const [name, setName] = useState('');
 
   useEffect(() => {
-    // Скрипт Telegram подключается асинхронно — даём ему немного времени.
+    // Данные входа берём у скрипта Telegram, а если он не загрузился — из адреса страницы
+    // (Telegram передаёт их в #tgWebAppData). Ждём скрипт до 6 секунд.
     let tries = 0;
     const attempt = () => {
-      const app = tg();
-      if (!app?.initData) {
-        if (tries++ < 10) return void setTimeout(attempt, 150);
+      const initData = tg()?.initData || hashInitData();
+      if (!initData) {
+        if (tries++ < 40) return void setTimeout(attempt, 150);
         return setState('browser');
       }
-      setName(app.initDataUnsafe?.user?.first_name ?? '');
-      fetch('/api/tg/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: app.initData }) })
+      setName(tg()?.initDataUnsafe?.user?.first_name ?? userName(initData));
+      fetch('/api/tg/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData }) })
         .then((r) => r.json())
         .then((d: { status: string }) => (d.status === 'ok' ? router.refresh() : setState(d.status in TEXT ? (d.status as keyof typeof TEXT) : 'error')))
         .catch(() => setState('error'));

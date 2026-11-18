@@ -7,7 +7,8 @@ export const viewport = { themeColor: '#0A0A09', width: 'device-width', initialS
 export default function TgLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+      {/* Копия скрипта Telegram лежит у нас: с telegram.org на телефонах он грузится не всегда. */}
+      <Script src="/tg/telegram-web-app.js" strategy="beforeInteractive" />
       <TgShell>{children}</TgShell>
     </>
   );
