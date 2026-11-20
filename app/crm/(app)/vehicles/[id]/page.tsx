@@ -6,13 +6,14 @@ import { fmtDate, fmtDateTime, toLocalInput } from '@/lib/dates';
 import { isActive, KIND_LABEL } from '@/lib/booking';
 import { can } from '@/lib/permissions';
 import { rub } from '@/lib/money';
-import { tierLabel, type Tier } from '@/lib/pricing';
+import { DRIVER_MIN_HOURS, tierLabel, type Tier } from '@/lib/pricing';
 import { STATUS_LABEL } from '@/lib/orders';
 import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
 import { damageRepairedAction, expenseAction, releaseBlockAction, tariffAction, tariffTermsAction, vehicleBlockAction, vehicleConditionAction, vehicleDocAction, vehiclePhotoAction, vehiclePhotosUploadAction, vehicleUpdateAction } from '../../../actions';
 import { PhotoSorter } from '@/components/crm/PhotoSorter';
 import { PhotoInput } from '@/components/crm/PhotoInput';
-import { COND_LABEL } from '@/lib/site';
+import { BODY_LABEL, COND_LABEL } from '@/lib/site';
+import { HourlyToggle } from '@/components/crm/HourlyToggle';
 
 export const metadata = { title: 'Автомобиль' };
 
@@ -38,11 +39,13 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
   const tiers = active ? json<Tier[]>(active.tiers, []).sort((a, b) => a.minDays - b.minDays) : [];
   const occ = v.occupancies.filter((o) => isActive(o, now));
   const photos = json<string[]>(v.photos, []);
+  const hourly = !!active?.driverOnly;
   const termsFields = (
     <>
+      <div style={{ gridColumn: '1 / -1' }}><HourlyToggle defaultChecked={hourly} /></div>
       <label className="field">Залог, ₽<input className="input" name="deposit" inputMode="decimal" defaultValue={String((active?.deposit ?? 0) / 100)} required /></label>
-      <label className="field">Пробег в сутки, км<input className="input" name="km" inputMode="numeric" defaultValue={String(active?.includedKmPerDay ?? 250)} required /></label>
-      <label className="field">Перепробег, ₽/км<input className="input" name="overmileage" inputMode="decimal" defaultValue={String((active?.overmileagePerKm ?? 0) / 100)} required /></label>
+      <label className="field daily-only">Пробег в сутки, км<input className="input" name="km" inputMode="numeric" defaultValue={String(active?.includedKmPerDay || 250)} required /></label>
+      <label className="field daily-only">Перепробег, ₽/км<input className="input" name="overmileage" inputMode="decimal" defaultValue={String((active?.overmileagePerKm ?? 0) / 100)} required /></label>
       <label className="field">С водителем, ₽/ч<input className="input" name="driver" inputMode="decimal" defaultValue={active?.driverPerHour ? String(active.driverPerHour / 100) : ''} placeholder="пусто — нет" /></label>
     </>
   );
@@ -109,7 +112,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
             <div className="row"><h2>Тариф</h2>{can(user, 'tariff.edit') ? (
               <ActionDialog label="Изменить тариф" title="Ставки за сутки" action={tariffAction} submit="Сохранить" hidden={{ vehicleId: id }} description="Создаётся новая версия тарифа. Согласованные заказы сохраняют свой снимок и не пересчитываются.">
                 <div className="grid-2">
-                  {[1, 3, 7, 14, 30].map((d) => <label key={d} className="field">{d === 1 ? '1–2 сут' : `от ${d} сут`}, ₽<input className="input" name={`t${d}`} inputMode="decimal" defaultValue={String((tiers.find((t) => t.minDays === d)?.dailyRate ?? 0) / 100)} required /></label>)}
+                  {[1, 3, 7, 14, 30].map((d) => <label key={d} className="field daily-only">{d === 1 ? '1–2 сут' : `от ${d} сут`}, ₽<input className="input" name={`t${d}`} inputMode="decimal" defaultValue={String((tiers.find((t) => t.minDays === d)?.dailyRate ?? 0) / 100)} required /></label>)}
                   {!active ? termsFields : null}
                 </div>
                 <label className="field">Комментарий<input className="input" name="note" /></label>
@@ -117,10 +120,14 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
             ) : null}</div>
             {active ? (
               <>
-                <div className="boxes">
-                  {tiers.map((t) => <div className="box" key={t.minDays}><span className="muted small">{tierLabel(t.minDays, tiers)}</span><b>{rub(t.dailyRate)}</b></div>)}
-                </div>
-                <div className="row" style={{ marginTop: 4 }}><h3 style={{ fontSize: 15, fontWeight: 600 }}>Залог и пробег</h3>{can(user, 'tariff.edit') ? (
+                {hourly ? (
+                  <div className="notice">Почасовая тарификация: только с водителем, от {DRIVER_MIN_HOURS} ч по {active.driverPerHour ? rub(active.driverPerHour) : '—'}/ч. Посуточная аренда отключена.</div>
+                ) : (
+                  <div className="boxes">
+                    {tiers.map((t) => <div className="box" key={t.minDays}><span className="muted small">{tierLabel(t.minDays, tiers)}</span><b>{rub(t.dailyRate)}</b></div>)}
+                  </div>
+                )}
+                <div className="row" style={{ marginTop: 4 }}><h3 style={{ fontSize: 15, fontWeight: 600 }}>{hourly ? 'Залог и режим' : 'Залог и пробег'}</h3>{can(user, 'tariff.edit') ? (
                   <ActionDialog label="Изменить условия" title="Залог и пробег" action={tariffTermsAction} submit="Сохранить" hidden={{ vehicleId: id }} description="Ставки за сутки не меняются. Согласованные заказы сохраняют свой снимок и не пересчитываются.">
                     <div className="grid-2">{termsFields}</div>
                     <label className="field">Комментарий<input className="input" name="note" /></label>
@@ -128,8 +135,8 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
                 ) : null}</div>
                 <div className="boxes">
                   <div className="box"><span className="muted small">Залог</span><b>{rub(active.deposit)}</b></div>
-                  <div className="box"><span className="muted small">Пробег в сутки</span><b>{active.includedKmPerDay} км</b></div>
-                  <div className="box"><span className="muted small">Перепробег</span><b>{rub(active.overmileagePerKm)}/км</b></div>
+                  {hourly ? null : <div className="box"><span className="muted small">Пробег в сутки</span><b>{active.includedKmPerDay} км</b></div>}
+                  {hourly ? null : <div className="box"><span className="muted small">Перепробег</span><b>{rub(active.overmileagePerKm)}/км</b></div>}
                   <div className="box"><span className="muted small">С водителем</span><b>{active.driverPerHour ? `${rub(active.driverPerHour)}/ч` : 'нет'}</b></div>
                 </div>
                 <p className="text-2 small">Действует с {fmtDate(active.validFrom)}{active.note ? ` · ${active.note}` : ''}</p>
@@ -169,6 +176,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
                     <label className="field">Госномер<input className="input" name="plate" defaultValue={v.plate ?? ''} /></label>
                   </>
                 ) : <p className="muted small">VIN и госномер скрыты для вашей роли.</p>}
+                <label className="field">Тип кузова<select className="input" name="bodyType" defaultValue={v.bodyType}>{Object.entries(BODY_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
                 <label className="field">Пробег, км<input className="input" name="mileageKm" type="number" defaultValue={v.mileageKm} /></label>
                 <label className="field">Следующее ТО, км<input className="input" name="nextServiceKm" type="number" defaultValue={v.nextServiceKm ?? ''} /></label>
                 <label className="field">Следующее ТО, дата<input className="input" name="nextServiceAt" type="date" defaultValue={v.nextServiceAt ? toLocalInput(v.nextServiceAt).slice(0, 10) : ''} /></label>

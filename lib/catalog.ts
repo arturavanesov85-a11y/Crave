@@ -33,7 +33,9 @@ export async function publicVehicles() {
         equipment: json<string[]>(v.equipment, []),
         photos: json<string[]>(v.photos, []),
         tariff: t,
-        from: fromPrice(t.tiers),
+        /** Только почасово с водителем (от 4 ч) — без посуточных ставок. */
+        hourly: t.driverOnly,
+        from: t.driverOnly ? null : fromPrice(t.tiers),
         shortRate: [...t.tiers].sort((a: Tier, b: Tier) => a.minDays - b.minDays)[0]?.dailyRate ?? 0,
       };
     });

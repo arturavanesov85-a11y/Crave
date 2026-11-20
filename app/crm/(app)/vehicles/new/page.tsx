@@ -3,6 +3,8 @@ import { requireUser } from '@/lib/auth';
 import { can } from '@/lib/permissions';
 import { ActionForm } from '@/components/crm/ActionForm';
 import { vehicleCreateAction } from '../../../actions';
+import { HourlyToggle } from '@/components/crm/HourlyToggle';
+import { BODY_LABEL } from '@/lib/site';
 
 export const metadata = { title: 'Новый автомобиль' };
 
@@ -20,7 +22,7 @@ export default async function NewVehicle() {
             <label className="field">Марка<input className="input" name="make" required placeholder="BMW" /></label>
             <label className="field">Модель<input className="input" name="model" required placeholder="M5 F90 Competition" /></label>
             <label className="field">Год<input className="input" name="year" type="number" min={1990} max={2100} required /></label>
-            <label className="field">Тип кузова<select className="input" name="bodyType"><option value="sedan">Седан</option><option value="suv">Внедорожник</option><option value="coupe">Купе</option><option value="pickup">Пикап</option></select></label>
+            <label className="field">Тип кузова<select className="input" name="bodyType">{Object.entries(BODY_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
             <label className="field">Мощность, л.с.<input className="input" name="powerHp" type="number" min={1} required /></label>
             <label className="field">Разгон 0–100, с<input className="input" name="accel" placeholder="3,9" required /></label>
             <label className="field">Привод<select className="input" name="drive"><option value="полный">Полный</option><option value="задний">Задний</option><option value="передний">Передний</option></select></label>
@@ -44,13 +46,14 @@ export default async function NewVehicle() {
           <section className="card pad stack">
             <h2>Тариф</h2>
             <p className="muted small">Цена за сутки по сроку аренды, в рублях. Без тарифа машина не показывается на сайте.</p>
-            <div className="grid-2 stack-sm" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+            <HourlyToggle />
+            <div className="grid-2 stack-sm daily-only" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
               {[1, 3, 7, 14, 30].map((d) => <label key={d} className="field">{d === 1 ? '1–2 сут' : `от ${d} сут`}<input className="input" name={`t${d}`} inputMode="decimal" /></label>)}
             </div>
             <div className="grid-2 stack-sm" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
               <label className="field">Залог, ₽<input className="input" name="deposit" inputMode="decimal" defaultValue="50000" /></label>
-              <label className="field">Км в сутки<input className="input" name="km" type="number" defaultValue={250} /></label>
-              <label className="field">Перепробег, ₽/км<input className="input" name="overmileage" inputMode="decimal" defaultValue="150" /></label>
+              <label className="field daily-only">Км в сутки<input className="input" name="km" type="number" defaultValue={250} /></label>
+              <label className="field daily-only">Перепробег, ₽/км<input className="input" name="overmileage" inputMode="decimal" defaultValue="150" /></label>
               <label className="field">С водителем, ₽/ч<input className="input" name="driver" inputMode="decimal" placeholder="нет" /></label>
             </div>
           </section>

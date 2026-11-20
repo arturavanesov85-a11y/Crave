@@ -114,7 +114,7 @@ model Vehicle {
   model          String
   title          String
   year           Int
-  bodyType       String // sedan | suv | coupe | pickup
+  bodyType       String // sedan | suv | coupe | pickup | minivan | wagon
   powerHp        Int
   accel          String
   drive          String
@@ -163,6 +163,7 @@ model TariffPlan {
   includedKmPerDay Int
   overmileagePerKm Int
   driverPerHour    Int?
+  driverOnly       Boolean  @default(false) // только почасово с водителем (от 4 ч), без посуточной аренды
   note             String?
   createdById      String?
   createdAt        DateTime @default(now())

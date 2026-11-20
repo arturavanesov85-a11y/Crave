@@ -14,7 +14,7 @@ export const metadata = { title: 'Автопарк', description: 'Премиа�
 type SP = Promise<Record<string, string | undefined>>;
 
 const BUDGETS: [string, string][] = [['', 'Любой'], ['lt25', 'до 25 000 ₽'], ['25_40', '25–40 тыс. ₽'], ['gt40', 'от 40 000 ₽']];
-const BODIES: [string, string][] = [['', 'Все'], ['sedan', 'Седаны'], ['suv', 'Внедорожники'], ['coupe', 'Купе'], ['pickup', 'Пикапы']];
+const BODIES: [string, string][] = [['', 'Все'], ['sedan', 'Седаны'], ['suv', 'Внедорожники'], ['coupe', 'Купе'], ['pickup', 'Пикапы'], ['minivan', 'Минивены'], ['wagon', 'Универсалы']];
 
 export default async function Catalog({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
@@ -27,7 +27,7 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
   const datesOk = !!pickupAt && !!returnAt && returnAt > pickupAt;
   const rows = await Promise.all(
     cars.map(async (v) => {
-      if (!datesOk) return { v, calc: null };
+      if (!datesOk || v.hourly) return { v, calc: null };
       const q = quote({ pickupAt: pickupAt!, returnAt: returnAt!, tariff: v.tariff, rules: settings.rules });
       if (!q.ok) return { v, calc: null };
       const vehicle = await db.vehicle.findUnique({ where: { id: v.id }, select: { condition: true } });
@@ -39,6 +39,7 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
   const filtered = rows.filter(({ v, calc }) => {
     if (sp.body && v.bodyType !== sp.body) return false;
     if (sp.brand && v.make !== sp.brand) return false;
+    if (sp.budget && v.hourly) return false;
     const rate = calc?.dailyRate ?? v.shortRate;
     if (sp.budget === 'lt25' && !(rate < 2500000)) return false;
     if (sp.budget === '25_40' && !(rate >= 2500000 && rate <= 4000000)) return false;
@@ -72,7 +73,7 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
         <aside className="aside stack" aria-label="Фильтры" style={{ flex: '1 1 240px', gap: 24 }}>
           <div className="stack" style={{ gap: 10 }}>
             <span className="eyebrow">Тип кузова</span>
-            <div className="wrap-row" style={{ gap: 8 }}>{BODIES.map(([k, l]) => <Link key={k} className={`chip${(sp.body ?? '') === k ? ' on' : ''}`} href={link({ body: k })}>{l}</Link>)}</div>
+            <div className="wrap-row" style={{ gap: 8 }}>{BODIES.filter(([k]) => !k || cars.some((c) => c.bodyType === k)).map(([k, l]) => <Link key={k} className={`chip${(sp.body ?? '') === k ? ' on' : ''}`} href={link({ body: k })}>{l}</Link>)}</div>
           </div>
           <div className="stack" style={{ gap: 10 }}>
             <span className="eyebrow">Бюджет в сутки</span>

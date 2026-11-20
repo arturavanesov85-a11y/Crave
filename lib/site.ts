@@ -25,6 +25,6 @@ export const COMPANY = {
   kpp: '774301001',
 };
 
-export const BODY_LABEL: Record<string, string> = { sedan: 'Седан', suv: 'Внедорожник', coupe: 'Купе', pickup: 'Пикап' };
+export const BODY_LABEL: Record<string, string> = { sedan: 'Седан', suv: 'Внедорожник', coupe: 'Купе', pickup: 'Пикап', minivan: 'Минивен', wagon: 'Универсал' };
 
 export const COND_LABEL: Record<string, string> = { ready: 'Готов', preparing: 'Подготовка', maintenance: 'Обслуживание', unavailable: 'Недоступен' };

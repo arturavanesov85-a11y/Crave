@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { billableDays, quote, type Rules, type Tariff } from '@/lib/pricing';
+import { addHoursLocal, billableDays, DRIVER_MIN_HOURS, quote, type Rules, type Tariff } from '@/lib/pricing';
 
 const tariff: Tariff = {
   tiers: [
@@ -58,5 +58,45 @@ describe('расчёт стоимости', () => {
     expect(quote({ pickupAt: at(13), returnAt: at(10), tariff, rules }).ok).toBe(false);
     expect(quote({ pickupAt: at(10), returnAt: at(13), tariff: { ...tariff, driverPerHour: null }, rules, services: [{ code: 'driver', qty: 2 }] }).ok).toBe(false);
     expect(quote({ pickupAt: at(10), returnAt: at(13), tariff, rules, services: [{ code: 'extra_driver', qty: 1 }], extras: [{ code: 'extra_driver', name: 'Доп. водитель', pricing: 'fixed', amount: null }] }).ok).toBe(false);
+  });
+});
+
+describe('почасовая тарификация с водителем', () => {
+  const hourly: Tariff = { ...tariff, tiers: [], includedKmPerDay: 0, overmileagePerKm: 0, driverPerHour: 500000, driverOnly: true };
+  const h = (hours: number) => new Date(Date.UTC(2026, 0, 10, 7) + hours * 3600000);
+
+  it('часы × ставка, неполный час — как полный', () => {
+    const q = quote({ pickupAt: h(0), returnAt: h(5.5), tariff: hourly, rules });
+    expect(q.ok).toBe(true);
+    if (!q.ok) return;
+    expect(q.hours).toBe(6);
+    expect(q.rent).toBe(6 * 500000);
+    expect(q.total).toBe(6 * 500000);
+    expect(q.includedKm).toBe(0);
+    expect(q.days).toBe(0);
+  });
+
+  it(`меньше ${DRIVER_MIN_HOURS} часов — нельзя`, () => {
+    const q = quote({ pickupAt: h(0), returnAt: h(3), tariff: hourly, rules });
+    expect(q.ok).toBe(false);
+  });
+
+  it('водитель отдельной услугой не добавляется второй раз', () => {
+    const q = quote({ pickupAt: h(0), returnAt: h(4), tariff: hourly, rules, services: [{ code: 'driver', qty: 4 }] });
+    expect(q.ok && q.total).toBe(4 * 500000);
+  });
+
+  it('без ставки с водителем — ошибка', () => {
+    expect(quote({ pickupAt: h(0), returnAt: h(4), tariff: { ...hourly, driverPerHour: null }, rules }).ok).toBe(false);
+  });
+
+  it('обычный тариф не меняется', () => {
+    const q = quote({ pickupAt: h(0), returnAt: h(48), tariff, rules });
+    expect(q.ok && q.hours).toBe(null);
+    expect(q.ok && q.days).toBe(2);
+  });
+
+  it('время возврата по часам — в формате формы', () => {
+    expect(addHoursLocal('2026-11-20T22:00', 4)).toBe('2026-11-21T02:00');
   });
 });

@@ -1,6 +1,7 @@
 'use server';
 
 // Серверные действия CRM. Каждое проверяет права заново: скрытая кнопка — не защита.
+import { BODY_LABEL } from '@/lib/site';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -389,6 +390,7 @@ export async function vehicleUpdateAction(_: ActionState, fd: FormData): Promise
       isPublished: fd.get('isPublished') === 'on',
       description: str(fd, 'description') || null,
     };
+    if (BODY_LABEL[str(fd, 'bodyType')]) data.bodyType = str(fd, 'bodyType');
     if (can(user, 'vehicle.sensitive')) {
       data.vin = str(fd, 'vin') || null;
       data.plate = str(fd, 'plate') || null;
@@ -397,6 +399,31 @@ export async function vehicleUpdateAction(_: ActionState, fd: FormData): Promise
     await audit(db, user.id, 'vehicle.update', 'vehicle', id);
     return 'Сохранено';
   });
+}
+
+/** Порядок машин проката на сайте — перетаскиванием в списке «Автомобили». */
+export async function vehicleOrderAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard('fleet.write');
+    let order: unknown;
+    try { order = JSON.parse(str(fd, 'order')); } catch { throw new Error('Не удалось прочитать порядок'); }
+    const ids = (await db.vehicle.findMany({ select: { id: true } })).map((v) => v.id);
+    if (!Array.isArray(order) || order.length !== ids.length || !ids.every((id) => order.includes(id))) throw new Error('Список изменился — обновите страницу');
+    await db.$transaction((order as string[]).map((id, i) => db.vehicle.update({ where: { id }, data: { sortOrder: i } })));
+    await audit(db, user.id, 'vehicle.order', 'vehicle', 'all', { count: ids.length });
+    return 'Порядок сохранён';
+  }, ['/crm', '/']);
+}
+
+/** Разместить машину на сайте проката или скрыть её — кнопкой в списке. */
+export async function vehiclePublishAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard('fleet.write');
+    const publish = str(fd, 'publish') === '1';
+    const v = await db.vehicle.update({ where: { id: str(fd, 'vehicleId') }, data: { isPublished: publish } });
+    await audit(db, user.id, publish ? 'vehicle.publish' : 'vehicle.unpublish', 'vehicle', v.id);
+    return publish ? `${v.title}: размещена на сайте` : `${v.title}: скрыта с сайта`;
+  }, ['/crm', '/']);
 }
 
 /** Фото машины проката для сайта: загрузка новых (добавляются в конец). */
@@ -463,18 +490,21 @@ export async function vehicleCreateAction(_: ActionState, fd: FormData): Promise
     if (!str(fd, 'accel')) throw new Error('Укажите разгон до 100 км/ч');
 
     // Тариф — только с правом изменения тарифов; без тарифа машина не видна на сайте.
-    let tariff: { tiers: { minDays: number; dailyRate: number }[]; deposit: number; km: number; over: number; driver: number | null } | null = null;
-    const anyRate = [1, 3, 7, 14, 30].some((d) => str(fd, `t${d}`));
+    let tariff: { tiers: { minDays: number; dailyRate: number }[]; deposit: number; km: number; over: number; driver: number | null; driverOnly: boolean } | null = null;
+    const hourly = fd.get('driverOnly') === 'on';
+    const anyRate = hourly || [1, 3, 7, 14, 30].some((d) => str(fd, `t${d}`));
     if (anyRate) {
       if (!can(user, 'tariff.edit')) throw new Forbidden('Тариф задаёт руководитель');
-      const tiers = [1, 3, 7, 14, 30].map((minDays) => {
-        const rate = parseRub(fd.get(`t${minDays}`));
-        if (!rate) throw new Error(`Укажите ставку «${minDays === 1 ? '1–2 сут' : `от ${minDays} сут`}» или оставьте все ставки пустыми`);
-        return { minDays, dailyRate: rate };
-      });
-      const km = Number(str(fd, 'km'));
-      if (!Number.isInteger(km) || km <= 0) throw new Error('Км в сутки — целое число');
-      tariff = { tiers, deposit: money(fd, 'deposit'), km, over: money(fd, 'overmileage'), driver: str(fd, 'driver') ? parseRub(fd.get('driver')) : null };
+      if (hourly) {
+        const driver = str(fd, 'driver') ? parseRub(fd.get('driver')) : 0;
+        if (!driver) throw new Error('Для почасовой тарификации укажите ставку с водителем, ₽/ч');
+        tariff = { tiers: [], deposit: money(fd, 'deposit'), km: 0, over: 0, driver, driverOnly: true };
+      } else {
+        const tiers = parseTiers(fd);
+        const km = Number(str(fd, 'km'));
+        if (!Number.isInteger(km) || km <= 0) throw new Error('Км в сутки — целое число');
+        tariff = { tiers, deposit: money(fd, 'deposit'), km, over: money(fd, 'overmileage'), driver: str(fd, 'driver') ? parseRub(fd.get('driver')) : null, driverOnly: false };
+      }
     }
 
     const base = slugify(`${make} ${model}`);
@@ -495,7 +525,7 @@ export async function vehicleCreateAction(_: ActionState, fd: FormData): Promise
           isPublished: fd.get('isPublished') === 'on', sortOrder: (last?.sortOrder ?? 0) + 1,
         },
       });
-      if (tariff) await tx.tariffPlan.create({ data: { vehicleId: v.id, tiers: JSON.stringify(tariff.tiers), deposit: tariff.deposit, includedKmPerDay: tariff.km, overmileagePerKm: tariff.over, driverPerHour: tariff.driver, createdById: user.id } });
+      if (tariff) await tx.tariffPlan.create({ data: { vehicleId: v.id, tiers: JSON.stringify(tariff.tiers), deposit: tariff.deposit, includedKmPerDay: tariff.km, overmileagePerKm: tariff.over, driverPerHour: tariff.driver, driverOnly: tariff.driverOnly, createdById: user.id } });
       await audit(tx, user.id, 'vehicle.create', 'vehicle', v.id, { title: v.title });
       return v;
     });
@@ -523,15 +553,23 @@ export async function damageRepairedAction(_: ActionState, fd: FormData): Promis
   });
 }
 
-type TariffTerms = { deposit: number; includedKmPerDay: number; overmileagePerKm: number; driverPerHour: number | null };
+type TariffTerms = { deposit: number; includedKmPerDay: number; overmileagePerKm: number; driverPerHour: number | null; driverOnly: boolean };
+
+function parseTiers(fd: FormData) {
+  return [1, 3, 7, 14, 30].map((minDays) => {
+    const rate = parseRub(fd.get(`t${minDays}`));
+    if (!rate) throw new Error(`Укажите ставку «${minDays === 1 ? '1–2 сут' : `от ${minDays} сут`}» — или поставьте галочку «Почасовая тарификация»`);
+    return { minDays, dailyRate: rate };
+  });
+}
 
 /** Новая версия тарифа: меняются только переданные части, остальное берётся из действующего тарифа. */
 async function newTariffVersion(userId: string, vehicleId: string, patch: { tiers?: { minDays: number; dailyRate: number }[]; terms?: TariffTerms }, note: string | null) {
   await db.$transaction(async (tx) => {
     const cur = await tx.tariffPlan.findFirst({ where: { vehicleId, status: 'active' } });
     const tiers = patch.tiers ?? (cur ? JSON.parse(cur.tiers) : null);
-    const terms = patch.terms ?? (cur ? { deposit: cur.deposit, includedKmPerDay: cur.includedKmPerDay, overmileagePerKm: cur.overmileagePerKm, driverPerHour: cur.driverPerHour } : null);
-    if (!tiers) throw new Error('Сначала задайте ставки тарифа');
+    const terms = patch.terms ?? (cur ? { deposit: cur.deposit, includedKmPerDay: cur.includedKmPerDay, overmileagePerKm: cur.overmileagePerKm, driverPerHour: cur.driverPerHour, driverOnly: cur.driverOnly } : null);
+    if (!tiers || (!tiers.length && !terms?.driverOnly)) throw new Error('Сначала задайте ставки за сутки — или включите почасовую тарификацию');
     if (!terms) throw new Error('Сначала задайте залог и пробег');
     await tx.tariffPlan.updateMany({ where: { vehicleId, status: 'active' }, data: { status: 'archived' } });
     await tx.tariffPlan.create({ data: { vehicleId, tiers: JSON.stringify(tiers), ...terms, createdById: userId, note } });
@@ -540,20 +578,22 @@ async function newTariffVersion(userId: string, vehicleId: string, patch: { tier
 }
 
 function tariffTerms(fd: FormData): TariffTerms {
+  const driverPerHour = str(fd, 'driver') ? parseRub(fd.get('driver')) : null;
+  if (fd.get('driverOnly') === 'on') {
+    if (!driverPerHour) throw new Error('Для почасовой тарификации укажите ставку с водителем, ₽/ч');
+    return { deposit: money(fd, 'deposit'), includedKmPerDay: 0, overmileagePerKm: 0, driverPerHour, driverOnly: true };
+  }
   const km = Number(str(fd, 'km'));
   if (!Number.isInteger(km) || km <= 0) throw new Error('Включённый пробег — целое число км');
-  return { deposit: money(fd, 'deposit'), includedKmPerDay: km, overmileagePerKm: money(fd, 'overmileage'), driverPerHour: str(fd, 'driver') ? parseRub(fd.get('driver')) : null };
+  return { deposit: money(fd, 'deposit'), includedKmPerDay: km, overmileagePerKm: money(fd, 'overmileage'), driverPerHour, driverOnly: false };
 }
 
 /** Ставки по срокам аренды. Если в форме есть поля условий (машина без тарифа) — сохраняются и они. */
 export async function tariffAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const user = await guard('tariff.edit');
-    const tiers = [1, 3, 7, 14, 30].map((minDays) => {
-      const rate = parseRub(fd.get(`t${minDays}`));
-      if (!rate) throw new Error(`Укажите ставку для ступени от ${minDays} сут.`);
-      return { minDays, dailyRate: rate };
-    });
+    // Почасовой тариф (галочка в форме машины без тарифа) обходится без ставок за сутки.
+    const tiers = fd.has('deposit') && fd.get('driverOnly') === 'on' && ![1, 3, 7, 14, 30].some((d) => str(fd, `t${d}`)) ? [] : parseTiers(fd);
     await newTariffVersion(user.id, str(fd, 'vehicleId'), { tiers, terms: fd.has('deposit') ? tariffTerms(fd) : undefined }, str(fd, 'note') || null);
     return 'Новые ставки действуют для новых расчётов. Существующие заказы не пересчитаны.';
   });

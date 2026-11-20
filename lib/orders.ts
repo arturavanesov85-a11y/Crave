@@ -234,7 +234,7 @@ export async function confirmOrder(user: SessionUser, id: string) {
       // Резерв истёк — машину нужно занять заново, если она свободна.
       await occupy(tx, { vehicleId: o.vehicleId, kind: 'booking', startsAt: o.pickupAt, endsAt: o.returnAt, bufferMin: terms.prepBufferMinutes, orderId: id, createdById: user.id });
     }
-    await post(tx, { kind: 'charge.rental', amount: q.rent, basis: `Аренда: ${daysWord(q.days)} × ${q.dailyRate / 100} ₽ (${q.tier.label})`, createdById: user.id, orderId: id, vehicleId: o.vehicleId, customerId: o.customerId, idempotencyKey: `confirm:${id}:rent` });
+    await post(tx, { kind: 'charge.rental', amount: q.rent, basis: q.hours ? `С водителем: ${q.hours} ч × ${(q.hourlyRate ?? 0) / 100} ₽` : `Аренда: ${daysWord(q.days)} × ${q.dailyRate / 100} ₽ (${q.tier.label})`, createdById: user.id, orderId: id, vehicleId: o.vehicleId, customerId: o.customerId, idempotencyKey: `confirm:${id}:rent` });
     for (const s of q.services) {
       await post(tx, { kind: 'charge.service', amount: s.amount, basis: `${s.name}: ${s.qty} ${s.unit}`, createdById: user.id, orderId: id, vehicleId: o.vehicleId, customerId: o.customerId, idempotencyKey: `confirm:${id}:svc:${s.code}` });
     }
@@ -297,7 +297,7 @@ export async function extendOrder(user: SessionUser, id: string, newReturnAt: Da
     await tx.rentalOrder.update({ where: { id }, data: { returnAt: newReturnAt, quoteSnapshot: JSON.stringify(q) } });
     const diff = q.total - old.total;
     if (['confirmed', 'issued'].includes(o.status) && diff !== 0) {
-      await post(tx, { kind: 'charge.rental', amount: diff, basis: `Продление до ${fmtDateTime(newReturnAt)}: ${daysWord(q.days)} по тарифу «${q.tier.label}»`, createdById: user.id, orderId: id, vehicleId: o.vehicleId, customerId: o.customerId });
+      await post(tx, { kind: 'charge.rental', amount: diff, basis: q.hours ? `Продление до ${fmtDateTime(newReturnAt)}: всего ${q.hours} ч с водителем` : `Продление до ${fmtDateTime(newReturnAt)}: ${daysWord(q.days)} по тарифу «${q.tier.label}»`, createdById: user.id, orderId: id, vehicleId: o.vehicleId, customerId: o.customerId });
     }
     await event(tx, id, 'extend', `Продление до ${fmtDateTime(newReturnAt)}. Новый итог ${q.total / 100} ₽ (было ${old.total / 100} ₽).`, user.id);
     await audit(tx, user.id, 'order.extend', 'order', id, { from: o.returnAt, to: newReturnAt });

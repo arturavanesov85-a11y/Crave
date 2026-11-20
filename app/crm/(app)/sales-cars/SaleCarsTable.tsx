@@ -3,10 +3,9 @@
 // Список «Авто в продаже». Строку тянут за значок ⠿ — порядок сразу сохраняется
 // и действует на сайте автосалона и в мини-приложении. Кнопки брони и продажи — прямо в строке.
 import Link from 'next/link';
-import { useEffect, useRef, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import type { ActionState } from '@/components/crm/ActionForm';
 import { SaleDealButtons, type DealDefaults } from '@/components/crm/SaleDealButtons';
+import { useRowOrder } from '@/components/crm/useRowOrder';
 
 type Action = (prev: ActionState, fd: FormData) => Promise<ActionState>;
 export type Row = {
@@ -16,56 +15,7 @@ export type Row = {
 };
 
 export function SaleCarsTable({ rows, orderAction, dealAction }: { rows: Row[]; orderAction: Action; dealAction: Action }) {
-  const [list, setList] = useState(rows);
-  const [drag, setDrag] = useState<string | null>(null);
-  const [msg, setMsg] = useState<ActionState>(undefined);
-  const [saving, start] = useTransition();
-  const router = useRouter();
-  const body = useRef<HTMLTableSectionElement>(null);
-  const before = useRef(rows);
-  useEffect(() => setList(rows), [rows]);
-
-  function save(order: Row[]) {
-    if (order.map((r) => r.id).join('|') === before.current.map((r) => r.id).join('|')) return;
-    const fd = new FormData();
-    fd.set('order', JSON.stringify(order.map((r) => r.id)));
-    start(async () => {
-      const res = await orderAction(undefined, fd);
-      setMsg(res);
-      if (res?.error) setList(before.current);
-      router.refresh();
-    });
-  }
-
-  function onPointerDown(e: React.PointerEvent, id: string) {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    before.current = list;
-    setDrag(id);
-    setMsg(undefined);
-    let current = list;
-    const move = (ev: PointerEvent) => {
-      const el = document.elementFromPoint(ev.clientX, ev.clientY)?.closest<HTMLElement>('[data-row]');
-      const over = el?.dataset.row;
-      if (!over || over === id || !body.current?.contains(el)) return;
-      const from = current.findIndex((r) => r.id === id), to = current.findIndex((r) => r.id === over);
-      if (from < 0 || to < 0) return;
-      const next = [...current];
-      next.splice(to, 0, ...next.splice(from, 1));
-      current = next;
-      setList(next);
-    };
-    const up = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      window.removeEventListener('pointercancel', up);
-      setDrag(null);
-      save(current);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-    window.addEventListener('pointercancel', up);
-  }
+  const { list, drag, msg, saving, body, onPointerDown } = useRowOrder(rows, orderAction);
 
   return (
     <>

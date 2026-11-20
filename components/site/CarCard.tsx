@@ -3,6 +3,7 @@ import { rub } from '@/lib/money';
 import { BODY_LABEL } from '@/lib/site';
 import type { PublicVehicle } from '@/lib/catalog';
 import { daysWord } from '@/lib/dates';
+import { DRIVER_MIN_HOURS } from '@/lib/pricing';
 
 export function CarPhoto({ title, src, label = '3/4 спереди', rounded, eager }: { title: string; src?: string | null; label?: string; rounded?: boolean; eager?: boolean }) {
   if (src) {
@@ -36,7 +37,14 @@ export function CarCard({ v, calc, query }: { v: PublicVehicle; calc?: Calc; que
         <span className="text-2" style={{ fontSize: 14 }}>
           {v.powerHp} л.с. · {v.accel} с до 100 км/ч · {v.year}
         </span>
-        {calc ? (
+        {v.hourly ? (
+          <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+            <div style={{ fontSize: 18, fontWeight: 600 }}>
+              {v.tariff.driverPerHour ? rub(v.tariff.driverPerHour) : '—'} <span className="text-2" style={{ fontSize: 14, fontWeight: 400 }}>/ час с водителем</span>
+            </div>
+            <div className="muted small">Только с водителем, от {DRIVER_MIN_HOURS} часов</div>
+          </div>
+        ) : calc ? (
           <dl className="price-dl">
             <dt>Тариф «{calc.tierLabel}»</dt>
             <dd>{rub(calc.dailyRate)} / сутки</dd>
@@ -55,8 +63,8 @@ export function CarCard({ v, calc, query }: { v: PublicVehicle; calc?: Calc; que
             {v.from ? <div className="muted small">от {rub(v.from.dailyRate)} / сутки при аренде от {v.from.minDays} суток</div> : null}
           </div>
         )}
-        <Link className={`btn btn-sm ${calc ? 'btn-primary' : ''}`} href={href} style={{ marginTop: 'auto', minHeight: 46 }}>
-          {calc ? 'Подробнее и заявка' : 'Рассчитать на мои даты'}
+        <Link className={`btn btn-sm ${calc && !v.hourly ? 'btn-primary' : ''}`} href={href} style={{ marginTop: 'auto', minHeight: 46 }}>
+          {v.hourly ? 'Подробнее и заявка' : calc ? 'Подробнее и заявка' : 'Рассчитать на мои даты'}
         </Link>
       </div>
     </article>

@@ -31,7 +31,7 @@ export async function activeTariff(vehicleId: string): Promise<(Tariff & { id: s
   return toTariff(t);
 }
 
-export function toTariff(t: { id: string; tiers: string; deposit: number; includedKmPerDay: number; overmileagePerKm: number; driverPerHour: number | null }) {
+export function toTariff(t: { id: string; tiers: string; deposit: number; includedKmPerDay: number; overmileagePerKm: number; driverPerHour: number | null; driverOnly?: boolean }) {
   return {
     id: t.id,
     tiers: json<Tier[]>(t.tiers, []),
@@ -39,6 +39,7 @@ export function toTariff(t: { id: string; tiers: string; deposit: number; includ
     includedKmPerDay: t.includedKmPerDay,
     overmileagePerKm: t.overmileagePerKm,
     driverPerHour: t.driverPerHour,
+    driverOnly: !!t.driverOnly,
   };
 }
 
