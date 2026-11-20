@@ -163,6 +163,7 @@ model TariffPlan {
   includedKmPerDay Int
   overmileagePerKm Int
   driverPerHour    Int?
+  driverOnly       Boolean  @default(false) // только почасово с водителем, ставки за сутки не действуют
   note             String?
   createdById      String?
   createdAt        DateTime @default(now())

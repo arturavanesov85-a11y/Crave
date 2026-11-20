@@ -5,10 +5,17 @@ import { Gallery } from '@/components/site/Gallery';
 import { BookingPanel } from '@/components/site/BookingPanel';
 import { defaultDates } from '@/components/site/DateSearch';
 import { rub } from '@/lib/money';
-import { tierLabel } from '@/lib/pricing';
+import { DRIVER_MIN_HOURS, tierLabel } from '@/lib/pricing';
 import { BODY_LABEL } from '@/lib/site';
+import { addHours, parseLocal, toLocalInput } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
+
+/** Возврат через N часов от получения — для машин только с водителем. */
+const plusHours = (from: string, h: number) => {
+  const d = parseLocal(from);
+  return d ? toLocalInput(addHours(d, h)) : from;
+};
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | undefined>> };
 
@@ -56,6 +63,13 @@ export default async function CarPage({ params, searchParams }: Props) {
 
           <section className="stack" style={{ gap: 12 }}>
             <h2 className="section-title" style={{ fontSize: 28 }}>Тарифы</h2>
+            {v.tariff.driverOnly ? (
+              <div className="boxes">
+                <div className="box gold"><span className="muted small">Только с водителем</span><b>{rub(v.tariff.driverPerHour ?? 0)} / час</b><span className="text-2 small">Аренда от {DRIVER_MIN_HOURS} часов, водитель входит в стоимость</span></div>
+                {v.tariff.deposit ? <div className="box"><span className="muted small">Залог</span><b>от {rub(v.tariff.deposit)}</b><span className="text-2 small">Не входит в стоимость, возвращается после аренды</span></div> : null}
+              </div>
+            ) : (
+            <>
             <div className="tier-list">
               {tiers.map((t) => (
                 <div className="tier-item" key={t.minDays}>
@@ -69,6 +83,8 @@ export default async function CarPage({ params, searchParams }: Props) {
               <div className="box gold"><span className="muted small">Залог</span><b>от {rub(v.tariff.deposit)}</b><span className="text-2 small">Не входит в стоимость, возвращается после аренды</span></div>
               <div className="box"><span className="muted small">С водителем</span><b>{v.tariff.driverPerHour ? `${rub(v.tariff.driverPerHour)} / час` : 'по согласованию'}</b></div>
             </div>
+            </>
+            )}
           </section>
 
           <section className="stack" style={{ gap: 8 }}>
@@ -78,7 +94,7 @@ export default async function CarPage({ params, searchParams }: Props) {
         </div>
 
         <aside className="aside" style={{ position: 'sticky', top: 90 }}>
-          <BookingPanel slug={v.slug} driverPerHour={v.tariff.driverPerHour} initialFrom={sp.from || def.from} initialTo={sp.to || def.to} utm={utm} />
+          <BookingPanel slug={v.slug} driverPerHour={v.tariff.driverPerHour} driverOnly={!!v.tariff.driverOnly} initialFrom={sp.from || def.from} initialTo={sp.to || (v.tariff.driverOnly ? plusHours(sp.from || def.from, DRIVER_MIN_HOURS) : def.to)} utm={utm} />
         </aside>
       </div>
     </div>

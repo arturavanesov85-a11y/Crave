@@ -13,6 +13,7 @@ type QuoteResp =
       tier: { label: string };
       dailyRate: number;
       rent: number;
+      hourly?: { hours: number; rate: number } | null;
       services: { name: string; qty: number; unit: string; amount: number }[];
       servicesTotal: number;
       discount: number;
@@ -28,12 +29,18 @@ type QuoteResp =
     };
 
 const rub = (k: number) => `${(k / 100).toLocaleString('ru-RU')} ₽`;
+const MIN_HOURS = 4; // как DRIVER_MIN_HOURS в lib/pricing
+/** '2026-10-23T10:00' (Москва) + N часов, в том же формате. */
+const plusHours = (s: string, h: number) => {
+  const d = new Date(s + ':00+03:00');
+  return Number.isNaN(d.getTime()) ? s : new Date(d.getTime() + (h + 3) * 3600000).toISOString().slice(0, 16);
+};
 const fmt = (s: string) => {
   const d = new Date(s + ':00+03:00');
   return d.toLocaleString('ru-RU', { timeZone: 'Europe/Moscow', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 };
 
-export function BookingPanel({ slug, driverPerHour, initialFrom, initialTo, utm, vehicles }: { slug: string; driverPerHour: number | null; initialFrom: string; initialTo: string; utm?: Record<string, string>; vehicles?: { slug: string; title: string; driverPerHour: number | null }[] }) {
+export function BookingPanel({ slug, driverPerHour, driverOnly, initialFrom, initialTo, utm, vehicles }: { slug: string; driverPerHour: number | null; driverOnly?: boolean; initialFrom: string; initialTo: string; utm?: Record<string, string>; vehicles?: { slug: string; title: string; driverPerHour: number | null; driverOnly?: boolean }[] }) {
   const [car, setCar] = useState(slug);
   const [from, setFrom] = useState(initialFrom);
   const [to, setTo] = useState(initialTo);
@@ -44,11 +51,12 @@ export function BookingPanel({ slug, driverPerHour, initialFrom, initialTo, utm,
   const [key, setKey] = useState('');
   const [state, action, pending] = useActionState<FormState, FormData>(submitRentalRequest, undefined);
   const driverRate = vehicles ? vehicles.find((v) => v.slug === car)?.driverPerHour ?? null : driverPerHour;
+  const onlyDriver = vehicles ? !!vehicles.find((v) => v.slug === car)?.driverOnly : !!driverOnly;
 
   useEffect(() => setKey(crypto.randomUUID()), []);
   useEffect(() => {
-    if (!driverRate) setDriver(false);
-  }, [driverRate]);
+    if (!driverRate || onlyDriver) setDriver(false);
+  }, [driverRate, onlyDriver]);
 
   const body = useMemo(() => JSON.stringify({ slug: car, from, to, services: driver ? [{ code: 'driver', qty: hours }] : [] }), [car, from, to, driver, hours]);
   useEffect(() => {
@@ -75,7 +83,11 @@ export function BookingPanel({ slug, driverPerHour, initialFrom, initialTo, utm,
       {vehicles ? (
         <label className="field">
           Автомобиль
-          <select className="input" value={car} onChange={(e) => setCar(e.target.value)}>
+          <select className="input" value={car} onChange={(e) => {
+            setCar(e.target.value);
+            // Машина только с водителем — сразу предлагаем минимальный срок.
+            if (vehicles.find((v) => v.slug === e.target.value)?.driverOnly) setTo(plusHours(from, MIN_HOURS));
+          }}>
             {vehicles.map((v) => <option key={v.slug} value={v.slug}>{v.title}</option>)}
           </select>
         </label>
@@ -99,26 +111,41 @@ export function BookingPanel({ slug, driverPerHour, initialFrom, initialTo, utm,
             {!ok.available ? <div className="notice warn">Автомобиль занят на эти даты. Выберите другие даты или другой автомобиль.</div> : null}
             {ok.pastPickup ? <div className="notice warn">Время получения уже прошло.</div> : null}
             <div className="row"><span className="muted">Период</span><span style={{ textAlign: 'right' }}>{fmt(from)} — {fmt(to)}</span></div>
-            <div className="row"><span className="muted">Оплачиваемый срок</span><span>{ok.days} сут.{ok.minutes % 1440 ? <span className="muted small"> ({Math.round(ok.minutes / 60)} ч)</span> : null}</span></div>
-            <div className="row"><span className="muted">Тариф</span><span>{ok.tier.label} · {rub(ok.dailyRate)}</span></div>
-            <hr className="hr" />
-            <div className="row"><span>Аренда, {ok.days} × {rub(ok.dailyRate)}</span><span>{rub(ok.rent)}</span></div>
+            {ok.hourly ? (
+              <>
+                <div className="row"><span className="muted">Оплачиваемый срок</span><span>{ok.hourly.hours} ч</span></div>
+                <hr className="hr" />
+                <div className="row"><span>С водителем, {ok.hourly.hours} ч × {rub(ok.hourly.rate)}</span><span>{rub(ok.rent)}</span></div>
+              </>
+            ) : (
+              <>
+                <div className="row"><span className="muted">Оплачиваемый срок</span><span>{ok.days} сут.{ok.minutes % 1440 ? <span className="muted small"> ({Math.round(ok.minutes / 60)} ч)</span> : null}</span></div>
+                <div className="row"><span className="muted">Тариф</span><span>{ok.tier.label} · {rub(ok.dailyRate)}</span></div>
+                <hr className="hr" />
+                <div className="row"><span>Аренда, {ok.days} × {rub(ok.dailyRate)}</span><span>{rub(ok.rent)}</span></div>
+              </>
+            )}
             {ok.services.map((s) => <div className="row" key={s.name}><span>{s.name}, {s.qty} {s.unit}</span><span>{rub(s.amount)}</span></div>)}
-            {!ok.services.length ? <div className="row"><span className="muted">Услуги</span><span className="muted">не выбраны</span></div> : null}
+            {!ok.services.length && !ok.hourly ? <div className="row"><span className="muted">Услуги</span><span className="muted">не выбраны</span></div> : null}
             {ok.discount ? <div className="row"><span className="muted">Скидка</span><span>−{rub(ok.discount)}</span></div> : null}
             <hr className="hr" />
             <div className="row" style={{ fontSize: 20, fontWeight: 600 }}><span>Итого</span><span>{rub(ok.total)}</span></div>
             <div className="row"><span className="muted">К оплате сейчас</span><span className="gold" style={{ textAlign: 'right' }}>{ok.payNow == null ? 'сообщит менеджер' : rub(ok.payNow)}</span></div>
             {ok.remainder != null ? <div className="row"><span className="muted">Остаток</span><span>{rub(ok.remainder)}</span></div> : null}
-            <div className="box gold" style={{ marginTop: 6 }}>
-              <div className="row" style={{ fontWeight: 600 }}><span>Залог</span><span>от {rub(ok.deposit)}</span></div>
-              <span className="text-2 small">Не входит в стоимость аренды. Возвращается при возврате автомобиля, 20 000 ₽ — через 21 день после проверки штрафов.</span>
-            </div>
-            <div className="row"><span className="muted">Включено</span><span>{ok.includedKm.toLocaleString('ru-RU')} км · сверх — {rub(ok.overmileagePerKm)} / км</span></div>
+            {ok.deposit ? (
+              <div className="box gold" style={{ marginTop: 6 }}>
+                <div className="row" style={{ fontWeight: 600 }}><span>Залог</span><span>от {rub(ok.deposit)}</span></div>
+                <span className="text-2 small">Не входит в стоимость аренды. Возвращается при возврате автомобиля, 20 000 ₽ — через 21 день после проверки штрафов.</span>
+              </div>
+            ) : null}
+            {!ok.hourly ? <div className="row"><span className="muted">Включено</span><span>{ok.includedKm.toLocaleString('ru-RU')} км · сверх — {rub(ok.overmileagePerKm)} / км</span></div> : null}
           </>
         ) : null}
       </section>
 
+      {onlyDriver ? (
+        <p className="notice">Этот автомобиль сдаётся только с водителем: оплата по часам, от {MIN_HOURS} часов. Водитель входит в стоимость.</p>
+      ) : (
       <div className="stack" style={{ gap: 8 }}>
         <label className="check">
           <input type="checkbox" checked={driver} disabled={!driverRate} onChange={(e) => setDriver(e.target.checked)} />
@@ -132,6 +159,7 @@ export function BookingPanel({ slug, driverPerHour, initialFrom, initialTo, utm,
           </label>
         ) : null}
       </div>
+      )}
 
       <form action={action} className="card pad stack" style={{ gap: 12 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600 }}>Заявка на бронирование</h2>

@@ -16,7 +16,7 @@ export default async function Home() {
   const cars = await publicVehicles();
   const hero = cars.find((c) => c.slug === 'mercedes-amg-gt63-s') ?? cars[0];
   const featured = cars.slice(0, 4);
-  const minDeposit = Math.min(...cars.map((c) => c.tariff.deposit));
+  const minDeposit = Math.min(...cars.filter((c) => !c.tariff.driverOnly).map((c) => c.tariff.deposit));
   const { from, to } = defaultDates();
 
   return (
@@ -28,7 +28,7 @@ export default async function Home() {
           <p className="text-2" style={{ fontSize: 18, maxWidth: 520 }}>
             Выберите автомобиль и даты — узнайте стоимость поездки и отправьте заявку на бронирование.
           </p>
-          <DateSearch from={from} to={to} />
+          <DateSearch from={from} to={to} bodies={[...new Set(cars.map((c) => c.bodyType))]} />
         </div>
         {hero ? (
           <figure className="hero-photo">

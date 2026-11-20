@@ -7,6 +7,7 @@ import { quote } from '@/lib/pricing';
 import { loadSettings } from '@/lib/rules';
 import { findConflict } from '@/lib/booking';
 import { db } from '@/lib/db';
+import { BODY_PLURAL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Автопарк', description: 'Премиальные автомобили в аренду: цены на ваши даты, залог и включённый пробег.' };
@@ -14,7 +15,6 @@ export const metadata = { title: 'Автопарк', description: 'Премиа�
 type SP = Promise<Record<string, string | undefined>>;
 
 const BUDGETS: [string, string][] = [['', 'Любой'], ['lt25', 'до 25 000 ₽'], ['25_40', '25–40 тыс. ₽'], ['gt40', 'от 40 000 ₽']];
-const BODIES: [string, string][] = [['', 'Все'], ['sedan', 'Седаны'], ['suv', 'Внедорожники'], ['coupe', 'Купе'], ['pickup', 'Пикапы']];
 
 export default async function Catalog({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
@@ -23,6 +23,8 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
   const pickupAt = parseLocal(fromStr), returnAt = parseLocal(toStr);
   const [cars, settings] = await Promise.all([publicVehicles(), loadSettings()]);
   const brands = [...new Set(cars.map((c) => c.make))];
+  const bodies = Object.keys(BODY_PLURAL).filter((k) => cars.some((c) => c.bodyType === k));
+  const BODIES: [string, string][] = [['', 'Все'], ...bodies.map((k): [string, string] => [k, BODY_PLURAL[k]])];
 
   const datesOk = !!pickupAt && !!returnAt && returnAt > pickupAt;
   const rows = await Promise.all(
@@ -32,7 +34,7 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
       if (!q.ok) return { v, calc: null };
       const vehicle = await db.vehicle.findUnique({ where: { id: v.id }, select: { condition: true } });
       const busy = vehicle?.condition === 'unavailable' || !!(await findConflict(db, v.id, pickupAt!, addMinutes(returnAt!, settings.prepBufferMinutes), settings.prepBufferMinutes));
-      return { v, calc: { days: q.days, tierLabel: q.tier.label, dailyRate: q.dailyRate, total: q.total, available: !busy } };
+      return { v, calc: { days: q.days, tierLabel: q.tier.label, dailyRate: q.dailyRate, hours: q.hourly?.hours ?? null, total: q.total, available: !busy } };
     }),
   );
 
@@ -40,6 +42,7 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
     if (sp.body && v.bodyType !== sp.body) return false;
     if (sp.brand && v.make !== sp.brand) return false;
     const rate = calc?.dailyRate ?? v.shortRate;
+    if (sp.budget && v.tariff.driverOnly) return false; // бюджет — в рублях за сутки, к почасовой аренде не относится
     if (sp.budget === 'lt25' && !(rate < 2500000)) return false;
     if (sp.budget === '25_40' && !(rate >= 2500000 && rate <= 4000000)) return false;
     if (sp.budget === 'gt40' && !(rate > 4000000)) return false;
@@ -63,7 +66,7 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
             <h1 className="page-title">Автопарк</h1>
             <p className="text-2">Укажите даты — покажем, какие машины свободны и сколько стоит поездка.</p>
           </div>
-          <DateSearch from={fromStr} to={toStr} body={sp.body} compact />
+          <DateSearch from={fromStr} to={toStr} body={sp.body} bodies={bodies} compact />
           {!datesOk ? <p className="error-text">Проверьте даты: возврат должен быть позже получения.</p> : null}
         </div>
       </section>

@@ -25,6 +25,8 @@ export const COMPANY = {
   kpp: '774301001',
 };
 
-export const BODY_LABEL: Record<string, string> = { sedan: 'Седан', suv: 'Внедорожник', coupe: 'Купе', pickup: 'Пикап' };
+export const BODY_LABEL: Record<string, string> = { sedan: 'Седан', suv: 'Внедорожник', coupe: 'Купе', pickup: 'Пикап', minivan: 'Минивен', wagon: 'Универсал' };
+// Для фильтров на сайте: «Седаны», «Минивены»…
+export const BODY_PLURAL: Record<string, string> = { sedan: 'Седаны', suv: 'Внедорожники', coupe: 'Купе', pickup: 'Пикапы', minivan: 'Минивены', wagon: 'Универсалы' };
 
 export const COND_LABEL: Record<string, string> = { ready: 'Готов', preparing: 'Подготовка', maintenance: 'Обслуживание', unavailable: 'Недоступен' };

@@ -3,6 +3,7 @@ import { rub } from '@/lib/money';
 import { BODY_LABEL } from '@/lib/site';
 import type { PublicVehicle } from '@/lib/catalog';
 import { daysWord } from '@/lib/dates';
+import { DRIVER_MIN_HOURS } from '@/lib/pricing';
 
 export function CarPhoto({ title, src, label = '3/4 спереди', rounded, eager }: { title: string; src?: string | null; label?: string; rounded?: boolean; eager?: boolean }) {
   if (src) {
@@ -20,7 +21,7 @@ export function CarPhoto({ title, src, label = '3/4 спереди', rounded, ea
   );
 }
 
-type Calc = { days: number; tierLabel: string; dailyRate: number; total: number; available: boolean } | null;
+type Calc = { days: number; tierLabel: string; dailyRate: number; hours: number | null; total: number; available: boolean } | null;
 
 export function CarCard({ v, calc, query }: { v: PublicVehicle; calc?: Calc; query?: string }) {
   const href = `/avtopark/${v.slug}${query ? `?${query}` : ''}`;
@@ -36,7 +37,14 @@ export function CarCard({ v, calc, query }: { v: PublicVehicle; calc?: Calc; que
         <span className="text-2" style={{ fontSize: 14 }}>
           {v.powerHp} л.с. · {v.accel} с до 100 км/ч · {v.year}
         </span>
-        {calc ? (
+        {calc?.hours ? (
+          <dl className="price-dl">
+            <dt>С водителем, почасово</dt>
+            <dd>{rub(v.tariff.driverPerHour ?? 0)} / час</dd>
+            <dt className="total">Итого за {calc.hours} ч</dt>
+            <dd className="total">{rub(calc.total)}</dd>
+          </dl>
+        ) : calc ? (
           <dl className="price-dl">
             <dt>Тариф «{calc.tierLabel}»</dt>
             <dd>{rub(calc.dailyRate)} / сутки</dd>
@@ -47,6 +55,13 @@ export function CarCard({ v, calc, query }: { v: PublicVehicle; calc?: Calc; que
             <dt>Включено</dt>
             <dd className="text-2">{(v.tariff.includedKmPerDay * calc.days).toLocaleString('ru-RU')} км</dd>
           </dl>
+        ) : v.tariff.driverOnly ? (
+          <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+            <div style={{ fontSize: 18, fontWeight: 600 }}>
+              {rub(v.tariff.driverPerHour ?? 0)} <span className="text-2" style={{ fontSize: 14, fontWeight: 400 }}>/ час с водителем</span>
+            </div>
+            <div className="muted small">Только с водителем, от {DRIVER_MIN_HOURS} часов</div>
+          </div>
         ) : (
           <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid var(--line)' }}>
             <div style={{ fontSize: 18, fontWeight: 600 }}>

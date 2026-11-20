@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { can } from '@/lib/permissions';
+import { BODY_LABEL } from '@/lib/site';
+import { DRIVER_MIN_HOURS } from '@/lib/pricing';
 import { ActionForm } from '@/components/crm/ActionForm';
 import { vehicleCreateAction } from '../../../actions';
 
@@ -20,7 +22,7 @@ export default async function NewVehicle() {
             <label className="field">Марка<input className="input" name="make" required placeholder="BMW" /></label>
             <label className="field">Модель<input className="input" name="model" required placeholder="M5 F90 Competition" /></label>
             <label className="field">Год<input className="input" name="year" type="number" min={1990} max={2100} required /></label>
-            <label className="field">Тип кузова<select className="input" name="bodyType"><option value="sedan">Седан</option><option value="suv">Внедорожник</option><option value="coupe">Купе</option><option value="pickup">Пикап</option></select></label>
+            <label className="field">Тип кузова<select className="input" name="bodyType">{Object.entries(BODY_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
             <label className="field">Мощность, л.с.<input className="input" name="powerHp" type="number" min={1} required /></label>
             <label className="field">Разгон 0–100, с<input className="input" name="accel" placeholder="3,9" required /></label>
             <label className="field">Привод<select className="input" name="drive"><option value="полный">Полный</option><option value="задний">Задний</option><option value="передний">Передний</option></select></label>
@@ -53,6 +55,7 @@ export default async function NewVehicle() {
               <label className="field">Перепробег, ₽/км<input className="input" name="overmileage" inputMode="decimal" defaultValue="150" /></label>
               <label className="field">С водителем, ₽/ч<input className="input" name="driver" inputMode="decimal" placeholder="нет" /></label>
             </div>
+            <label className="check"><input type="checkbox" name="driverOnly" />Только почасовая аренда с водителем, от {DRIVER_MIN_HOURS} часов — тогда ставки за сутки можно не заполнять</label>
           </section>
         ) : <p className="notice">Тариф задаст руководитель — до этого машина не будет показана на сайте.</p>}
 

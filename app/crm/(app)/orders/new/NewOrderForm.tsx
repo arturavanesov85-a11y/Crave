@@ -3,8 +3,8 @@
 import { useActionState, useEffect, useState } from 'react';
 import { createOrderAction } from '../../../actions';
 
-type V = { id: string; slug: string; title: string; published: boolean; driverPerHour: number | null };
-type Q = { ok: boolean; error?: string; days?: number; tier?: { label: string }; dailyRate?: number; total?: number; deposit?: number; available?: boolean; includedKm?: number };
+type V = { id: string; slug: string; title: string; published: boolean; driverPerHour: number | null; driverOnly?: boolean };
+type Q = { ok: boolean; error?: string; days?: number; tier?: { label: string }; dailyRate?: number; total?: number; deposit?: number; available?: boolean; includedKm?: number; hourly?: { hours: number; rate: number } | null };
 
 const rub = (k: number) => `${(k / 100).toLocaleString('ru-RU')} ₽`;
 
@@ -20,7 +20,7 @@ export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initi
   useEffect(() => {
     if (!v) return;
     const ctrl = new AbortController();
-    fetch('/api/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: v.slug, from, to, services: hours ? [{ code: 'driver', qty: hours }] : [] }), signal: ctrl.signal })
+    fetch('/api/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: v.slug, from, to, services: hours && !v.driverOnly ? [{ code: 'driver', qty: hours }] : [] }), signal: ctrl.signal })
       .then((r) => r.json())
       .then(setQ)
       .catch(() => undefined);
@@ -47,7 +47,11 @@ export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initi
         </div>
         <div className="grid-2 stack-sm">
           <label className="field">E-mail (необязательно)<input className="input" name="email" type="email" /></label>
-          <label className="field">Часов с водителем{v?.driverPerHour ? '' : ' (недоступно)'}<input className="input" name="driverHours" type="number" min={0} value={hours} disabled={!v?.driverPerHour} onChange={(e) => setHours(Math.max(0, Number(e.target.value) || 0))} /></label>
+          {v?.driverOnly ? (
+            <p className="notice small" style={{ margin: 0 }}>Только с водителем: оплата по часам между получением и возвратом, от 4 часов.</p>
+          ) : (
+            <label className="field">Часов с водителем{v?.driverPerHour ? '' : ' (недоступно)'}<input className="input" name="driverHours" type="number" min={0} value={hours} disabled={!v?.driverPerHour} onChange={(e) => setHours(Math.max(0, Number(e.target.value) || 0))} /></label>
+          )}
         </div>
         {state?.error ? <p className="error-text" role="alert">{state.error}</p> : null}
         <button className="btn btn-primary" type="submit" disabled={pending || (q ? !q.ok || q.available === false : false)}>{pending ? 'Создаём…' : 'Создать заказ с резервом'}</button>
@@ -58,11 +62,17 @@ export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initi
         {!q ? <span className="muted">Считаем…</span> : !q.ok ? <span className="warn">{q.error}</span> : (
           <>
             {q.available === false ? <div className="notice warn">Автомобиль занят на эти даты (с учётом подготовки).</div> : <div className="notice ok">Свободен</div>}
-            <div className="row"><span className="muted">Срок</span><span>{q.days} сут.</span></div>
-            <div className="row"><span className="muted">Тариф</span><span>{q.tier?.label} · {rub(q.dailyRate!)}</span></div>
+            {q.hourly ? (
+              <div className="row"><span className="muted">С водителем</span><span>{q.hourly.hours} ч × {rub(q.hourly.rate)}</span></div>
+            ) : (
+              <>
+                <div className="row"><span className="muted">Срок</span><span>{q.days} сут.</span></div>
+                <div className="row"><span className="muted">Тариф</span><span>{q.tier?.label} · {rub(q.dailyRate!)}</span></div>
+              </>
+            )}
             <div className="row" style={{ fontWeight: 600, fontSize: 18 }}><span>Итого</span><span>{rub(q.total!)}</span></div>
             <div className="row"><span className="muted">Залог</span><span>{rub(q.deposit!)}</span></div>
-            <div className="row"><span className="muted">Включено</span><span>{q.includedKm} км</span></div>
+            {!q.hourly ? <div className="row"><span className="muted">Включено</span><span>{q.includedKm} км</span></div> : null}
           </>
         )}
       </aside>

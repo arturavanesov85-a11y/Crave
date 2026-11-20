@@ -46,7 +46,7 @@ export default async function TgFree({ searchParams }: { searchParams: Promise<R
                 <strong>{v.title}</strong>
                 {q.ok ? <strong>{rub(q.total)}</strong> : <span className="muted small">{q.error}</span>}
               </div>
-              {q.ok ? <span className="text-2 small">{q.days} сут. × {rub(q.dailyRate)} · залог {rub(q.deposit)} · {q.includedKm} км{v.condition !== 'ready' ? ' · сейчас на подготовке' : ''}</span> : null}
+              {q.ok ? <span className="text-2 small">{q.hourly ? `с водителем, ${q.hourly.hours} ч × ${rub(q.hourly.rate)}` : `${q.days} сут. × ${rub(q.dailyRate)} · залог ${rub(q.deposit)} · ${q.includedKm} км`}{v.condition !== 'ready' ? ' · сейчас на подготовке' : ''}</span> : null}
               {q.ok && can(user, 'rental.write') ? <Link className="btn btn-quiet btn-sm" href={`/tg/rental/new?vehicle=${v.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`}>Забронировать</Link> : null}
             </div>
           ))}

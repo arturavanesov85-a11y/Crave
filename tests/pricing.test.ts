@@ -60,3 +60,35 @@ describe('расчёт стоимости', () => {
     expect(quote({ pickupAt: at(10), returnAt: at(13), tariff, rules, services: [{ code: 'extra_driver', qty: 1 }], extras: [{ code: 'extra_driver', name: 'Доп. водитель', pricing: 'fixed', amount: null }] }).ok).toBe(false);
   });
 });
+
+describe('аренда только с водителем', () => {
+  const driverOnly: Tariff = { tiers: [], deposit: 0, includedKmPerDay: 250, overmileagePerKm: 15000, driverPerHour: 500000, driverOnly: true };
+  const h = (hours: number, minutes = 0) => new Date(at(5).getTime() + (hours * 60 + minutes) * 60000);
+
+  it('оплачиваются начатые часы, без суточных ставок и пробега', () => {
+    const q = quote({ pickupAt: at(5), returnAt: h(5, 10), tariff: driverOnly, rules });
+    if (!q.ok) throw new Error(q.error);
+    expect(q.hourly).toEqual({ hours: 6, rate: 500000 });
+    expect(q.total).toBe(3000000);
+    expect(q.includedKm).toBe(0);
+    expect(q.overmileagePerKm).toBe(0);
+  });
+
+  it('меньше 4 часов — ошибка, ровно 4 — можно', () => {
+    const short = quote({ pickupAt: at(5), returnAt: h(3, 59), tariff: driverOnly, rules });
+    expect(short.ok).toBe(false);
+    const four = quote({ pickupAt: at(5), returnAt: h(4), tariff: driverOnly, rules });
+    expect(four.ok && four.total).toBe(2000000);
+  });
+
+  it('услуга «водитель» не добавляется второй раз', () => {
+    const q = quote({ pickupAt: at(5), returnAt: h(4), tariff: driverOnly, rules, services: [{ code: 'driver', qty: 4 }] });
+    expect(q.ok && q.services).toEqual([]);
+    expect(q.ok && q.total).toBe(2000000);
+  });
+
+  it('без цены часа не считается', () => {
+    const q = quote({ pickupAt: at(5), returnAt: h(4), tariff: { ...driverOnly, driverPerHour: null }, rules });
+    expect(q.ok).toBe(false);
+  });
+});
