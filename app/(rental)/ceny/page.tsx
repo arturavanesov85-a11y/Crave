@@ -3,7 +3,7 @@ import { publicVehicles } from '@/lib/catalog';
 import { BookingPanel } from '@/components/site/BookingPanel';
 import { defaultDates } from '@/components/site/DateSearch';
 import { rub } from '@/lib/money';
-import { DRIVER_MIN_HOURS, tierLabel } from '@/lib/pricing';
+import { tierLabel, DRIVER_MIN_HOURS } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Цены', description: 'Стоимость аренды премиальных автомобилей: расчёт на ваши даты и все тарифы.' };
@@ -28,7 +28,7 @@ export default async function Prices({ searchParams }: { searchParams: Promise<R
 
       {mode === 'calc' ? (
         <div style={{ maxWidth: 560 }}>
-          <BookingPanel slug={sp.car && cars.some((c) => c.slug === sp.car) ? sp.car : cars[0].slug} driverPerHour={null} initialFrom={def.from} initialTo={def.to} vehicles={cars.map((c) => ({ slug: c.slug, title: c.title, driverPerHour: c.tariff.driverPerHour, driverOnly: !!c.tariff.driverOnly }))} />
+          <BookingPanel slug={sp.car && cars.some((c) => c.slug === sp.car) ? sp.car : cars[0].slug} driverPerHour={null} initialFrom={def.from} initialTo={def.to} vehicles={cars.map((c) => ({ slug: c.slug, title: c.title, driverPerHour: c.tariff.driverPerHour, hourly: c.hourly }))} />
         </div>
       ) : (
         <div className="car-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
@@ -40,14 +40,14 @@ export default async function Prices({ searchParams }: { searchParams: Promise<R
                 <span className="muted small" style={{ whiteSpace: 'nowrap' }}>Залог от {rub(c.tariff.deposit)}</span>
               </div>
               <div className="stack" style={{ gap: 6, flex: 1 }}>
-                {c.tariff.driverOnly ? (
-                  <div className="row"><span className="text-2">Только с водителем, от {DRIVER_MIN_HOURS} ч</span><span style={{ fontWeight: 600 }}>{rub(c.tariff.driverPerHour ?? 0)} / час</span></div>
+                {c.hourly ? (
+                  <div className="row"><span className="text-2">Только с водителем, от {DRIVER_MIN_HOURS} ч</span><span style={{ fontWeight: 600 }}>{c.tariff.driverPerHour ? rub(c.tariff.driverPerHour) : '—'} / ч</span></div>
                 ) : tiersOf(c.tariff.tiers).map((t) => (
                   <div className="row" key={t.minDays}><span className="text-2">{tierLabel(t.minDays, c.tariff.tiers)}</span><span style={{ fontWeight: 600 }}>{rub(t.dailyRate)}</span></div>
                 ))}
                 <hr className="hr" />
-                {!c.tariff.driverOnly ? <div className="row small"><span className="muted">Перепробег</span><span>{rub(c.tariff.overmileagePerKm)} / км</span></div> : null}
-                <div className="row small"><span className="muted">С водителем</span><span>{c.tariff.driverPerHour ? `${rub(c.tariff.driverPerHour)} / час` : 'уточняйте'}</span></div>
+                {c.hourly ? null : <div className="row small"><span className="muted">Перепробег</span><span>{rub(c.tariff.overmileagePerKm)} / км</span></div>}
+                {c.hourly ? null : <div className="row small"><span className="muted">С водителем</span><span>{c.tariff.driverPerHour ? `${rub(c.tariff.driverPerHour)} / час` : 'уточняйте'}</span></div>}
                 <Link className="btn btn-sm" href={`/avtopark/${c.slug}`} style={{ marginTop: 'auto' }}>Рассчитать на мои даты</Link>
               </div>
             </article>

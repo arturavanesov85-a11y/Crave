@@ -16,7 +16,7 @@ export default async function NewOrder({ searchParams }: { searchParams: Promise
     <>
       <h1>Новый заказ</h1>
       <NewOrderForm
-        vehicles={vehicles.map((v) => ({ id: v.id, slug: v.slug, title: v.title, published: v.isPublished, driverPerHour: v.tariffs[0]?.driverPerHour ?? null, driverOnly: v.tariffs[0]?.driverOnly ?? false }))}
+        vehicles={vehicles.map((v) => ({ id: v.id, slug: v.slug, title: v.title, published: v.isPublished, driverPerHour: v.tariffs[0]?.driverPerHour ?? null, hourly: !!v.tariffs[0]?.driverOnly }))}
         initial={{ vehicleId: sp.vehicle ?? vehicles[0]?.id ?? '', from, to, name: lead?.name ?? '', phone: lead?.phone ?? '', leadId: lead?.id ?? '' }}
       />
     </>

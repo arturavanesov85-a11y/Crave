@@ -138,7 +138,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         <div className="facts-grid">
           <div><span className="k">Клиент</span>{can(user, 'customers.read') ? <Link href={`/crm/customers/${o.customerId}`} style={{ fontWeight: 600, color: 'var(--text)' }}>{o.customer.fullName}</Link> : <strong>{o.customer.fullName}</strong>}<a href={`tel:+${o.customer.phone}`} className="text-2">{formatPhone(o.customer.phone)}</a>{el.issues.map((i) => <span key={i} className="warn small">{i}</span>)}{el.unknown.length && ['new', 'negotiation', 'confirmed'].includes(o.status) ? <span className="muted small">не заполнено: {el.unknown.join(', ')}</span> : null}</div>
           <div><span className="k">Автомобиль</span><Link href={`/crm/vehicles/${o.vehicleId}`} style={{ fontWeight: 600, color: 'var(--text)' }}>{o.vehicle.title}</Link><span className="text-2">{o.vehicle.colorExterior} · {o.vehicle.year}</span></div>
-          <div><span className="k">Срок</span><strong>{fmtDateTime(o.pickupAt)} → {fmtDateTime(o.returnAt)}</strong><span className="text-2">{q.hourly ? `${q.hourly.hours} ч с водителем` : daysWord(q.days)}{o.actualPickupAt ? ` · выдан ${fmtDateTime(o.actualPickupAt)}` : ''}{o.actualReturnAt ? ` · возвращён ${fmtDateTime(o.actualReturnAt)}` : ''}{o.closedAt ? ` · завершён ${fmtDateTime(o.closedAt)}` : ''}</span></div>
+          <div><span className="k">Срок</span><strong>{fmtDateTime(o.pickupAt)} → {fmtDateTime(o.returnAt)}</strong><span className="text-2">{q.hours ? `${q.hours} ч с водителем` : daysWord(q.days)}{o.actualPickupAt ? ` · выдан ${fmtDateTime(o.actualPickupAt)}` : ''}{o.actualReturnAt ? ` · возвращён ${fmtDateTime(o.actualReturnAt)}` : ''}{o.closedAt ? ` · завершён ${fmtDateTime(o.closedAt)}` : ''}</span></div>
           <div><span className="k">Стоимость</span><strong>{rub(m.charges || q.total)}</strong>{m.charges ? <span className={m.debt > 0 ? 'warn' : 'gold'}>{m.debt > 0 ? `долг ${rub(m.debt)}` : m.debt < 0 ? `переплата ${rub(-m.debt)}` : 'оплачено'}</span> : <span className="muted">начислится при подтверждении</span>}</div>
           <div><span className="k">Ответственный</span><strong>{name(o.assigneeId)}</strong><span className="text-2">выдача: {name(o.handoverId)}</span></div>
         </div>
@@ -191,15 +191,19 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
               <>
                 <p className="muted small">Снимок условий от {fmtDateTime(new Date(terms.capturedAt))}. Изменение общего прайса этот заказ не пересчитывает.</p>
                 <table className="table"><tbody>
-                  {q.hourly ? (
-                    <tr><td className="muted">Тариф</td><td className="num">С водителем, почасово · {rub(q.hourly.rate)} / час</td></tr>
-                  ) : <tr><td className="muted">Тариф</td><td className="num">«{q.tier.label}» · {rub(q.dailyRate)} / сутки</td></tr>}
-                  <tr><td className="muted">Оплачиваемый срок</td><td className="num">{q.hourly ? `${q.hourly.hours} ч` : daysWord(q.days)}</td></tr>
+                  {q.hours ? (
+                    <tr><td className="muted">Тариф</td><td className="num">почасово с водителем · {q.hours} ч × {rub(q.hourlyRate ?? 0)}</td></tr>
+                  ) : (
+                    <>
+                      <tr><td className="muted">Тариф</td><td className="num">«{q.tier.label}» · {rub(q.dailyRate)} / сутки</td></tr>
+                      <tr><td className="muted">Оплачиваемый срок</td><td className="num">{daysWord(q.days)}</td></tr>
+                    </>
+                  )}
                   <tr><td className="muted">Аренда</td><td className="num">{rub(q.rent)}</td></tr>
                   {q.services.map((s) => <tr key={s.code}><td className="muted">{s.name}</td><td className="num">{s.qty} {s.unit} · {rub(s.amount)}</td></tr>)}
                   <tr><td className="muted">Скидка</td><td className="num">{q.discount ? `${rub(q.discount)} · ${q.discountReason}` : 'нет'}</td></tr>
                   <tr><td className="muted">Итого по расчёту</td><td className="num"><strong>{rub(q.total)}</strong></td></tr>
-                  {!q.hourly ? <tr><td className="muted">Включённый пробег</td><td className="num">{q.includedKm} км · сверх — {rub(terms.tariff.overmileagePerKm)} / км</td></tr> : null}
+                  {q.hours ? null : <tr><td className="muted">Включённый пробег</td><td className="num">{q.includedKm} км · сверх — {rub(terms.tariff.overmileagePerKm)} / км</td></tr>}
                   <tr><td className="muted">Залог</td><td className="num">{rub(terms.tariff.deposit)} · не входит в стоимость</td></tr>
                   <tr><td className="muted">Подготовка после аренды</td><td className="num">{terms.prepBufferMinutes / 60} ч</td></tr>
                   {terms.assumptions.length ? <tr><td className="muted">Не утверждены</td><td className="gold" style={{ textAlign: 'right' }}>{terms.assumptions.join(', ')}</td></tr> : null}

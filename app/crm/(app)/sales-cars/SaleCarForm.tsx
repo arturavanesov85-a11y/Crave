@@ -1,7 +1,6 @@
 import { ActionForm } from '@/components/crm/ActionForm';
 import { json } from '@/lib/db';
 import { SALE_STATUS, SUPPLY } from '@/lib/sales';
-import { BODY_LABEL } from '@/lib/site';
 import { toLocalInput } from '@/lib/dates';
 import { saleCarSaveAction } from '../../sales-actions';
 import { db } from '@/lib/db';
@@ -94,7 +93,7 @@ export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id
           <label className="field">Кузов
             <select className="input" name="bodyType" defaultValue={car?.bodyType ?? ''}>
               {!car ? <option value="">— как в выбранной машине —</option> : null}
-              {Object.entries(BODY_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              <option value="sedan">Седан</option><option value="suv">Внедорожник</option><option value="coupe">Купе</option><option value="pickup">Пикап</option>
             </select>
           </label>
           <label className="field">Мощность, л.с.<input className="input" name="powerHp" type="number" min={1} defaultValue={v(car?.powerHp)} /></label>

@@ -24,7 +24,7 @@ export default async function TgNewOrder({ searchParams }: { searchParams: Promi
       <h1 style={{ fontSize: 22, fontWeight: 600 }}>Новая бронь</h1>
       <NewOrderForm
         back="tg"
-        vehicles={vehicles.map((v) => ({ id: v.id, slug: v.slug, title: v.title, published: v.isPublished, driverPerHour: v.tariffs[0]?.driverPerHour ?? null, driverOnly: v.tariffs[0]?.driverOnly ?? false }))}
+        vehicles={vehicles.map((v) => ({ id: v.id, slug: v.slug, title: v.title, published: v.isPublished, driverPerHour: v.tariffs[0]?.driverPerHour ?? null, hourly: !!v.tariffs[0]?.driverOnly }))}
         initial={{ vehicleId: sp.vehicle ?? vehicles[0]?.id ?? '', from, to, name: '', phone: '', leadId: '' }}
       />
     </div>

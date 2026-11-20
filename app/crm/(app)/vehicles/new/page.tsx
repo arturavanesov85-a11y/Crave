@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { can } from '@/lib/permissions';
-import { BODY_LABEL } from '@/lib/site';
-import { DRIVER_MIN_HOURS } from '@/lib/pricing';
 import { ActionForm } from '@/components/crm/ActionForm';
 import { vehicleCreateAction } from '../../../actions';
+import { HourlyToggle } from '@/components/crm/HourlyToggle';
+import { BODY_LABEL } from '@/lib/site';
 
 export const metadata = { title: 'Новый автомобиль' };
 
@@ -46,16 +46,16 @@ export default async function NewVehicle() {
           <section className="card pad stack">
             <h2>Тариф</h2>
             <p className="muted small">Цена за сутки по сроку аренды, в рублях. Без тарифа машина не показывается на сайте.</p>
-            <div className="grid-2 stack-sm" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+            <HourlyToggle />
+            <div className="grid-2 stack-sm daily-only" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
               {[1, 3, 7, 14, 30].map((d) => <label key={d} className="field">{d === 1 ? '1–2 сут' : `от ${d} сут`}<input className="input" name={`t${d}`} inputMode="decimal" /></label>)}
             </div>
             <div className="grid-2 stack-sm" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
               <label className="field">Залог, ₽<input className="input" name="deposit" inputMode="decimal" defaultValue="50000" /></label>
-              <label className="field">Км в сутки<input className="input" name="km" type="number" defaultValue={250} /></label>
-              <label className="field">Перепробег, ₽/км<input className="input" name="overmileage" inputMode="decimal" defaultValue="150" /></label>
+              <label className="field daily-only">Км в сутки<input className="input" name="km" type="number" defaultValue={250} /></label>
+              <label className="field daily-only">Перепробег, ₽/км<input className="input" name="overmileage" inputMode="decimal" defaultValue="150" /></label>
               <label className="field">С водителем, ₽/ч<input className="input" name="driver" inputMode="decimal" placeholder="нет" /></label>
             </div>
-            <label className="check"><input type="checkbox" name="driverOnly" />Только почасовая аренда с водителем, от {DRIVER_MIN_HOURS} часов — тогда ставки за сутки можно не заполнять</label>
           </section>
         ) : <p className="notice">Тариф задаст руководитель — до этого машина не будет показана на сайте.</p>}
 

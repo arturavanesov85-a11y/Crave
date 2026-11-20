@@ -2,9 +2,10 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import { createOrderAction } from '../../../actions';
+import { addHoursLocal, DRIVER_MIN_HOURS } from '@/lib/pricing';
 
-type V = { id: string; slug: string; title: string; published: boolean; driverPerHour: number | null; driverOnly?: boolean };
-type Q = { ok: boolean; error?: string; days?: number; tier?: { label: string }; dailyRate?: number; total?: number; deposit?: number; available?: boolean; includedKm?: number; hourly?: { hours: number; rate: number } | null };
+type V = { id: string; slug: string; title: string; published: boolean; driverPerHour: number | null; hourly?: boolean };
+type Q = { ok: boolean; error?: string; days?: number; hours?: number | null; hourlyRate?: number | null; tier?: { label: string }; dailyRate?: number; total?: number; deposit?: number; available?: boolean; includedKm?: number };
 
 const rub = (k: number) => `${(k / 100).toLocaleString('ru-RU')} ₽`;
 
@@ -12,20 +13,24 @@ export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initi
   const [state, action, pending] = useActionState(createOrderAction, undefined);
   const [vehicleId, setVehicleId] = useState(initial.vehicleId);
   const [from, setFrom] = useState(initial.from);
-  const [to, setTo] = useState(initial.to);
+  const [toInput, setTo] = useState(initial.to);
   const [hours, setHours] = useState(0);
+  const [driveHours, setDriveHours] = useState(DRIVER_MIN_HOURS);
   const [q, setQ] = useState<Q | null>(null);
   const v = vehicles.find((x) => x.id === vehicleId);
+  // Почасовая машина: только с водителем — время подачи и число часов (от 4), возврат считается сам.
+  const hourly = !!v?.hourly;
+  const to = hourly ? addHoursLocal(from, driveHours) : toInput;
 
   useEffect(() => {
     if (!v) return;
     const ctrl = new AbortController();
-    fetch('/api/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: v.slug, from, to, services: hours && !v.driverOnly ? [{ code: 'driver', qty: hours }] : [] }), signal: ctrl.signal })
+    fetch('/api/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: v.slug, from, to, services: hours && !hourly ? [{ code: 'driver', qty: hours }] : [] }), signal: ctrl.signal })
       .then((r) => r.json())
       .then(setQ)
       .catch(() => undefined);
     return () => ctrl.abort();
-  }, [v, from, to, hours]);
+  }, [v, from, to, hours, hourly]);
 
   return (
     <form action={action} className="cols">
@@ -37,21 +42,28 @@ export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initi
             {vehicles.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
           </select>
         </label>
-        <div className="grid-2 stack-sm">
-          <label className="field">Получение<input className="input" type="datetime-local" name="from" value={from} onChange={(e) => setFrom(e.target.value)} required /></label>
-          <label className="field">Возврат<input className="input" type="datetime-local" name="to" value={to} onChange={(e) => setTo(e.target.value)} required /></label>
-        </div>
+        {hourly ? (
+          <>
+            <p className="notice small" style={{ margin: 0 }}>Только с водителем, почасово, от {DRIVER_MIN_HOURS} ч.</p>
+            <div className="grid-2 stack-sm">
+              <label className="field">Подача<input className="input" type="datetime-local" name="from" value={from} onChange={(e) => setFrom(e.target.value)} required /></label>
+              <label className="field">Часов<input className="input" type="number" min={DRIVER_MIN_HOURS} max={240} value={driveHours} onChange={(e) => setDriveHours(Math.max(DRIVER_MIN_HOURS, Number(e.target.value) || DRIVER_MIN_HOURS))} /></label>
+            </div>
+            <input type="hidden" name="to" value={to} />
+          </>
+        ) : (
+          <div className="grid-2 stack-sm">
+            <label className="field">Получение<input className="input" type="datetime-local" name="from" value={from} onChange={(e) => setFrom(e.target.value)} required /></label>
+            <label className="field">Возврат<input className="input" type="datetime-local" name="to" value={toInput} onChange={(e) => setTo(e.target.value)} required /></label>
+          </div>
+        )}
         <div className="grid-2 stack-sm">
           <label className="field">Имя клиента<input className="input" name="name" defaultValue={initial.name} required /></label>
           <label className="field">Телефон<input className="input" name="phone" type="tel" defaultValue={initial.phone} required placeholder="+7" /></label>
         </div>
         <div className="grid-2 stack-sm">
           <label className="field">E-mail (необязательно)<input className="input" name="email" type="email" /></label>
-          {v?.driverOnly ? (
-            <p className="notice small" style={{ margin: 0 }}>Только с водителем: оплата по часам между получением и возвратом, от 4 часов.</p>
-          ) : (
-            <label className="field">Часов с водителем{v?.driverPerHour ? '' : ' (недоступно)'}<input className="input" name="driverHours" type="number" min={0} value={hours} disabled={!v?.driverPerHour} onChange={(e) => setHours(Math.max(0, Number(e.target.value) || 0))} /></label>
-          )}
+          {hourly ? <span /> : <label className="field">Часов с водителем{v?.driverPerHour ? '' : ' (недоступно)'}<input className="input" name="driverHours" type="number" min={0} value={hours} disabled={!v?.driverPerHour} onChange={(e) => setHours(Math.max(0, Number(e.target.value) || 0))} /></label>}
         </div>
         {state?.error ? <p className="error-text" role="alert">{state.error}</p> : null}
         <button className="btn btn-primary" type="submit" disabled={pending || (q ? !q.ok || q.available === false : false)}>{pending ? 'Создаём…' : 'Создать заказ с резервом'}</button>
@@ -62,8 +74,8 @@ export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initi
         {!q ? <span className="muted">Считаем…</span> : !q.ok ? <span className="warn">{q.error}</span> : (
           <>
             {q.available === false ? <div className="notice warn">Автомобиль занят на эти даты (с учётом подготовки).</div> : <div className="notice ok">Свободен</div>}
-            {q.hourly ? (
-              <div className="row"><span className="muted">С водителем</span><span>{q.hourly.hours} ч × {rub(q.hourly.rate)}</span></div>
+            {q.hours ? (
+              <div className="row"><span className="muted">С водителем</span><span>{q.hours} ч × {rub(q.hourlyRate ?? 0)}</span></div>
             ) : (
               <>
                 <div className="row"><span className="muted">Срок</span><span>{q.days} сут.</span></div>
@@ -72,7 +84,7 @@ export function NewOrderForm({ vehicles, initial, back }: { vehicles: V[]; initi
             )}
             <div className="row" style={{ fontWeight: 600, fontSize: 18 }}><span>Итого</span><span>{rub(q.total!)}</span></div>
             <div className="row"><span className="muted">Залог</span><span>{rub(q.deposit!)}</span></div>
-            {!q.hourly ? <div className="row"><span className="muted">Включено</span><span>{q.includedKm} км</span></div> : null}
+            {q.hours ? null : <div className="row"><span className="muted">Включено</span><span>{q.includedKm} км</span></div>}
           </>
         )}
       </aside>

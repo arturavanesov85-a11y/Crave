@@ -30,7 +30,7 @@ export default async function TgOrder({ params }: { params: Promise<{ id: string
   const o = await db.rentalOrder.findUnique({ where: { id: (await params).id }, include: { vehicle: true, customer: true, inspections: { select: { kind: true } }, events: { orderBy: { createdAt: 'desc' }, take: 6 } } });
   if (!o) notFound();
   if (!can(user, 'rental.read') && !(can(user, 'rental.read.assigned') && o.handoverId === user.id)) redirect('/tg/rental');
-  const q = json<{ total?: number; deposit?: number; includedKm?: number; days?: number; hourly?: { hours: number } | null }>(o.quoteSnapshot, {});
+  const q = json<{ total?: number; deposit?: number; includedKm?: number; days?: number; hours?: number | null }>(o.quoteSnapshot, {});
   const m = await orderMoney(db, o.id, q.deposit ?? 0);
   const write = can(user, 'rental.write');
   const inspect = can(user, 'rental.inspect');
@@ -47,7 +47,7 @@ export default async function TgOrder({ params }: { params: Promise<{ id: string
       <div className="stack" style={{ gap: 4 }}>
         <span className="eyebrow">{STATUS_LABEL[o.status]} · {o.number}</span>
         <h1 style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.2 }}>{o.vehicle.title}{o.vehicle.plate ? <span className="muted" style={{ fontSize: 15 }}> · {o.vehicle.plate}</span> : null}</h1>
-        <span className="text-2">{fmtDateTime(o.pickupAt)} — {fmtDateTime(o.returnAt)}{q.hourly ? ` · ${q.hourly.hours} ч с водителем` : q.days ? ` · ${q.days} сут.` : ''}</span>
+        <span className="text-2">{fmtDateTime(o.pickupAt)} — {fmtDateTime(o.returnAt)}{q.hours ? ` · ${q.hours} ч с водителем` : q.days ? ` · ${q.days} сут.` : ''}</span>
       </div>
 
       <section className="card pad stack" style={{ gap: 6 }}>

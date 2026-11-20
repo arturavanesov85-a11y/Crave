@@ -1,6 +1,4 @@
 // Выбор дат — обычная GET-форма, работает и без JavaScript.
-import { BODY_PLURAL } from '@/lib/site';
-
 export function defaultDates() {
   const now = new Date(Date.now() + 3 * 3600000); // Москва
   const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 10, 0));
@@ -9,8 +7,7 @@ export function defaultDates() {
   return { from: f(d), to: f(r) };
 }
 
-// bodies — типы кузова, которые есть в автопарке; без него — все.
-export function DateSearch({ from, to, body, bodies, action = '/avtopark', compact }: { from: string; to: string; body?: string; bodies?: string[]; action?: string; compact?: boolean }) {
+export function DateSearch({ from, to, body, action = '/avtopark', compact }: { from: string; to: string; body?: string; action?: string; compact?: boolean }) {
   return (
     <form action={action} method="get" className={compact ? 'wrap-row' : 'card pad stack'} style={compact ? { alignItems: 'flex-end', gap: 16 } : undefined}>
       <div className="grid-2 stack-sm" style={compact ? { flex: '2 1 440px' } : undefined}>
@@ -27,7 +24,10 @@ export function DateSearch({ from, to, body, bodies, action = '/avtopark', compa
         Тип кузова
         <select className="input" name="body" defaultValue={body ?? ''}>
           <option value="">Все автомобили</option>
-          {Object.entries(BODY_PLURAL).filter(([k]) => !bodies || bodies.includes(k)).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          <option value="sedan">Седаны</option>
+          <option value="suv">Внедорожники</option>
+          <option value="coupe">Купе</option>
+          <option value="pickup">Пикапы</option>
         </select>
       </label>
       <div className="wrap-row" style={compact ? { flex: '1 1 200px' } : { gap: 12 }}>
