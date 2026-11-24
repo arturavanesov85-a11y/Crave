@@ -104,7 +104,7 @@ async function handleMessage(chat: Chat, m: Message, uid: number): Promise<'lead
   if (existing) {
     await db.leadNote.create({ data: { leadId: existing.id, kind: 'system', text: `Авито, ${buyer}: ${text}` } });
     // Закрытая заявка снова в работе — покупатель написал ещё раз.
-    if (['converted', 'rejected', 'spam'].includes(existing.status)) await db.lead.update({ where: { id: existing.id }, data: { status: 'new', stage: 'new', closedAt: null } });
+    await db.lead.update({ where: { id: existing.id }, data: { viewedAt: null, ...(['converted', 'rejected', 'spam'].includes(existing.status) ? { status: 'new', stage: 'new', closedAt: null } : {}) } });
     await notifyAvitoMessage(existing.id, chat.id, buyer, item?.title ?? null, text, false);
     return 'note';
   }

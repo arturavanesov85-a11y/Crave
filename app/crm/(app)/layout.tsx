@@ -13,7 +13,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   const user = await requireUser();
   const dirs = directionsOf(user);
   const [newRental, newSales, newService] = await Promise.all(
-    (['rental', 'sales', 'service'] as const).map((d) => db.lead.count({ where: { status: 'new', direction: d } })),
+    (['rental', 'sales', 'service'] as const).map((d) => db.lead.count({ where: d === 'rental' ? { status: 'new', direction: d } : { direction: d, viewedAt: null, status: { in: ['new', 'in_progress'] } } })),
   );
   // Меню: «Сегодня» → направления (раскрывающиеся группы) → «Клиенты» → «Настройки».
   // Пункты без доступа не показываются, пустые группы тоже.

@@ -25,6 +25,8 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   const direction = lead.direction as WsDirection;
   const ws = WS[direction];
   if (!can(user, ws.perm)) redirect('/crm/no-access');
+  // Открыли — заявка прочитана, счётчик «Заявки» в меню гаснет (новое сообщение с Авито зажжёт снова).
+  if (!lead.viewedAt) await db.lead.update({ where: { id: lead.id }, data: { viewedAt: new Date() } });
 
   const [users, staffRaw, saleCars] = await Promise.all([
     usersById(),

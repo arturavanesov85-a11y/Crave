@@ -95,6 +95,7 @@ model Lead {
   amount         Int? // сумма сделки или оценка работ, копейки
   lostReason     String?
   closedAt       DateTime?
+  viewedAt       DateTime? // когда заявку впервые открыли в CRM; пусто — не прочитана (счётчик в меню)
   createdAt      DateTime  @default(now())
   notes          LeadNote[]
 }
