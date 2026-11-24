@@ -136,6 +136,7 @@ export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'v
     tag('Make', ad.make), tag('Model', ad.model), tag('Generation', ad.generation), tag('Modification', ad.modification), tag('Complectation', ad.complectation),
     tag('Year', car.year), tag('Kilometrage', car.mileageKm), tag('VIN', car.vin), // GRN — госномер (покупатели не видят), RegInRussia — на учёте ли машина в РФ
     tag('GRN', car.plate), tag('RegInRussia', car.plate ? 'На учете в РФ' : 'Не на учете в РФ'),
+    tag('PTS', 'Электронный'), // у всех машин салона ЭПТС
     tag('BodyType', mod.body), tag('Doors', mod.doors), tag('FuelType', mod.fuel), tag('DriveType', mod.drive), tag('Transmission', mod.transmission),
     tag('EngineSize', mod.engine), tag('Power', mod.power),
     tag('Color', ad.color), tag('WheelType', ad.wheel || 'Левый'), tag('Owners', ad.owners), tag('Accident', ad.accident || 'Не битый'),
