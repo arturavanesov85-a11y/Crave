@@ -137,7 +137,6 @@ export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'v
     tag('EngineSize', mod.engine), tag('Power', mod.power),
     tag('Color', ad.color), tag('WheelType', ad.wheel || 'Левый'), tag('Owners', ad.owners), tag('Accident', ad.accident || 'Не битый'),
     tag('Price', price),
-    tag('OnlyOnAvito', 'Нет'), // машины есть и на нашем сайте
     html ? `<Description>${cdata(html)}</Description>` : '',
     photos.length ? `<Images>${photos.map((p) => `<Image url="${esc(photoUrl(p))}"/>`).join('')}</Images>` : '',
     '</Ad>',
