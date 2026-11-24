@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ChannelTag } from '@/components/crm/ChannelTag';
 import { notFound, redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { CustomerDocs } from '@/components/crm/CustomerDocs';
@@ -55,7 +56,8 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
           ) : null}
         </div>
         <div className="facts-grid">
-          <div><span className="k">Телефон</span><a href={`tel:+${c.phone}`}>{formatPhone(c.phone)}</a></div>
+          <div><span className="k">Телефон</span>{c.phone ? <a href={`tel:+${c.phone}`}>{formatPhone(c.phone)}</a> : <span className="muted">не передан</span>}</div>
+          <div><span className="k">Откуда пришёл</span><span><ChannelTag channel={c.channel ?? 'site'} />{c.avitoProfile ? <> · <a href={c.avitoProfile} target="_blank" rel="noreferrer">профиль на Авито</a></> : null}</span></div>
           <div><span className="k">E-mail</span><span>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : '—'}</span></div>
           <div><span className="k">Возраст</span><span className={el.age != null && el.age < MIN_AGE_YEARS ? 'warn' : ''}>{el.age != null ? `${el.age} лет · ${fmtDate(c.birthDate)}` : '—'}</span></div>
           <div><span className="k">Водительский стаж</span><span className={el.exp != null && el.exp < MIN_EXPERIENCE_YEARS ? 'warn' : ''}>{experienceText(el.exp)}{c.drivingSince ? ` · с ${fmtDate(c.drivingSince)}` : ''}</span></div>

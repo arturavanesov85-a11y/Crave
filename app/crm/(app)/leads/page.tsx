@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { ChannelTag } from '@/components/crm/ChannelTag';
 import { requireUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
 import { fmtDateTime } from '@/lib/dates';
@@ -56,7 +57,7 @@ export default async function Leads({ searchParams }: { searchParams: Promise<Re
               <div style={{ flex: '2 1 280px' }} className="stack">
                 <div className="wrap-row" style={{ gap: 8 }}>
                   <strong>{l.name}</strong>
-                  <a href={`tel:+${l.phone}`}>{formatPhone(l.phone)}</a>
+                  {l.phone ? <a href={`tel:+${l.phone}`}>{formatPhone(l.phone)}</a> : null} <ChannelTag channel={l.channel} />
                   <span className={`tag ${l.status === 'new' ? 'gold' : ''}`}>{STATUS[l.status]}</span>
                   {stale ? <span className="tag warn">без ответственного более 15 мин</span> : null}
                 </div>

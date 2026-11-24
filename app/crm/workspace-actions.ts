@@ -53,7 +53,7 @@ export async function requestCreateAction(_: ActionState, fd: FormData): Promise
       const customer = await upsertCustomer(tx, { name, phone }, direction);
       const l = await tx.lead.create({
         data: {
-          direction, site: 'crm', kind: 'manual', name, phone,
+          direction, site: 'crm', channel: 'crm', kind: 'manual', name, phone,
           message: str(fd, 'message') || null, carInfo: str(fd, 'carInfo') || null,
           customerId: customer.id, assigneeId: user.id, stage: 'new', status: 'new',
         },
@@ -137,5 +137,21 @@ export async function requestNoteAction(_: ActionState, fd: FormData): Promise<A
     if (!text) throw new Error('Пустой комментарий');
     await db.leadNote.create({ data: { leadId: lead.id, authorId: user.id, kind: 'comment', text } });
     return 'Добавлено';
+  });
+}
+
+/** Ответ покупателю в чат Авито прямо из заявки. */
+export async function avitoReplyAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const { lead, direction } = await loadLead(str(fd, 'id'));
+    const user = await guard(direction);
+    const text = str(fd, 'text').slice(0, 3000);
+    if (!text) throw new Error('Пустое сообщение');
+    const { leadAvitoChat, sendAvitoMessage } = await import('@/lib/avito-api');
+    const chatId = (JSON.parse(lead.payload || '{}') as { avitoChatId?: string }).avitoChatId;
+    if (!chatId || !leadAvitoChat(lead.payload)) throw new Error('Заявка не из Авито');
+    await sendAvitoMessage(chatId, text);
+    await db.leadNote.create({ data: { leadId: lead.id, authorId: user.id, kind: 'comment', text: `Ответ в Авито: ${text}` } });
+    return 'Отправлено в чат Авито';
   });
 }

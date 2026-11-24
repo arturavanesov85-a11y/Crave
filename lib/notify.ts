@@ -248,3 +248,10 @@ export async function notifyAccessRequest(linkId: string) {
   const text = `<b>Запрос доступа к приложению</b>\n${esc(name)}${l.username ? ` (@${esc(l.username)})` : ''}\nПривяжите аккаунт к сотруднику в CRM.`;
   await deliver('staff', to, text, [[{ text: 'Открыть запросы', url: appUrl('/crm/settings/telegram') }]]);
 }
+
+/** Сообщение покупателя с Авито — сотрудникам продаж: новая заявка или новое сообщение в существующей. */
+export async function notifyAvitoMessage(leadId: string, chatId: string, buyer: string, item: string | null, text: string, isNew: boolean) {
+  const to = await staffWith(['leads.sales']);
+  const { avitoChatUrl } = await import('./avito-api');
+  await deliver('staff', to, `<b>${isNew ? 'Авито: новая заявка' : 'Авито: новое сообщение'}</b>\n${esc(buyer)}${item ? `\n${esc(item)}` : ''}\n«${esc(text.slice(0, 800))}»`, [[{ text: 'Открыть заявку', url: appUrl(`/crm/requests/${leadId}`) }, { text: 'Чат на Авито', url: avitoChatUrl(chatId) }]]);
+}

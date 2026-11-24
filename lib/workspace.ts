@@ -47,4 +47,5 @@ export const LEAD_KIND: Record<string, string> = {
   custom_order: 'Авто под заказ',
   service_request: 'Запись в сервис',
   manual: 'Создана в CRM',
+  avito_message: 'Сообщение с Авито',
 };

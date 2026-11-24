@@ -1,5 +1,6 @@
 // Доска заявок рабочей зоны: колонки по этапам, свои/все, поиск, закрытые.
 import Link from 'next/link';
+import { ChannelTag } from './ChannelTag';
 import type { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { fmtDateTime, startOfLocalDay, addMinutes } from '@/lib/dates';
@@ -44,7 +45,7 @@ export async function Workspace({ direction, user, sp }: { direction: WsDirectio
     return (
       <Link key={l.id} href={`/crm/requests/${l.id}`} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 12, color: 'var(--text)', borderColor: late ? 'var(--warn)' : undefined }}>
         <div className="row" style={{ alignItems: 'center' }}><strong>{l.name}</strong><span className="muted small">{fmtDateTime(l.createdAt)}</span></div>
-        <span className="text-2 small">{formatPhone(l.phone)} · {LEAD_KIND[l.kind] ?? l.kind}</span>
+        <span className="text-2 small" style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}><ChannelTag channel={l.channel} />{l.phone ? `${formatPhone(l.phone)} · ` : ''}{LEAD_KIND[l.kind] ?? l.kind}</span>
         {l.carInfo || l.saleCarId ? <span className="small">{l.saleCarId ? cars.get(l.saleCarId) : l.carInfo}</span> : null}
         {direction === 'service' && l.appointmentAt ? <span className="small gold">Запись: {fmtDateTime(l.appointmentAt)}</span> : null}
         {l.nextActionAt || l.nextAction ? <span className={`small ${late ? 'warn' : 'muted'}`}>{late ? 'Просрочено: ' : ''}{l.nextAction ?? 'действие'}{l.nextActionAt ? ` · ${fmtDateTime(l.nextActionAt)}` : ''}</span> : null}
@@ -111,7 +112,7 @@ export async function Workspace({ direction, user, sp }: { direction: WsDirectio
             <tbody>
               {leads.map((l) => (
                 <tr key={l.id}>
-                  <td><Link href={`/crm/requests/${l.id}`} style={{ fontWeight: 600 }}>{l.name}</Link><div className="muted small">{formatPhone(l.phone)}</div></td>
+                  <td><Link href={`/crm/requests/${l.id}`} style={{ fontWeight: 600 }}>{l.name}</Link><div className="muted small"><ChannelTag channel={l.channel} /> {l.phone ? formatPhone(l.phone) : ''}</div></td>
                   <td><span className={`tag ${stageOf(direction, l.stage).closed === 'won' ? 'ok' : ''}`}>{stageOf(direction, l.stage).label}</span>{l.lostReason ? <div className="muted small">{l.lostReason}</div> : null}</td>
                   <td className="small">{l.saleCarId ? cars.get(l.saleCarId) : l.carInfo ?? '—'}</td>
                   <td className="num">{l.amount ? rub(l.amount) : '—'}</td>

@@ -12,9 +12,9 @@ import { formatPhone } from '@/lib/orders';
 export const metadata = { title: 'Сегодня' };
 
 type Ref = { id: string; label: string } | null;
-type Item = { at: Date | null; order: Ref; note?: string; vehicle: Ref; customer: (Ref & { phone?: string }) | null; who: string; next: string; href: string; warn?: boolean };
+type Item = { at: Date | null; order: Ref; note?: string; vehicle: Ref; customer: (Ref & { phone?: string | null }) | null; who: string; next: string; href: string; warn?: boolean };
 
-type O = { id: string; number: string; vehicleId: string; customerId: string; vehicle: { title: string }; customer: { fullName: string; phone: string } };
+type O = { id: string; number: string; vehicleId: string; customerId: string; vehicle: { title: string }; customer: { fullName: string; phone: string | null } };
 const refs = (o: O) => ({ order: { id: o.id, label: o.number }, vehicle: { id: o.vehicleId, label: o.vehicle.title }, customer: { id: o.customerId, label: o.customer.fullName, phone: o.customer.phone } });
 
 export default async function Today() {

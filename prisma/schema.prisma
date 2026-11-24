@@ -39,7 +39,10 @@ model Session {
 model Customer {
   id          String              @id @default(cuid())
   fullName    String
-  phone       String              @unique // только цифры, 7XXXXXXXXXX
+  phone       String?             @unique // только цифры, 7XXXXXXXXXX; пусто — канал не передал номер (например, Авито)
+  channel     String? // откуда клиент пришёл впервые: site | avito | crm | … (lib/channels.ts)
+  avitoUserId String?             @unique // покупатель на Авито
+  avitoProfile String? // ссылка на профиль покупателя на Авито
   email       String?
   birthDate   DateTime?
   drivingSince DateTime? // дата начала водительского стажа
@@ -69,6 +72,7 @@ model Lead {
   id             String    @id @default(cuid())
   direction      String // rental | sales | service
   site           String
+  channel        String    @default("site") // канал привлечения: site | avito | crm | … (lib/channels.ts)
   kind           String // booking_request | callback | purchase | service_request
   status         String    @default("new") // new | in_progress | converted | rejected | spam
   name           String

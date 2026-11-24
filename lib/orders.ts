@@ -51,7 +51,8 @@ export function normalizePhone(raw: string): string | null {
   return /^7\d{10}$/.test(d) ? d : null;
 }
 
-export function formatPhone(d: string) {
+export function formatPhone(d: string | null | undefined) {
+  if (!d) return '—';
   return d.length === 11 ? `+${d[0]} (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7, 9)}-${d.slice(9)}` : d;
 }
 

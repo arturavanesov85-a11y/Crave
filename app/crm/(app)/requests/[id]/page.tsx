@@ -9,7 +9,9 @@ import { can, directionsOf } from '@/lib/permissions';
 import { usersById } from '@/lib/crm-data';
 import { LEAD_KIND, STAGES, WS, stageOf, type WsDirection } from '@/lib/workspace';
 import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
-import { requestNoteAction, requestStageAction, requestUpdateAction } from '../../../workspace-actions';
+import { avitoReplyAction, requestNoteAction, requestStageAction, requestUpdateAction } from '../../../workspace-actions';
+import { avitoChatMessages, avitoConfigured, leadAvitoChat } from '@/lib/avito-api';
+import { ChannelTag } from '@/components/crm/ChannelTag';
 
 export const metadata = { title: 'Заявка' };
 
@@ -37,6 +39,9 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   const won = order.find((s) => s.closed === 'won')!;
   const payload = json<Record<string, unknown>>(lead.payload, {});
   const utm = json<Record<string, string>>(lead.utm, {});
+  const avito = leadAvitoChat(lead.payload);
+  const chatId = avito ? json<{ avitoChatId?: string }>(lead.payload, {}).avitoChatId : undefined;
+  const chat = chatId && avitoConfigured() ? await avitoChatMessages(chatId).catch(() => null) : chatId ? null : [];
   const name = (id: string | null) => (id ? users.get(id)?.fullName ?? '—' : 'не назначен');
   const car = lead.saleCarId ? saleCars.find((c) => c.id === lead.saleCarId) : null;
   const late = lead.nextActionAt && lead.nextActionAt < new Date();
@@ -75,9 +80,9 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
           ))}
         </nav>
         <div className="facts-grid">
-          <div><span className="k">Телефон</span><a href={`tel:+${lead.phone}`}>{formatPhone(lead.phone)}</a></div>
+          <div><span className="k">Телефон</span>{lead.phone ? <a href={`tel:+${lead.phone}`}>{formatPhone(lead.phone)}</a> : <span className="muted">не передан</span>}</div>
           <div><span className="k">Клиент</span>{lead.customerId && can(user, 'customers.read') && directionsOf(user).includes(direction) ? <Link href={`/crm/customers/${lead.customerId}`}>{lead.customer?.fullName ?? lead.name}</Link> : <span>{lead.name}</span>}</div>
-          <div><span className="k">Поступила</span><span>{fmtDateTime(lead.createdAt)} · {lead.site === 'crm' ? 'создана в CRM' : `сайт ${lead.site}`}</span></div>
+          <div><span className="k">Поступила</span><span style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>{fmtDateTime(lead.createdAt)} · <ChannelTag channel={lead.channel} />{lead.channel === 'site' ? ` ${lead.site}` : ''}</span></div>
           <div><span className="k">Ответственный</span><strong>{name(lead.assigneeId)}</strong></div>
           <div><span className="k">Следующее действие</span><span className={late ? 'warn' : ''}>{lead.nextAction ?? '—'}{lead.nextActionAt ? ` · ${fmtDateTime(lead.nextActionAt)}` : ''}</span></div>
           {direction === 'service' ? <div><span className="k">Запись</span><span className="gold">{fmtDateTime(lead.appointmentAt)}</span></div> : null}
@@ -88,6 +93,26 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         {payload.car ? <p className="small">Из формы: {String(payload.car)}</p> : null}
         {Object.keys(utm).length ? <p className="muted small">Реклама: {Object.entries(utm).map(([k, v]) => `${k}=${v}`).join(', ')}</p> : null}
       </section>
+
+      {avito ? (
+        <section className="card pad stack">
+          <div className="row"><h2>Переписка на Авито</h2><a className="btn btn-quiet btn-sm" href={avito.chat} target="_blank" rel="noreferrer">Открыть чат на Авито</a></div>
+          {avito.item ? <p className="small">Объявление: <a href={avito.item} target="_blank" rel="noreferrer">{lead.carInfo ?? avito.item}</a></p> : null}
+          {chat === null ? <p className="warn small">Не удалось загрузить переписку с Авито — откройте чат на Авито.</p> : (
+            <div className="stack" style={{ gap: 6, maxHeight: 420, overflowY: 'auto' }}>
+              {chat.map((m) => (
+                <div key={m.id} style={{ alignSelf: m.mine ? 'flex-end' : 'flex-start', maxWidth: '80%', padding: '8px 12px', borderRadius: 12, background: m.mine ? 'var(--gold-12)' : 'var(--surface-2, #1c1c1c)', border: '1px solid var(--line)' }}>
+                  <div className="small" style={{ whiteSpace: 'pre-line' }}>{m.text}</div>
+                  <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>{m.mine ? 'CRAVE' : lead.name} · {fmtDateTime(m.at)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <ActionForm action={avitoReplyAction} hidden={{ id: lead.id }} submit="Отправить в Авито" className="stack" style={{ gap: 6 }}>
+            <textarea className="input" name="text" rows={3} required placeholder="Сообщение покупателю — уйдёт в чат Авито от имени CRAVE" />
+          </ActionForm>
+        </section>
+      ) : null}
 
       <div className="cols">
         <section className="main card pad stack">
