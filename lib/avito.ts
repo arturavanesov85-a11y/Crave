@@ -105,7 +105,8 @@ export function avitoDescription(description: string, equipment: string | null) 
   try { eq = equipment ? JSON.parse(equipment) : []; } catch { eq = []; }
   const parts = [
     ...description.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((l) => `<p>${esc(l)}</p>`),
-    ...eq.map((l) => l.trim()).filter(Boolean).map((l) => (l.endsWith(':') ? `<p><strong>${esc(l)}</strong></p>` : `<p>${esc(l)}</p>`)),
+    // пустая строка в тексте — пустая строка и в объявлении
+    ...eq.map((l) => l.trim()).map((l) => (!l ? '<br>' : l.endsWith(':') ? `<p><strong>${esc(l)}</strong></p>` : `<p>${esc(l)}</p>`)),
   ];
   let out = '';
   for (const x of parts) { if (out.length + x.length > 7400) break; out += x; }

@@ -9,7 +9,7 @@ import { parseRub } from '@/lib/money';
 import { parseLocal } from '@/lib/dates';
 import { can, Forbidden } from '@/lib/permissions';
 import { audit, normalizePhone } from '@/lib/orders';
-import { BUYER_FIELDS, type Buyer } from '@/lib/sales';
+import { BUYER_FIELDS, textLines, type Buyer } from '@/lib/sales';
 import { removePublicFolder, removePublicPhoto, savePublicPhotos } from '@/lib/public-media';
 import { AUTO_FIELDS } from '@/lib/site-settings';
 
@@ -72,7 +72,7 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
     const status = locked ? existing.status : asked;
     const powerRaw = str(fd, 'powerHp') || (src ? String(src.powerHp) : '');
     const eqText = str(fd, 'equipment');
-    const equipment = eqText ? eqText.split('\n').map((l) => l.trim()).filter(Boolean) : src ? [...(src.description ? [src.description] : []), ...json<string[]>(src.equipment, [])] : [];
+    const equipment = eqText ? textLines(eqText) : src ? [...(src.description ? [src.description] : []), ...json<string[]>(src.equipment, [])] : [];
 
     // Поля каталога Авито: модификация проверяется по каталогу, остальное — как выбрали.
     const { findModification } = await import('@/lib/avito');

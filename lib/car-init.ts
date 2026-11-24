@@ -1,5 +1,6 @@
 // Начальные значения общего блока «Автомобиль» (components/crm/CarFields) для машин проката и продажи.
 import type { CarInit } from '@/components/crm/CarFields';
+import { SALE_TEXT_TEMPLATE } from '@/lib/sales';
 
 type Extra = { generation?: string; modification?: string; complectation?: string; owners?: string; accident?: string; wheel?: string };
 const extra = (raw: string | null | undefined): Extra => { try { return raw ? JSON.parse(raw) : {}; } catch { return {}; } };
@@ -20,7 +21,7 @@ function common(c: Common): CarInit {
 }
 
 export function saleCarInit(c: (Common & { plate: string | null; color: string | null; engine: string | null; transmission: string | null }) | null): CarInit {
-  if (!c) return { ...blank, drive: '' };
+  if (!c) return { ...blank, drive: '', equipment: SALE_TEXT_TEMPLATE };
   return { ...common(c), plate: s(c.plate), color: s(c.color), engine: s(c.engine), transmission: s(c.transmission) };
 }
 

@@ -22,6 +22,7 @@ export type Buyer = Partial<Record<(typeof BUYER_FIELDS)[number][0], string>>;
 export function equipmentGroups(lines: string[]): { title: string | null; items: string[] }[] {
   const out: { title: string | null; items: string[] }[] = [];
   for (const l of lines) {
+    if (!l.trim()) continue; // пустые строки — отступы в тексте объявления, в списке комплектации не нужны
     if (/:\s*$/.test(l)) out.push({ title: l.replace(/:\s*$/, ''), items: [] });
     else {
       if (!out.length) out.push({ title: null, items: [] });
@@ -72,4 +73,31 @@ export async function publicSaleCar(slug: string) {
 export function sitePhotos(c: { photos: string | null; platePhoto?: boolean }): string[] {
   const all = json<string[]>(c.photos, []);
   return c.platePhoto && all.length > 1 ? all.slice(0, -1) : all;
+}
+
+/** Текст «Описание и комплектация», который подставляется в новое объявление. */
+export const SALE_TEXT_TEMPLATE = [
+  'CRAVE | DRIVE YOUR EMOTIONS', '',
+  'Премиальные автомобили в наличии и под заказ', '',
+  'CRAVE — продажа и индивидуальный подбор автомобилей премиум-класса с полным сопровождением сделки', '',
+  '✓ Автомобили в наличии и поставка под заказ', '',
+  '✓ Лизинг и автокредитование', '',
+  '✓ Страхование ОСАГО и КАСКО', '',
+  '✓ Прокат премиальных автомобилей', '',
+  '✓ Сервисное обслуживание', '',
+  'CRAVE — ваш автомобильный партнер', '',
+  '━━━━━━━━━━━━━━━━━━━━', '',
+  'ИНФОРМАЦИЯ ОБ АВТОМОБИЛЕ', '', '',
+].join('\n');
+
+/** Текст из поля в строки: пустые строки сохраняются (не больше одной подряд), по краям — убираются. */
+export function textLines(text: string): string[] {
+  const out: string[] = [];
+  for (const raw of text.replace(/\r/g, '').split('\n')) {
+    const l = raw.trimEnd();
+    if (!l.trim() && (!out.length || !out[out.length - 1].trim())) continue;
+    out.push(l.trim() ? l : '');
+  }
+  while (out.length && !out[out.length - 1].trim()) out.pop();
+  return out;
 }
