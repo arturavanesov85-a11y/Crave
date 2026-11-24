@@ -79,6 +79,8 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
     const extra = {
       generation: str(fd, 'generation'), modification: str(fd, 'modification'), complectation: str(fd, 'complectation'),
       owners: str(fd, 'owners'), accident: str(fd, 'accident') || 'Не битый', wheel: str(fd, 'wheel') || 'Левый',
+      // номер объявления на Авито задаётся в блоке «Авито», форма карточки его не трогает
+      avitoId: existing ? (JSON.parse(existing.avito || '{}') as { avitoId?: string }).avitoId : undefined,
     };
     if (extra.modification && !(await findModification(make, model, extra.generation, extra.modification))) throw new Error('Такой модификации нет в каталоге Авито — выберите марку, модель, поколение и модификацию из списков');
     const data = {
@@ -297,6 +299,14 @@ export async function saleCarAvitoAction(_: ActionState, fd: FormData): Promise<
     const { adFromCar, avitoProblems } = await import('@/lib/avito');
     const car = await db.saleCar.findUnique({ where: { id: str(fd, 'id') } });
     if (!car) throw new Error('Автомобиль не найден');
+    if (str(fd, 'intent') === 'link') {
+      const avitoId = str(fd, 'avitoId').replace(/\D/g, '');
+      if (avitoId && avitoId.length < 6) throw new Error('Номер объявления — цифры из ссылки на Авито, например 8546030713');
+      const cur = JSON.parse(car.avito || '{}');
+      await db.saleCar.update({ where: { id: car.id }, data: { avito: JSON.stringify({ ...cur, avitoId: avitoId || undefined }) } });
+      await audit(db, user.id, 'salecar.avito', 'salecar', car.id, { avitoId });
+      return avitoId ? `Связано с объявлением №${avitoId}` : 'Связь с объявлением убрана';
+    }
     if (str(fd, 'intent') === 'unpublish') {
       await db.saleCar.update({ where: { id: car.id }, data: { avitoStatus: 'draft', avitoSince: null } });
       await audit(db, user.id, 'salecar.avito', 'salecar', car.id, { status: 'draft' });

@@ -9,7 +9,7 @@ import { DIRECTION_URLS } from '@/lib/site';
 import { ActionForm } from '@/components/crm/ActionForm';
 import { PhotoSorter } from '@/components/crm/PhotoSorter';
 import { saleCarAvitoAction, saleCarDeleteAction, saleCarPhotoAction } from '../../../sales-actions';
-import { adFromCar, avitoProblems } from '@/lib/avito';
+import { adFromCar, avitoExtra, avitoProblems } from '@/lib/avito';
 import { AvitoSection } from '../AvitoSection';
 import { SaleCarForm } from '../SaleCarForm';
 import { DealSection } from '../DealSection';
@@ -52,7 +52,7 @@ export default async function EditSaleCar({ params }: { params: Promise<{ id: st
 
       <SaleCarForm car={car} />
 
-      <AvitoSection carId={car.id} status={car.avitoStatus} problems={problems} since={car.avitoSince ? fmtDateTime(car.avitoSince) : null} action={saleCarAvitoAction} />
+      <AvitoSection avitoId={avitoExtra(car).avitoId ?? ''} carId={car.id} status={car.avitoStatus} problems={problems} since={car.avitoSince ? fmtDateTime(car.avitoSince) : null} action={saleCarAvitoAction} />
 
       <section className="card pad stack" style={{ gap: 8 }}>
         <h2>Удаление</h2>

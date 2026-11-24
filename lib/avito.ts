@@ -51,6 +51,7 @@ export type AvitoAd = {
   make: string; model: string; generation: string; modification: string; complectation: string;
   price: number | null; // рубли; пусто — берём цену машины
   owners: string; accident: string; wheel: string; color: string; address: string; description: string;
+  avitoId?: string;
 };
 
 export const AVITO_COLORS = ['Белый', 'Бежевый', 'Бордовый', 'Голубой', 'Жёлтый', 'Зелёный', 'Золотой', 'Коричневый', 'Красный', 'Оранжевый', 'Пурпурный', 'Розовый', 'Серебряный', 'Серый', 'Синий', 'Фиолетовый', 'Чёрный'];
@@ -66,7 +67,9 @@ export function guessColor(c: string | null) {
 type Car = { id: string; make: string; model: string; year: number; mileageKm: number; vin: string | null; price: number | null; priceVat: boolean; color: string | null; description: string | null; equipment: string | null; photos: string | null; avito: string | null };
 
 /** Поля каталога Авито, которые хранятся у машины рядом с обычными (марка и модель — общие). */
-export type AvitoExtra = { generation: string; modification: string; complectation: string; owners: string; accident: string; wheel: string };
+// avitoId — номер объявления, которое уже размещено на Авито вручную: с ним автозагрузка
+// подхватывает и обновляет это объявление, а не создаёт второе.
+export type AvitoExtra = { generation: string; modification: string; complectation: string; owners: string; accident: string; wheel: string; avitoId?: string };
 export const emptyExtra = (): AvitoExtra => ({ generation: '', modification: '', complectation: '', owners: '', accident: 'Не битый', wheel: 'Левый' });
 export function avitoExtra(car: { avito: string | null }): AvitoExtra {
   try { return { ...emptyExtra(), ...(car.avito ? JSON.parse(car.avito) : {}) }; } catch { return emptyExtra(); }
@@ -108,6 +111,7 @@ export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'v
   return [
     '<Ad>',
     tag('Id', `crave-${car.id}`),
+    tag('AvitoId', ad.avitoId),
     tag('ListingFee', 'Package'),
     tag('ContactMethod', 'По телефону и в сообщениях'),
     tag('Address', ad.address || AVITO_DEFAULT_ADDRESS),
