@@ -22,7 +22,8 @@ export type Buyer = Partial<Record<(typeof BUYER_FIELDS)[number][0], string>>;
 export function equipmentGroups(lines: string[]): { title: string | null; items: string[] }[] {
   const out: { title: string | null; items: string[] }[] = [];
   for (const l of lines) {
-    if (!l.trim()) continue; // пустые строки — отступы в тексте объявления, в списке комплектации не нужны
+    // Пустые строки и строки-разделители («━━━━») — оформление текста для Авито, в списке на сайте не нужны.
+    if (!/[\p{L}\p{N}]/u.test(l)) continue;
     if (/:\s*$/.test(l)) out.push({ title: l.replace(/:\s*$/, ''), items: [] });
     else {
       if (!out.length) out.push({ title: null, items: [] });
