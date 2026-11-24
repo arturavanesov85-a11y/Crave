@@ -63,10 +63,24 @@ export function guessColor(c: string | null) {
   return AVITO_COLORS.find((x) => s.includes(x.toLowerCase().replace('ё', 'е').slice(0, 4))) ?? '';
 }
 
-type Car = { id: string; year: number; mileageKm: number; vin: string | null; price: number | null; description: string | null; equipment: string | null; photos: string | null };
+type Car = { id: string; make: string; model: string; year: number; mileageKm: number; vin: string | null; price: number | null; priceVat: boolean; color: string | null; description: string | null; equipment: string | null; photos: string | null; avito: string | null };
+
+/** Поля каталога Авито, которые хранятся у машины рядом с обычными (марка и модель — общие). */
+export type AvitoExtra = { generation: string; modification: string; complectation: string; owners: string; accident: string; wheel: string };
+export const emptyExtra = (): AvitoExtra => ({ generation: '', modification: '', complectation: '', owners: '', accident: 'Не битый', wheel: 'Левый' });
+export function avitoExtra(car: { avito: string | null }): AvitoExtra {
+  try { return { ...emptyExtra(), ...(car.avito ? JSON.parse(car.avito) : {}) }; } catch { return emptyExtra(); }
+}
+
+/** Объявление Авито из карточки машины: одна карточка — и сайт, и Авито. */
+export function adFromCar(car: Car): AvitoAd {
+  const x = avitoExtra(car);
+  const desc = [car.price && car.priceVat ? 'Цена указана с НДС.' : '', car.description ?? ''].filter(Boolean).join('\n');
+  return { make: car.make, model: car.model, ...x, price: car.price ? Math.round(car.price / 100) : null, color: guessColor(car.color), address: AVITO_DEFAULT_ADDRESS, description: desc };
+}
 
 /** Чего не хватает, чтобы объявление приняли. Пустой список — можно отправлять. */
-export async function avitoProblems(car: Car, ad: AvitoAd | null) {
+export async function avitoProblems(car: Pick<Car, 'mileageKm' | 'vin' | 'price' | 'photos'>, ad: AvitoAd | null) {
   const p: string[] = [];
   if (!ad) return ['поля Авито не заполнены'];
   if (!ad.make || !ad.model || !ad.generation || !ad.modification) p.push('выберите модификацию по каталогу Авито');
@@ -74,7 +88,7 @@ export async function avitoProblems(car: Car, ad: AvitoAd | null) {
   if (!(ad.price ?? (car.price ? car.price / 100 : 0))) p.push('нет цены');
   if (!car.mileageKm) p.push('пробег 0 км — Авито сочтёт машину новой, а тариф только на машины с пробегом');
   if (!car.vin || car.vin.length !== 17) p.push('нет VIN (17 знаков)');
-  if (!ad.color) p.push('не выбран цвет');
+  if (!ad.color) p.push('цвет кузова не из списка Авито');
   if (!ad.owners) p.push('не указано число владельцев');
   if (!JSON.parse(car.photos || '[]').length) p.push('нет фото');
   return p;
@@ -85,7 +99,7 @@ const cdata = (s: string) => `<![CDATA[${s.replace(/]]>/g, ']]]]><![CDATA[>')}]]
 const tag = (k: string, v: string | number | null | undefined) => (v === null || v === undefined || v === '' ? '' : `<${k}>${esc(v)}</${k}>`);
 
 /** Один элемент <Ad> файла автозагрузки. photoUrl — абсолютный адрес JPEG для каждого фото. */
-export async function avitoAdXml(car: Car, ad: AvitoAd, photoUrl: (p: string) => string) {
+export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'vin' | 'price' | 'description' | 'photos'>, ad: AvitoAd, photoUrl: (p: string) => string) {
   const mod = await findModification(ad.make, ad.model, ad.generation, ad.modification);
   if (!mod) return '';
   const price = ad.price ?? (car.price ? Math.round(car.price / 100) : 0);

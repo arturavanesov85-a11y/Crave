@@ -696,3 +696,37 @@ export async function ruleAction(_: ActionState, fd: FormData): Promise<ActionSt
   });
 }
 
+
+// ---------- Документы автомобиля (файлы) ----------
+
+const CAR_FILE_PERMS = { vehicle: { read: 'fleet.read', write: 'fleet.write' }, salecar: { read: 'sales.catalog', write: 'sales.catalog' } } as const;
+
+export async function carFileAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const carType = str(fd, 'carType') as keyof typeof CAR_FILE_PERMS;
+    if (!CAR_FILE_PERMS[carType]) throw new Error('Неизвестный тип автомобиля');
+    const user = await guard(CAR_FILE_PERMS[carType].write);
+    const carId = str(fd, 'carId');
+    if (str(fd, 'op') === 'remove') {
+      const f = await db.carFile.findFirstOrThrow({ where: { id: str(fd, 'fileId'), carType, carId } });
+      await db.carFile.delete({ where: { id: f.id } });
+      const { rm } = await import('node:fs/promises');
+      const { join, normalize } = await import('node:path');
+      const { STORAGE_DIR } = await import('@/lib/files');
+      const file = normalize(join(STORAGE_DIR, f.path));
+      if (file.startsWith(STORAGE_DIR)) await rm(file, { force: true });
+      await audit(db, user.id, 'car.file.remove', carType, carId, { title: f.title });
+      return 'Документ удалён';
+    }
+    const exists = carType === 'vehicle' ? await db.vehicle.findUnique({ where: { id: carId } }) : await db.saleCar.findUnique({ where: { id: carId } });
+    if (!exists) throw new Error('Автомобиль не найден');
+    const kind = ['pts', 'sts', 'osago', 'kasko', 'contract', 'diagnostic', 'other'].includes(str(fd, 'kind')) ? str(fd, 'kind') : 'other';
+    const { saveDocs } = await import('@/lib/files');
+    const saved = await saveDocs(fd.getAll('files') as File[], `cars/${carType}/${carId}`);
+    if (!saved.length) throw new Error('Выберите файл');
+    const caption = str(fd, 'title').slice(0, 120);
+    await db.carFile.createMany({ data: saved.map((f) => ({ carType, carId, kind, title: caption ? (saved.length > 1 ? `${caption} — ${f.name}` : caption) : f.name, path: f.path, mime: f.mime, size: f.size, uploadedBy: user.id })) });
+    await audit(db, user.id, 'car.file.add', carType, carId, { kind, count: saved.length });
+    return `Загружено: ${saved.length}`;
+  });
+}

@@ -459,3 +459,20 @@ model TelegramLink {
   blockedAt   DateTime? // бот не может писать этому человеку (не разрешил или заблокировал)
   createdAt   DateTime  @default(now())
 }
+
+// Файлы документов автомобиля (ПТС, СТС, полисы, договоры…) — для машин проката и машин в продаже.
+// Хранятся в закрытом storage/cars/…, отдаются через /api/files/car/[id] после проверки прав.
+model CarFile {
+  id         String   @id @default(cuid())
+  carType    String // vehicle — автопарк проката | salecar — авто в продаже
+  carId      String
+  kind       String // pts | sts | osago | kasko | contract | diagnostic | other
+  title      String // имя файла или подпись
+  path       String
+  mime       String
+  size       Int
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  @@index([carType, carId])
+}

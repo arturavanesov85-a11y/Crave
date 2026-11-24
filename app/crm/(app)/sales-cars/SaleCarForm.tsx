@@ -5,7 +5,8 @@ import { toLocalInput } from '@/lib/dates';
 import { saleCarSaveAction } from '../../sales-actions';
 import { db } from '@/lib/db';
 import { CAR_MODELS, COLOR_HINTS, DRIVE_HINTS, INTERIOR_HINTS, ENGINE_HINTS, TRANSMISSION_HINTS } from '@/lib/car-models';
-import { MakeModelFields } from './MakeModelFields';
+import { CatalogFields } from './CatalogFields';
+import { AVITO_COLORS, AVITO_OWNERS, avitoExtra } from '@/lib/avito';
 import { PhotoInput } from '@/components/crm/PhotoInput';
 
 /** Подсказки: справочник + всё, что уже вводилось в объявлениях и автопарке. */
@@ -30,11 +31,13 @@ async function hints() {
   };
 }
 
-type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; priceVat: boolean; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; supply: string; etaAt: Date | null; etaNote: string | null } | null;
+type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; priceVat: boolean; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; title: string; avito: string | null; supply: string; etaAt: Date | null; etaNote: string | null } | null;
 
 export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id: string; title: string }[] }) {
   const v = (x: string | number | null | undefined) => (x == null ? '' : String(x));
   const h = await hints();
+  const x = avitoExtra({ avito: car?.avito ?? null });
+  const autoTitle = car ? [car.make, car.model, x.complectation].filter(Boolean).join(' ') : '';
   return (
     <ActionForm action={saleCarSaveAction} submit={car ? 'Сохранить' : 'Добавить автомобиль'} hidden={car ? { id: car.id } : undefined} className="stack">
       {!car && vehicles?.length ? (
@@ -87,26 +90,27 @@ export async function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id
       <section className="card pad stack">
         <h2>Автомобиль</h2>
         <div className="grid-2 stack-sm">
-          <MakeModelFields make={v(car?.make)} model={v(car?.model)} models={h.models} required={!!car} />
-          <label className="field">Год<input className="input" name="year" type="number" min={1950} max={2100} defaultValue={v(car?.year)} /></label>
+          <CatalogFields isNew={!car} init={{ make: v(car?.make), model: v(car?.model), year: v(car?.year), ...x, bodyType: car?.bodyType ?? '', powerHp: v(car?.powerHp), engine: v(car?.engine), transmission: v(car?.transmission), drive: v(car?.drive) }} />
           <label className="field">Пробег, км<input className="input" name="mileageKm" type="number" min={0} defaultValue={v(car?.mileageKm ?? 0)} /></label>
-          <label className="field">Кузов
-            <select className="input" name="bodyType" defaultValue={car?.bodyType ?? ''}>
-              {!car ? <option value="">— как в выбранной машине —</option> : null}
-              <option value="sedan">Седан</option><option value="suv">Внедорожник</option><option value="coupe">Купе</option><option value="pickup">Пикап</option>
+          <label className="field">Цвет кузова
+            <select className="input" name="color" defaultValue={car?.color ?? ''}>
+              <option value="">—</option>
+              {car?.color && !AVITO_COLORS.includes(car.color) ? <option value={car.color}>{car.color} (не из списка Авито)</option> : null}
+              {AVITO_COLORS.map((c) => <option key={c}>{c}</option>)}
             </select>
           </label>
-          <label className="field">Мощность, л.с.<input className="input" name="powerHp" type="number" min={1} defaultValue={v(car?.powerHp)} /></label>
-          <label className="field">Двигатель<input className="input" name="engine" list="dl-engine" autoComplete="off" placeholder="бензин, 3.0 л" defaultValue={v(car?.engine)} /></label>
-          <label className="field">Коробка<input className="input" name="transmission" list="dl-transmission" autoComplete="off" placeholder="автомат" defaultValue={v(car?.transmission)} /></label>
-          <label className="field">Привод<input className="input" name="drive" list="dl-drive" autoComplete="off" placeholder="полный" defaultValue={v(car?.drive)} /></label>
-          <label className="field">Цвет кузова<input className="input" name="color" list="dl-color" autoComplete="off" defaultValue={v(car?.color)} /></label>
           <label className="field">Цвет салона<input className="input" name="colorInterior" list="dl-interior" autoComplete="off" placeholder="бежевый" defaultValue={v(car?.colorInterior)} /></label>
+          <label className="field">Владельцев по ПТС
+            <select className="input" name="owners" defaultValue={x.owners}><option value="">—</option>{AVITO_OWNERS.map((o) => <option key={o}>{o}</option>)}</select>
+          </label>
+          <label className="field">Состояние
+            <select className="input" name="accident" defaultValue={x.accident}><option>Не битый</option><option>Битый</option></select>
+          </label>
+          <label className="field">Руль
+            <select className="input" name="wheel" defaultValue={x.wheel}><option>Левый</option><option>Правый</option></select>
+          </label>
+          <label className="field">Название на сайте (пусто — марка, модель и комплектация)<input className="input" name="title" defaultValue={car && car.title !== autoTitle ? car.title : ''} placeholder={autoTitle || 'RAM 1500 TRX'} /></label>
         </div>
-        <datalist id="dl-engine">{h.engine.map((x) => <option key={x} value={x} />)}</datalist>
-        <datalist id="dl-transmission">{h.transmission.map((x) => <option key={x} value={x} />)}</datalist>
-        <datalist id="dl-drive">{h.drive.map((x) => <option key={x} value={x} />)}</datalist>
-        <datalist id="dl-color">{h.color.map((x) => <option key={x} value={x} />)}</datalist>
         <datalist id="dl-interior">{h.interior.map((x) => <option key={x} value={x} />)}</datalist>
         <label className="field">Описание<textarea className="input" name="description" rows={4} defaultValue={v(car?.description)} /></label>
         <label className="field">Комплектация — по одному пункту в строке. Строка с двоеточием на конце — заголовок группы («Салон и комфорт:»)<textarea className="input" name="equipment" rows={8} defaultValue={car ? json<string[]>(car.equipment, []).join('\n') : ''} /></label>

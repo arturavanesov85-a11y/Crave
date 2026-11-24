@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CarFiles } from '@/components/crm/CarFiles';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
@@ -187,7 +188,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
           </section>
 
           <section className="card pad stack">
-            <div className="row"><h2>Документы</h2>{fw ? (
+            <div className="row"><h2>Сроки документов</h2>{fw ? (
               <ActionDialog label="Добавить" title="Документ автомобиля" action={vehicleDocAction} submit="Добавить" hidden={{ vehicleId: id }}>
                 <label className="field">Вид<select className="input" name="kind">{Object.entries(DOC_KIND).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
                 <label className="field">Название<input className="input" name="title" required /></label>
@@ -198,6 +199,8 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
               <div key={d.id} className="row small"><span>{d.title} <span className="muted">· {DOC_KIND[d.kind]}</span></span><span className={d.validUntil && d.validUntil < new Date(now.getTime() + 30 * 86400000) ? 'warn' : 'muted'}>{d.validUntil ? `до ${fmtDate(d.validUntil)}` : 'бессрочно'}</span></div>
             )) : <p className="muted small">Не добавлены</p>}
           </section>
+
+          <CarFiles carType="vehicle" carId={id} canWrite={fw} />
 
           {money ? (
             <section className="card pad stack" style={{ gap: 8 }}>

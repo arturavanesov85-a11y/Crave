@@ -74,10 +74,18 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
     const eqText = str(fd, 'equipment');
     const equipment = eqText ? eqText.split('\n').map((l) => l.trim()).filter(Boolean) : src ? json<string[]>(src.equipment, []) : [];
 
+    // Поля каталога Авито: модификация проверяется по каталогу, остальное — как выбрали.
+    const { findModification } = await import('@/lib/avito');
+    const extra = {
+      generation: str(fd, 'generation'), modification: str(fd, 'modification'), complectation: str(fd, 'complectation'),
+      owners: str(fd, 'owners'), accident: str(fd, 'accident') || 'Не битый', wheel: str(fd, 'wheel') || 'Левый',
+    };
+    if (extra.modification && !(await findModification(make, model, extra.generation, extra.modification))) throw new Error('Такой модификации нет в каталоге Авито — выберите марку, модель, поколение и модификацию из списков');
     const data = {
       make,
       model,
-      title: `${make} ${model}`,
+      title: str(fd, 'title').slice(0, 80) || [make, model, extra.complectation].filter(Boolean).join(' '),
+      avito: JSON.stringify(extra),
       year,
       mileageKm,
       price,
@@ -282,37 +290,23 @@ export async function siteTextsAction(_: ActionState, fd: FormData): Promise<Act
   });
 }
 
-/** Блок «Авито» в карточке машины: save — черновик в CRM, publish — в файл автозагрузки, unpublish — снять. */
+/** Кнопка «Авито» в карточке машины: publish — в файл автозагрузки, unpublish — снять. Данные — из самой карточки. */
 export async function saleCarAvitoAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const user = await guard();
-    const { avitoProblems, findModification } = await import('@/lib/avito');
+    const { adFromCar, avitoProblems } = await import('@/lib/avito');
     const car = await db.saleCar.findUnique({ where: { id: str(fd, 'id') } });
     if (!car) throw new Error('Автомобиль не найден');
-    const intent = str(fd, 'intent');
-    if (intent === 'unpublish') {
+    if (str(fd, 'intent') === 'unpublish') {
       await db.saleCar.update({ where: { id: car.id }, data: { avitoStatus: 'draft', avitoSince: null } });
       await audit(db, user.id, 'salecar.avito', 'salecar', car.id, { status: 'draft' });
       return 'Убрано из файла для Авито — объявление снимется при следующей загрузке';
     }
-    const priceRaw = str(fd, 'price');
-    const price = priceRaw ? parseRub(priceRaw) : null;
-    if (priceRaw && (price === null || price <= 0)) throw new Error('Цена указана неверно');
-    const ad = {
-      make: str(fd, 'make'), model: str(fd, 'model'), generation: str(fd, 'generation'), modification: str(fd, 'modification'), complectation: str(fd, 'complectation'),
-      price: price ? Math.round(price / 100) : null,
-      owners: str(fd, 'owners'), accident: str(fd, 'accident') || 'Не битый', wheel: str(fd, 'wheel') || 'Левый', color: str(fd, 'color'),
-      address: str(fd, 'address'), description: str(fd, 'description').slice(0, 7500),
-    };
-    if (ad.modification && !(await findModification(ad.make, ad.model, ad.generation, ad.modification))) throw new Error('Такой модификации нет в каталоге Авито — выберите из списка');
-    const live = intent === 'publish' || car.avitoStatus === 'live';
-    if (live) {
-      const problems = await avitoProblems(car, ad);
-      if (problems.length) throw new Error(`На Авито пока нельзя: ${problems.join('; ')}`);
-      if (!['published', 'reserved'].includes(car.status)) throw new Error('Сначала опубликуйте машину на сайте (статус «Опубликован»)');
-    }
-    await db.saleCar.update({ where: { id: car.id }, data: { avito: JSON.stringify(ad), avitoStatus: live ? 'live' : 'draft', avitoSince: live ? car.avitoSince ?? new Date() : null } });
-    await audit(db, user.id, 'salecar.avito', 'salecar', car.id, { status: live ? 'live' : 'draft' });
-    return intent === 'publish' ? 'Отправлено: объявление появится на Авито при ближайшей автозагрузке' : live ? 'Сохранено — изменения уйдут на Авито при ближайшей загрузке' : 'Черновик для Авито сохранён';
+    const problems = await avitoProblems(car, adFromCar(car));
+    if (!['published', 'reserved'].includes(car.status)) problems.unshift('машина не опубликована на сайте');
+    if (problems.length) throw new Error(`На Авито пока нельзя: ${problems.join('; ')}`);
+    await db.saleCar.update({ where: { id: car.id }, data: { avitoStatus: 'live', avitoSince: new Date() } });
+    await audit(db, user.id, 'salecar.avito', 'salecar', car.id, { status: 'live' });
+    return 'Отправлено: объявление появится на Авито при ближайшей автозагрузке';
   });
 }

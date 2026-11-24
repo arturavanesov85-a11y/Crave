@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CarFiles } from '@/components/crm/CarFiles';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
@@ -8,7 +9,7 @@ import { DIRECTION_URLS } from '@/lib/site';
 import { ActionForm } from '@/components/crm/ActionForm';
 import { PhotoSorter } from '@/components/crm/PhotoSorter';
 import { saleCarAvitoAction, saleCarDeleteAction, saleCarPhotoAction } from '../../../sales-actions';
-import { AVITO_COLORS, AVITO_DEFAULT_ADDRESS, AVITO_OWNERS, avitoProblems, guessColor, type AvitoAd } from '@/lib/avito';
+import { adFromCar, avitoProblems } from '@/lib/avito';
 import { AvitoSection } from '../AvitoSection';
 import { SaleCarForm } from '../SaleCarForm';
 import { DealSection } from '../DealSection';
@@ -23,9 +24,8 @@ export default async function EditSaleCar({ params }: { params: Promise<{ id: st
   const photos = json<string[]>(car.photos, []);
   const onSite = ['published', 'reserved'].includes(car.status);
   const siteBase = DIRECTION_URLS.sales.replace(/\/$/, '');
-  const saved = json<AvitoAd | null>(car.avito, null);
-  const ad: AvitoAd = saved ?? { make: car.make, model: '', generation: '', modification: '', complectation: '', price: null, owners: '', accident: 'Не битый', wheel: 'Левый', color: guessColor(car.color), address: AVITO_DEFAULT_ADDRESS, description: car.description ?? '' };
-  const problems = await avitoProblems(car, ad);
+  const problems = await avitoProblems(car, adFromCar(car));
+  if (!onSite) problems.unshift('машина не опубликована на сайте');
 
   return (
     <div className="stack" style={{ maxWidth: 860 }}>
@@ -48,9 +48,11 @@ export default async function EditSaleCar({ params }: { params: Promise<{ id: st
         ) : <p className="muted">Фото нет — добавьте ниже, в разделе «Фото».</p>}
       </section>
 
+      <CarFiles carType="salecar" carId={car.id} canWrite />
+
       <SaleCarForm car={car} />
 
-      <AvitoSection carId={car.id} year={car.year} status={car.avitoStatus} ad={ad} problems={saved ? problems : []} since={car.avitoSince ? fmtDateTime(car.avitoSince) : null} colors={AVITO_COLORS} owners={AVITO_OWNERS} defaultAddress={AVITO_DEFAULT_ADDRESS} action={saleCarAvitoAction} />
+      <AvitoSection carId={car.id} status={car.avitoStatus} problems={problems} since={car.avitoSince ? fmtDateTime(car.avitoSince) : null} action={saleCarAvitoAction} />
 
       <section className="card pad stack" style={{ gap: 8 }}>
         <h2>Удаление</h2>

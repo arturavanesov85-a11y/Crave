@@ -25,3 +25,28 @@ export async function saveImages(files: File[], folder: string) {
   }
   return out;
 }
+
+// Документы автомобиля: фото приводим к JPEG, PDF и офисные файлы храним как есть.
+const DOC_EXT: Record<string, string> = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
+
+export async function saveDocs(files: File[], folder: string) {
+  const out: { path: string; mime: string; size: number; name: string }[] = [];
+  const dir = join(STORAGE_DIR, folder);
+  await mkdir(dir, { recursive: true });
+  for (const f of files) {
+    if (!f || typeof f === 'string' || f.size === 0) continue;
+    if (f.size > MAX) throw new Error(`Файл «${f.name}» больше 50 МБ`);
+    const ext = (f.name.split('.').pop() ?? '').toLowerCase();
+    const id = randomBytes(12).toString('hex');
+    if (ALLOWED.has(f.type) || /^(heic|heif|jpe?g|png|webp)$/.test(ext)) {
+      const { data } = await toJpeg(Buffer.from(await f.arrayBuffer()), f.name);
+      await writeFile(join(dir, `${id}.jpg`), data);
+      out.push({ path: `${folder}/${id}.jpg`, mime: 'image/jpeg', size: data.length, name: f.name });
+    } else if (DOC_EXT[ext]) {
+      const buf = Buffer.from(await f.arrayBuffer());
+      await writeFile(join(dir, `${id}.${ext}`), buf);
+      out.push({ path: `${folder}/${id}.${ext}`, mime: DOC_EXT[ext], size: buf.length, name: f.name });
+    } else throw new Error(`Файл «${f.name}»: можно PDF, фото, Word или Excel`);
+  }
+  return out;
+}
