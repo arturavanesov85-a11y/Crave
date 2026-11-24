@@ -392,6 +392,10 @@ model SaleCar {
   vin          String?
   note         String? // внутренняя заметка, на сайте не показывается
   sortOrder    Int       @default(0)
+  // Авито: off — не готовится | draft — черновик в CRM, на Авито не уходит | live — в файле автозагрузки
+  avitoStatus  String    @default("off")
+  avito        String? // JSON: поля объявления по каталогу Авито (марка, поколение, модификация, цена…)
+  avitoSince   DateTime? // когда отправлено на Авито
   createdById  String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime?

@@ -12,6 +12,8 @@ sudo -u crave -H bash -c "
   git pull --ff-only
   if [ \"\$before\" != \"\$(sha1sum package-lock.json)\" ] || [ ! -d node_modules ]; then npm ci --no-audit --no-fund; fi
   npx prisma generate >/dev/null
+  # Справочник Авито обновляем раз в неделю; не получилось — работаем со старым.
+  [ -n \"\$(find storage/avito-catalog.json -mtime -7 2>/dev/null)\" ] || node scripts/avito-catalog.mjs || true
   rm -rf .next-new
   NODE_OPTIONS=--max-old-space-size=1536 NEXT_DIST_DIR=.next-new npx next build
 "
