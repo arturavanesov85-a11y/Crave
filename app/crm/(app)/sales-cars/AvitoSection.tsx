@@ -3,7 +3,7 @@
 // Блок «Авито» в карточке машины. Марка → модель → поколение → модификация выбираются из каталога
 // Авито, характеристики (кузов, мощность, привод…) подставляются из каталога сами. Пока машина
 // в черновике, на Авито ничего не уходит; «Отправить на Авито» кладёт её в файл автозагрузки.
-import { useActionState, useEffect, useState } from 'react';
+import { startTransition, useActionState, useEffect, useState } from 'react';
 import type { ActionState } from '@/components/crm/ActionForm';
 import type { AvitoAd, ModInfo } from '@/lib/avito';
 
@@ -50,7 +50,13 @@ export function AvitoSection({ carId, year, status, ad, problems, since, colors,
       <p className="muted small">Характеристики берутся из каталога Авито по выбранной модификации. Тюнинг и реальную мощность пишите в описании. Пока статус «Черновик», на Авито ничего не уходит.</p>
       {err ? <p className="error-text">{err}</p> : null}
 
-      <form action={run} className="stack">
+      {/* Не action={run}: React после действия сбрасывает поля формы к начальным значениям,
+          и введённое пропадало с экрана. Отправляем сами — поля остаются как есть. */}
+      <form className="stack" onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+        startTransition(() => run(fd));
+      }}>
         <input type="hidden" name="id" value={carId} />
         <datalist id="avito-makes">{makes.map((m) => <option key={m} value={m} />)}</datalist>
         <div className="grid-2 stack-sm">
