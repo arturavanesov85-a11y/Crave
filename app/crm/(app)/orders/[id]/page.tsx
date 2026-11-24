@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
+import { deleteRecordAction } from '@/app/crm/trash-actions';
 import { db, json } from '@/lib/db';
 import { daysWord, fmtDateTime, toLocalInput } from '@/lib/dates';
 import { holdInfo, usersById } from '@/lib/crm-data';
@@ -134,6 +135,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           {hold && hold.kind === 'hold' ? <span className={`tag ${hold.active ? '' : 'warn'}`}>{hold.active ? `Резерв до ${fmtDateTime(hold.expiresAt)}` : 'Резерв истёк'}</span> : null}
           <div className="grow" />
           {next}
+          {can(user, 'records.delete') && can(user, 'rental.write') ? <ActionForm action={deleteRecordAction} hidden={{ kind: 'order', id }} submit="Удалить" variant="danger" confirm={`Удалить заказ ${o.number}? Он пропадёт из CRM и календаря, копия останется в журнале.`} /> : null}
         </div>
         <div className="facts-grid">
           <div><span className="k">Клиент</span>{can(user, 'customers.read') ? <Link href={`/crm/customers/${o.customerId}`} style={{ fontWeight: 600, color: 'var(--text)' }}>{o.customer.fullName}</Link> : <strong>{o.customer.fullName}</strong>}<a href={`tel:+${o.customer.phone}`} className="text-2">{formatPhone(o.customer.phone)}</a>{el.issues.map((i) => <span key={i} className="warn small">{i}</span>)}{el.unknown.length && ['new', 'negotiation', 'confirmed'].includes(o.status) ? <span className="muted small">не заполнено: {el.unknown.join(', ')}</span> : null}</div>

@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { ChannelTag } from '@/components/crm/ChannelTag';
 import { notFound, redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
+import { deleteRecordAction } from '@/app/crm/trash-actions';
 import { CustomerDocs } from '@/components/crm/CustomerDocs';
 import { db } from '@/lib/db';
 import { fmtDate, fmtDateTime, toLocalInput } from '@/lib/dates';
 import { eligibility, experienceText, MIN_AGE_YEARS, MIN_EXPERIENCE_YEARS } from '@/lib/customers';
-import { ActionDialog } from '@/components/crm/ActionForm';
+import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
 import { customerUpdateAction } from '../../../actions';
 
 const ymd = (d: Date | null) => (d ? toLocalInput(d).slice(0, 10) : '');
@@ -54,6 +55,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
               <p className="muted small">Требования к арендатору: от {MIN_AGE_YEARS} лет, стаж от {String(MIN_EXPERIENCE_YEARS).replace('.', ',')} лет.</p>
             </ActionDialog>
           ) : null}
+          {can(user, 'records.delete') && can(user, 'customers.write') ? <ActionForm action={deleteRecordAction} hidden={{ kind: 'customer', id: c.id }} submit="Удалить" variant="danger" confirm="Удалить клиента? Карточка пропадёт из CRM, копия останется в журнале. Заявки клиента сохранятся." /> : null}
         </div>
         <div className="facts-grid">
           <div><span className="k">Телефон</span>{c.phone ? <a href={`tel:+${c.phone}`}>{formatPhone(c.phone)}</a> : <span className="muted">не передан</span>}</div>

@@ -46,6 +46,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       ],
     },
     ...link('/crm/customers', 'Клиенты', can(user, 'customers.read')),
+    ...link('/crm/journal', 'Журнал', can(user, 'records.delete') || can(user, 'users.manage')),
     ...link('/crm/settings', 'Настройки', can(user, 'settings.manage') || user.role === 'owner'),
   ].filter((e) => !('items' in e) || e.items.length > 0);
 

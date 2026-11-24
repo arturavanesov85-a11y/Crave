@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { requireUser, toSessionUser } from '@/lib/auth';
+import { deleteRecordAction } from '@/app/crm/trash-actions';
 import { db, json } from '@/lib/db';
 import { fmtDateTime, toLocalInput } from '@/lib/dates';
 import { rub } from '@/lib/money';
@@ -75,6 +76,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
           ) : (
             <ActionForm action={requestStageAction} hidden={{ id: lead.id, stage: 'contacted' }} submit="Вернуть в работу" variant="quiet" />
           )}
+          {can(user, 'records.delete') ? <ActionForm action={deleteRecordAction} hidden={{ kind: 'lead', id: lead.id }} submit="Удалить" variant="danger" confirm="Удалить заявку? Она пропадёт из списков, копия останется в журнале." /> : null}
         </div>
         <nav className="wrap-row" style={{ gap: 6 }} aria-label="Этапы">
           {order.filter((s) => !s.closed).map((s, i) => (

@@ -56,7 +56,7 @@ export default async function Settings() {
         </section>
       ) : null}
       <section className="card pad stack">
-        <h2>Журнал изменений</h2>
+        <div className="row"><h2>Журнал изменений</h2><Link className="btn btn-quiet btn-sm" href="/crm/journal">Открыть журнал</Link></div>
         <ul className="list">
           {log.map((l) => <li key={l.id}><span className="muted small" style={{ flex: '0 0 120px' }}>{fmtDateTime(l.createdAt)}</span><span className="grow small">{l.action} · {l.entity} {l.details ? <span className="muted">{l.details.slice(0, 160)}</span> : null}</span><span className="small">{l.actorId ? byId.get(l.actorId)?.fullName : 'система'}</span></li>)}
         </ul>

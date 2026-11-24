@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ChannelTag } from '@/components/crm/ChannelTag';
 import { requireUser } from '@/lib/auth';
+import { deleteRecordAction } from '@/app/crm/trash-actions';
 import { db, json } from '@/lib/db';
 import { fmtDateTime } from '@/lib/dates';
 import { can, homePath, DIRECTION_LABEL, type Direction } from '@/lib/permissions';
@@ -74,6 +75,7 @@ export default async function Leads({ searchParams }: { searchParams: Promise<Re
                 {dir !== 'rental' && l.status === 'in_progress' ? <ActionForm action={leadAction} hidden={{ leadId: l.id, status: 'converted' }} submit="Обработана" variant="ghost" /> : null}
                 {['new', 'in_progress'].includes(l.status) && !l.orderId ? <ActionForm action={leadAction} hidden={{ leadId: l.id, status: 'rejected' }} submit="Отклонить" variant="quiet" /> : null}
                 {l.status === 'new' && !l.orderId ? <ActionForm action={leadAction} hidden={{ leadId: l.id, status: 'spam' }} submit="Спам" variant="quiet" /> : null}
+                {can(user, 'records.delete') ? <ActionForm action={deleteRecordAction} hidden={{ kind: 'lead', id: l.id, stay: '1' }} submit="Удалить" variant="danger" confirm="Удалить заявку? Она пропадёт из списков, копия останется в журнале." /> : null}
               </div>
             </article>
           );
