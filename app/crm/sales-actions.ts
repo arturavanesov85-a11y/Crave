@@ -72,7 +72,7 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
     const status = locked ? existing.status : asked;
     const powerRaw = str(fd, 'powerHp') || (src ? String(src.powerHp) : '');
     const eqText = str(fd, 'equipment');
-    const equipment = eqText ? eqText.split('\n').map((l) => l.trim()).filter(Boolean) : src ? json<string[]>(src.equipment, []) : [];
+    const equipment = eqText ? eqText.split('\n').map((l) => l.trim()).filter(Boolean) : src ? [...(src.description ? [src.description] : []), ...json<string[]>(src.equipment, [])] : [];
 
     // Поля каталога Авито: модификация проверяется по каталогу, остальное — как выбрали.
     const { findModification } = await import('@/lib/avito');
@@ -100,7 +100,7 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
       drive: str(fd, 'drive') || src?.drive || null,
       color: str(fd, 'color') || src?.colorExterior || null,
       colorInterior: str(fd, 'colorInterior') || src?.colorInterior || null,
-      description: str(fd, 'description') || src?.description || null,
+      description: null, // описание у машин в продаже — в «Комплектации» (одно поле для сайта и Авито)
       equipment: equipment.length ? JSON.stringify(equipment) : null,
       vin: str(fd, 'vin').toUpperCase() || null,
       plate: str(fd, 'plate').toUpperCase().replace(/\s/g, '') || null,

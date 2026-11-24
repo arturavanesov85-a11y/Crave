@@ -80,10 +80,12 @@ export function CarFields({ kind, init, isNew, showVin = true, showPlate = false
       if (!r.ok) throw new Error(j.error);
       setVin(j.vin);
       if (j.year) setYear(String(j.year));
+      // Что расшифровка не нашла — оставляем как было, если марка та же.
+      const sameMake = !j.make || j.make === make;
       if (j.make) setMake(j.make);
-      setModel(j.model ?? '');
-      setGen(j.generation ?? '');
-      setMod(j.modification ?? '');
+      if (j.model || !sameMake) setModel(j.model ?? '');
+      if (j.generation || !sameMake || j.model) setGen(j.generation ?? '');
+      if (j.modification || !sameMake || j.model) setMod(j.modification ?? '');
       if (j.complectation) setCompl(j.complectation);
       if (j.mod) applyMod(j.mod);
       const found = [j.make, j.model, j.year, j.generation, j.modification].filter(Boolean).join(' · ');
@@ -190,8 +192,8 @@ export function CarFields({ kind, init, isNew, showVin = true, showPlate = false
         ) : null}
       </div>
 
-      <label className="field">Описание для сайта<textarea className="input" name="description" rows={4} defaultValue={init.description} /></label>
-      <label className="field">Комплектация — по одному пункту в строке. Строка с двоеточием на конце — заголовок группы («Салон и комфорт:»)<textarea className="input" name="equipment" rows={6} defaultValue={init.equipment} /></label>
+      {rental ? <label className="field">Описание для сайта<textarea className="input" name="description" rows={4} defaultValue={init.description} /></label> : null}
+      <label className="field">{rental ? 'Комплектация' : 'Описание и комплектация (на сайте и на Авито)'} — по одному пункту в строке. Строка с двоеточием на конце — заголовок группы («Салон и комфорт:»)<textarea className="input" name="equipment" rows={rental ? 6 : 14} defaultValue={init.equipment} /></label>
     </div>
   );
 }

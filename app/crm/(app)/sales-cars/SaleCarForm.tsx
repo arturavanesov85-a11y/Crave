@@ -11,7 +11,7 @@ type Car = { id: string; make: string; model: string; year: number; mileageKm: n
 export function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id: string; title: string }[] }) {
   const v = (x: string | number | null | undefined) => (x == null ? '' : String(x));
   return (
-    <ActionForm action={saleCarSaveAction} submit={car ? 'Сохранить' : 'Добавить автомобиль'} hidden={car ? { id: car.id } : undefined} className="stack">
+    <ActionForm keepValues action={saleCarSaveAction} submit={car ? 'Сохранить' : 'Добавить автомобиль'} hidden={car ? { id: car.id } : undefined} className="stack">
       {!car && vehicles?.length ? (
         <section className="card pad stack" style={{ gap: 8 }}>
           <h2>Быстрое заполнение</h2>

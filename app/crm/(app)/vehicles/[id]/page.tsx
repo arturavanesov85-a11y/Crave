@@ -98,7 +98,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
           <section className="card pad stack">
             <h2>Автомобиль</h2>
             {fw ? (
-              <ActionForm action={vehicleCardAction} hidden={{ vehicleId: id }} submit="Сохранить" className="stack">
+              <ActionForm keepValues action={vehicleCardAction} hidden={{ vehicleId: id }} submit="Сохранить" className="stack">
                 <CarFields kind="rental" isNew={false} init={vehicleInit(v)} showVin={can(user, 'vehicle.sensitive')} showPlate={can(user, 'vehicle.sensitive')} />
               </ActionForm>
             ) : <p className="muted small">{v.year} · {BODY_LABEL[v.bodyType] ?? v.bodyType} · {v.powerHp} л.с. · {v.mileageKm.toLocaleString('ru-RU')} км</p>}

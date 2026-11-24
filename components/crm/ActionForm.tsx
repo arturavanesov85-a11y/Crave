@@ -2,12 +2,14 @@
 
 // Форма серверного действия с выводом ошибки. Ошибки домена (конфликт брони, нет прав)
 // показываются прямо у кнопки.
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { startTransition, useActionState, useEffect, useRef, useState } from 'react';
 
 export type ActionState = { error?: string; ok?: string } | undefined;
 type Action = (prev: ActionState, fd: FormData) => Promise<ActionState>;
 
-export function ActionForm({ action, children, submit, className, style, variant = 'primary', confirm, onDone, hidden }: { action: Action; children?: React.ReactNode; submit: string; className?: string; style?: React.CSSProperties; variant?: 'primary' | 'quiet' | 'danger' | 'ghost'; confirm?: string; onDone?: () => void; hidden?: Record<string, string> }) {
+// keepValues: не очищать поля после сохранения (React по умолчанию сбрасывает форму к начальным значениям,
+// и в больших формах выбранное «слетало» с экрана).
+export function ActionForm({ action, children, submit, className, style, variant = 'primary', confirm, onDone, hidden, keepValues }: { action: Action; children?: React.ReactNode; submit: string; className?: string; style?: React.CSSProperties; variant?: 'primary' | 'quiet' | 'danger' | 'ghost'; confirm?: string; onDone?: () => void; hidden?: Record<string, string>; keepValues?: boolean }) {
   const [state, run, pending] = useActionState<ActionState, FormData>(action, undefined);
   const done = useRef(onDone);
   done.current = onDone;
@@ -21,7 +23,12 @@ export function ActionForm({ action, children, submit, className, style, variant
       className={className}
       style={style}
       onSubmit={(e) => {
-        if (confirm && !window.confirm(confirm)) e.preventDefault();
+        if (confirm && !window.confirm(confirm)) { e.preventDefault(); return; }
+        if (keepValues) {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+          startTransition(() => run(fd));
+        }
       }}
     >
       {hidden ? Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />) : null}
