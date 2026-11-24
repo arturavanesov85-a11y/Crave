@@ -6,7 +6,7 @@ import { CarFields } from '@/components/crm/CarFields';
 import { saleCarInit } from '@/lib/car-init';
 import { PhotoInput } from '@/components/crm/PhotoInput';
 
-type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; priceVat: boolean; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; title: string; avito: string | null; supply: string; etaAt: Date | null; etaNote: string | null } | null;
+type Car = { id: string; make: string; model: string; year: number; mileageKm: number; price: number | null; priceVat: boolean; status: string; bodyType: string; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; description: string | null; equipment: string | null; vin: string | null; note: string | null; plate: string | null; title: string; avito: string | null; supply: string; etaAt: Date | null; etaNote: string | null } | null;
 
 export function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id: string; title: string }[] }) {
   const v = (x: string | number | null | undefined) => (x == null ? '' : String(x));
@@ -61,13 +61,13 @@ export function SaleCarForm({ car, vehicles }: { car: Car; vehicles?: { id: stri
 
       <section className="card pad stack">
         <h2>Автомобиль</h2>
-        <CarFields kind="sale" isNew={!car} init={saleCarInit(car)} />
+        <CarFields kind="sale" isNew={!car} init={saleCarInit(car)} showPlate />
       </section>
 
-      <section className="card pad stack">
+      {car ? null : <section className="card pad stack">
         <h2>Фото</h2>
         <PhotoInput label="Добавить фото — можно несколько сразу. Перед отправкой фото уменьшаются прямо на телефоне или компьютере." />
-      </section>
+      </section>}
 
       <section className="card pad stack">
         <h2>Внутреннее</h2>

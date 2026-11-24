@@ -5,7 +5,7 @@ import { db, json } from '@/lib/db';
 import { fmtDate } from '@/lib/dates';
 import { rub } from '@/lib/money';
 import { can } from '@/lib/permissions';
-import { SUPPLY } from '@/lib/sales';
+import { SUPPLY, sitePhotos } from '@/lib/sales';
 import { BODY_LABEL } from '@/lib/site';
 import { Gallery } from '@/components/site/Gallery';
 import { TgKpButton } from '@/components/tg/TgKpButton';
@@ -18,7 +18,7 @@ export default async function TgCar({ params }: { params: Promise<{ id: string }
   if (!user || !can(user, 'tg.app')) redirect('/tg');
   const c = await db.saleCar.findUnique({ where: { id: (await params).id } });
   if (!c || !['draft', 'published', 'reserved'].includes(c.status) || (c.status === 'draft' && !can(user, 'tg.drafts'))) notFound();
-  const photos = json<string[]>(c.photos, []);
+  const photos = sitePhotos(c);
   const equipment = json<string[]>(c.equipment, []);
   const specs: [string, string | null][] = [
     ['Наличие', c.supply === 'stock' ? 'В наличии' : `${SUPPLY[c.supply]}${c.etaAt ? ` · прибытие ${fmtDate(c.etaAt)}` : ''}${c.etaNote ? ` · ${c.etaNote}` : ''}`],

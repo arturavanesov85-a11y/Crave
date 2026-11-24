@@ -6,7 +6,7 @@ import { db, json } from '@/lib/db';
 import { fmtDate } from '@/lib/dates';
 import { rub } from '@/lib/money';
 import { can } from '@/lib/permissions';
-import { SUPPLY } from '@/lib/sales';
+import { SUPPLY, sitePhotos } from '@/lib/sales';
 import { TgTop } from '@/components/tg/TgTop';
 import { CarPhoto } from '@/components/site/CarCard';
 import { TgLogin } from '@/components/tg/TgLogin';
@@ -82,7 +82,7 @@ export default async function TgCatalog({ searchParams }: { searchParams: Promis
       {cars.length ? (
         <div className="tg-grid">
           {cars.map((c) => {
-            const photo = json<string[]>(c.photos, [])[0];
+            const photo = sitePhotos(c)[0];
             return (
               <Link key={c.id} href={`/tg/car/${c.id}`} className="card tg-card">
                 <CarPhoto title={c.title} src={photo} />

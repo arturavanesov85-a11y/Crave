@@ -394,6 +394,8 @@ model SaleCar {
   note         String? // внутренняя заметка, на сайте не показывается
   sortOrder    Int       @default(0)
   // Авито: off — не готовится | draft — черновик в CRM, на Авито не уходит | live — в файле автозагрузки
+  plate        String? // госномер (для Авито, если машина на учёте)
+  platePhoto   Boolean   @default(false) // последнее фото — с госномером: только для Авито, на сайте не показывается
   avitoStatus  String    @default("off")
   avito        String? // JSON: поля объявления по каталогу Авито (марка, поколение, модификация, цена…)
   avitoSince   DateTime? // когда отправлено на Авито

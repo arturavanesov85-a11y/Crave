@@ -1,3 +1,4 @@
+import { sitePhotos } from './sales';
 // Коммерческое предложение (КП) на автомобиль в продаже — PDF по образцу CRAVE:
 // альбомный A4; 1-я страница — название, цвета, характеристики, итоговая стоимость и главное фото;
 // 2-я — оснащение по группам; дальше — по фото на страницу.
@@ -10,7 +11,7 @@ import { rub } from './money';
 import { PUBLIC_MEDIA_DIR } from './public-media';
 import { equipmentGroups } from './sales';
 
-type Car = { title: string; make: string; model: string; year: number; mileageKm: number; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; equipment: string | null; photos: string | null };
+type Car = { title: string; make: string; model: string; year: number; mileageKm: number; powerHp: number | null; engine: string | null; transmission: string | null; drive: string | null; color: string | null; colorInterior: string | null; equipment: string | null; photos: string | null; platePhoto?: boolean };
 export type KpOptions = { price: number | null; vat: boolean };
 
 const FONTS = join(process.cwd(), 'assets', 'fonts');
@@ -98,7 +99,7 @@ export async function buildKp(car: Car, opt: KpOptions): Promise<Buffer> {
   doc.font('b').fontSize(18).fillColor('#ffffff').text(opt.price ? rub(opt.price) : 'По запросу', M, y + 8, { width: W - 2 * M - 14, align: 'right', lineBreak: false });
   y += 50;
 
-  const photos = json<string[]>(car.photos, []);
+  const photos = sitePhotos(car);
   const images: Img[] = [];
   for (const p of photos) {
     const b = await jpeg(p);

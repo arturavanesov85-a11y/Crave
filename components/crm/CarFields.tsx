@@ -112,7 +112,7 @@ export function CarFields({ kind, init, isNew, showVin = true, showPlate = false
             {vinMsg ? <span className={`small ${vinMsg.tone === 'error' ? 'error-text' : vinMsg.tone === 'warn' ? 'warn' : 'gold'}`}>{vinMsg.text}</span> : <span className="muted small">Заполнит марку, модель, год и по возможности модификацию</span>}
           </label>
         ) : <p className="muted small">VIN и госномер скрыты для вашей роли.</p>}
-        {showPlate ? <label className="field">Госномер<input className="input" name="plate" defaultValue={init.plate} autoComplete="off" /></label> : null}
+        {showPlate ? <label className="field">Госномер{rental ? '' : ' (если на учёте — нужен для Авито)'}<input className="input" name="plate" defaultValue={init.plate} autoComplete="off" placeholder="А123ВС777" /></label> : null}
       </div>
 
       <datalist id="avito-makes">{makes.map((m) => <option key={m} value={m} />)}</datalist>

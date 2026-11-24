@@ -83,7 +83,7 @@ export function adFromCar(car: Car): AvitoAd {
 }
 
 /** Чего не хватает, чтобы объявление приняли. Пустой список — можно отправлять. */
-export async function avitoProblems(car: Pick<Car, 'mileageKm' | 'vin' | 'price' | 'photos' | 'equipment'>, ad: AvitoAd | null) {
+export async function avitoProblems(car: Pick<Car, 'mileageKm' | 'vin' | 'price' | 'photos' | 'equipment'> & { plate?: string | null; platePhoto?: boolean }, ad: AvitoAd | null) {
   const p: string[] = [];
   if (!ad) return ['поля Авито не заполнены'];
   if (!ad.make || !ad.model || !ad.generation || !ad.modification) p.push('выберите модификацию по каталогу Авито');
@@ -95,6 +95,7 @@ export async function avitoProblems(car: Pick<Car, 'mileageKm' | 'vin' | 'price'
   if (!ad.owners) p.push('не указано число владельцев');
   if (!JSON.parse(car.photos || '[]').length) p.push('нет фото');
   if (!avitoDescription(ad.description || '', car.equipment)) p.push('нет описания и комплектации');
+  if (car.plate && !car.platePhoto) p.push('машина на учёте: добавьте последним фото с госномером и отметьте «Последнее фото — только для Авито»');
   return p;
 }
 
@@ -116,7 +117,7 @@ const cdata = (s: string) => `<![CDATA[${s.replace(/]]>/g, ']]]]><![CDATA[>')}]]
 const tag = (k: string, v: string | number | null | undefined) => (v === null || v === undefined || v === '' ? '' : `<${k}>${esc(v)}</${k}>`);
 
 /** Один элемент <Ad> файла автозагрузки. photoUrl — абсолютный адрес JPEG для каждого фото. */
-export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'vin' | 'price' | 'description' | 'photos' | 'equipment'>, ad: AvitoAd, photoUrl: (p: string) => string) {
+export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'vin' | 'price' | 'description' | 'photos' | 'equipment'> & { plate?: string | null }, ad: AvitoAd, photoUrl: (p: string) => string) {
   const mod = await findModification(ad.make, ad.model, ad.generation, ad.modification);
   if (!mod) return '';
   const price = ad.price ?? (car.price ? Math.round(car.price / 100) : 0);
@@ -132,7 +133,7 @@ export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'v
     tag('Category', 'Автомобили'),
     tag('CarType', 'С пробегом'),
     tag('Make', ad.make), tag('Model', ad.model), tag('Generation', ad.generation), tag('Modification', ad.modification), tag('Complectation', ad.complectation),
-    tag('Year', car.year), tag('Kilometrage', car.mileageKm), tag('VIN', car.vin),
+    tag('Year', car.year), tag('Kilometrage', car.mileageKm), tag('VIN', car.vin), tag('LicensePlate', car.plate),
     tag('BodyType', mod.body), tag('Doors', mod.doors), tag('FuelType', mod.fuel), tag('DriveType', mod.drive), tag('Transmission', mod.transmission),
     tag('EngineSize', mod.engine), tag('Power', mod.power),
     tag('Color', ad.color), tag('WheelType', ad.wheel || 'Левый'), tag('Owners', ad.owners), tag('Accident', ad.accident || 'Не битый'),

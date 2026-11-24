@@ -8,6 +8,7 @@ import { SALE_STATUS } from '@/lib/sales';
 import { DIRECTION_URLS } from '@/lib/site';
 import { ActionForm } from '@/components/crm/ActionForm';
 import { PhotoSorter } from '@/components/crm/PhotoSorter';
+import { PhotoInput } from '@/components/crm/PhotoInput';
 import { saleCarAvitoAction, saleCarDeleteAction, saleCarPhotoAction } from '../../../sales-actions';
 import { adFromCar, avitoExtra, avitoProblems } from '@/lib/avito';
 import { AvitoSection } from '../AvitoSection';
@@ -45,7 +46,15 @@ export default async function EditSaleCar({ params }: { params: Promise<{ id: st
         <h2>Фото · {photos.length}</h2>
         {photos.length ? (
           <PhotoSorter photos={photos} action={saleCarPhotoAction} hidden={{ id: car.id }} />
-        ) : <p className="muted">Фото нет — добавьте ниже, в разделе «Фото».</p>}
+        ) : <p className="muted">Фото пока нет.</p>}
+        <ActionForm action={saleCarPhotoAction} hidden={{ id: car.id, op: 'upload' }} submit="Загрузить" className="wrap-row" style={{ gap: 8, alignItems: 'flex-end' }}>
+          <div className="grow"><PhotoInput required label="Добавить фото — можно несколько сразу. Первое фото — обложка; новые встают в конец." /></div>
+        </ActionForm>
+        {photos.length > 1 ? (
+          <ActionForm action={saleCarPhotoAction} hidden={{ id: car.id, op: 'platePhoto', on: car.platePhoto ? '0' : '1' }} submit={car.platePhoto ? 'Показывать последнее фото на сайте' : 'Последнее фото — только для Авито'} variant="quiet" className="wrap-row" style={{ gap: 8, alignItems: 'center' }}>
+            <span className="small">{car.platePhoto ? <><span className="tag avito-tag">Только Авито</span> Последнее фото (с госномером) уходит только на Авито, на сайте и в КП его нет.</> : <span className="muted">Если машина на учёте, Авито требует фото с госномером: загрузите его последним и нажмите кнопку — на сайте оно не появится.</span>}</span>
+          </ActionForm>
+        ) : null}
       </section>
 
       <CarFiles carType="salecar" carId={car.id} canWrite />

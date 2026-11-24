@@ -102,7 +102,8 @@ export async function saleCarSaveAction(_: ActionState, fd: FormData): Promise<A
       colorInterior: str(fd, 'colorInterior') || src?.colorInterior || null,
       description: str(fd, 'description') || src?.description || null,
       equipment: equipment.length ? JSON.stringify(equipment) : null,
-      vin: str(fd, 'vin') || null,
+      vin: str(fd, 'vin').toUpperCase() || null,
+      plate: str(fd, 'plate').toUpperCase().replace(/\s/g, '') || null,
       note: str(fd, 'note') || null,
       supply: ['stock', 'transit', 'order'].includes(str(fd, 'supply')) ? str(fd, 'supply') : 'stock',
       etaAt: str(fd, 'etaAt') ? parseLocal(str(fd, 'etaAt') + 'T12:00') : null,
@@ -146,6 +147,18 @@ export async function saleCarPhotoAction(_: ActionState, fd: FormData): Promise<
     await guard();
     const car = await db.saleCar.findUniqueOrThrow({ where: { id: str(fd, 'id') } });
     const photos = json<string[]>(car.photos, []);
+    if (str(fd, 'op') === 'upload') {
+      const uploaded = await savePublicPhotos(fd.getAll('photos') as File[], `sales/${car.id}`);
+      if (!uploaded.length) throw new Error('Выберите фото');
+      await db.saleCar.update({ where: { id: car.id }, data: { photos: JSON.stringify([...photos, ...uploaded]), updatedAt: new Date() } });
+      return `Добавлено фото: ${uploaded.length}`;
+    }
+    if (str(fd, 'op') === 'platePhoto') {
+      const on = str(fd, 'on') === '1';
+      if (on && photos.length < 2) throw new Error('Нужно хотя бы два фото: последнее уйдёт только на Авито');
+      await db.saleCar.update({ where: { id: car.id }, data: { platePhoto: on, updatedAt: new Date() } });
+      return on ? 'Последнее фото — только для Авито, на сайте скрыто' : 'Последнее фото снова показывается на сайте';
+    }
     if (str(fd, 'op') === 'reorder') {
       const order = reorder(photos, str(fd, 'order'));
       await db.saleCar.update({ where: { id: car.id }, data: { photos: JSON.stringify(order), updatedAt: new Date() } });

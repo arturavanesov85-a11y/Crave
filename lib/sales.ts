@@ -52,7 +52,7 @@ export function toPublic(c: Awaited<ReturnType<typeof db.saleCar.findFirstOrThro
     colorInterior: c.colorInterior,
     description: c.description,
     equipment: json<string[]>(c.equipment, []),
-    photos: json<string[]>(c.photos, []),
+    photos: sitePhotos(c),
   };
 }
 
@@ -66,4 +66,10 @@ export async function publicSaleCars() {
 export async function publicSaleCar(slug: string) {
   const c = await db.saleCar.findUnique({ where: { slug } });
   return c && ['published', 'reserved'].includes(c.status) && c.supply === 'stock' ? toPublic(c) : null;
+}
+
+/** Фото для сайта, приложения и КП: если последнее фото — с госномером (только для Авито), его не показываем. */
+export function sitePhotos(c: { photos: string | null; platePhoto?: boolean }): string[] {
+  const all = json<string[]>(c.photos, []);
+  return c.platePhoto && all.length > 1 ? all.slice(0, -1) : all;
 }

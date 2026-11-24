@@ -19,9 +19,9 @@ function common(c: Common): CarInit {
   };
 }
 
-export function saleCarInit(c: (Common & { color: string | null; engine: string | null; transmission: string | null }) | null): CarInit {
+export function saleCarInit(c: (Common & { plate: string | null; color: string | null; engine: string | null; transmission: string | null }) | null): CarInit {
   if (!c) return { ...blank, drive: '' };
-  return { ...common(c), color: s(c.color), engine: s(c.engine), transmission: s(c.transmission) };
+  return { ...common(c), plate: s(c.plate), color: s(c.color), engine: s(c.engine), transmission: s(c.transmission) };
 }
 
 export function vehicleInit(v: (Common & { plate: string | null; colorExterior: string | null; fuel: string; accel: string; seats: number | null }) | null): CarInit {
