@@ -83,7 +83,7 @@ export function adFromCar(car: Car): AvitoAd {
 }
 
 /** Чего не хватает, чтобы объявление приняли. Пустой список — можно отправлять. */
-export async function avitoProblems(car: Pick<Car, 'mileageKm' | 'vin' | 'price' | 'photos'>, ad: AvitoAd | null) {
+export async function avitoProblems(car: Pick<Car, 'mileageKm' | 'vin' | 'price' | 'photos' | 'equipment'>, ad: AvitoAd | null) {
   const p: string[] = [];
   if (!ad) return ['поля Авито не заполнены'];
   if (!ad.make || !ad.model || !ad.generation || !ad.modification) p.push('выберите модификацию по каталогу Авито');
@@ -94,7 +94,21 @@ export async function avitoProblems(car: Pick<Car, 'mileageKm' | 'vin' | 'price'
   if (!ad.color) p.push('цвет кузова не из списка Авито');
   if (!ad.owners) p.push('не указано число владельцев');
   if (!JSON.parse(car.photos || '[]').length) p.push('нет фото');
+  if (!avitoDescription(ad.description || '', car.equipment)) p.push('нет описания и комплектации');
   return p;
+}
+
+/** Описание для Авито: текст описания, затем комплектация (строка с «:» на конце — подзаголовок). До 7500 знаков. */
+export function avitoDescription(description: string, equipment: string | null) {
+  let eq: string[] = [];
+  try { eq = equipment ? JSON.parse(equipment) : []; } catch { eq = []; }
+  const parts = [
+    ...description.split(/\n+/).map((l) => l.trim()).filter(Boolean).map((l) => `<p>${esc(l)}</p>`),
+    ...eq.map((l) => l.trim()).filter(Boolean).map((l) => (l.endsWith(':') ? `<p><strong>${esc(l)}</strong></p>` : `<p>${esc(l)}</p>`)),
+  ];
+  let out = '';
+  for (const x of parts) { if (out.length + x.length > 7400) break; out += x; }
+  return out;
 }
 
 const esc = (s: string | number) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -102,12 +116,12 @@ const cdata = (s: string) => `<![CDATA[${s.replace(/]]>/g, ']]]]><![CDATA[>')}]]
 const tag = (k: string, v: string | number | null | undefined) => (v === null || v === undefined || v === '' ? '' : `<${k}>${esc(v)}</${k}>`);
 
 /** Один элемент <Ad> файла автозагрузки. photoUrl — абсолютный адрес JPEG для каждого фото. */
-export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'vin' | 'price' | 'description' | 'photos'>, ad: AvitoAd, photoUrl: (p: string) => string) {
+export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'vin' | 'price' | 'description' | 'photos' | 'equipment'>, ad: AvitoAd, photoUrl: (p: string) => string) {
   const mod = await findModification(ad.make, ad.model, ad.generation, ad.modification);
   if (!mod) return '';
   const price = ad.price ?? (car.price ? Math.round(car.price / 100) : 0);
   const photos = (JSON.parse(car.photos || '[]') as string[]).slice(0, 40);
-  const html = (ad.description || car.description || '').split(/\n+/).filter(Boolean).map((l) => `<p>${esc(l)}</p>`).join('');
+  const html = avitoDescription(ad.description || car.description || '', car.equipment);
   return [
     '<Ad>',
     tag('Id', `crave-${car.id}`),
@@ -123,6 +137,7 @@ export async function avitoAdXml(car: Pick<Car, 'id' | 'year' | 'mileageKm' | 'v
     tag('EngineSize', mod.engine), tag('Power', mod.power),
     tag('Color', ad.color), tag('WheelType', ad.wheel || 'Левый'), tag('Owners', ad.owners), tag('Accident', ad.accident || 'Не битый'),
     tag('Price', price),
+    tag('OnlyOnAvito', 'Нет'), // машины есть и на нашем сайте
     html ? `<Description>${cdata(html)}</Description>` : '',
     photos.length ? `<Images>${photos.map((p) => `<Image url="${esc(photoUrl(p))}"/>`).join('')}</Images>` : '',
     '</Ad>',
