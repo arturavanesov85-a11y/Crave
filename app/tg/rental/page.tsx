@@ -12,6 +12,7 @@ import { ActionForm } from '@/components/crm/ActionForm';
 import { TgLogin } from '@/components/tg/TgLogin';
 import { TgTop } from '@/components/tg/TgTop';
 import { vehicleConditionAction, withholdDecisionAction } from '@/app/crm/actions';
+import { RentalCalendar } from './RentalCalendar';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,8 @@ function Item({ o, at, note, warn }: { o: O; at: Date; note: string; warn?: bool
   );
 }
 
-export default async function TgRental() {
+export default async function TgRental({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const sp = await searchParams;
   const user = await currentUser();
   if (!user) return <TgLogin />;
   if (!can(user, 'tg.rental')) redirect('/tg');
@@ -58,6 +60,8 @@ export default async function TgRental() {
           {can(user, 'rental.write') ? <Link className="btn btn-primary" href="/tg/rental/new" style={{ minHeight: 48 }}>Новая бронь</Link> : null}
         </div>
       ) : null}
+
+      <RentalCalendar user={user} month={sp.m} day={sp.d} />
 
       {withholds.length ? (
         <section className="stack" style={{ gap: 8 }}>
@@ -114,6 +118,7 @@ export default async function TgRental() {
       ) : null}
 
       {empty ? <div className="empty">На сегодня и завтра дел нет.</div> : null}
+
     </div>
   );
 }

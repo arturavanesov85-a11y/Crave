@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { CarFiles } from '@/components/crm/CarFiles';
+import { CarFields } from '@/components/crm/CarFields';
+import { vehicleInit } from '@/lib/car-init';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
@@ -10,7 +12,7 @@ import { rub } from '@/lib/money';
 import { DRIVER_MIN_HOURS, tierLabel, type Tier } from '@/lib/pricing';
 import { STATUS_LABEL } from '@/lib/orders';
 import { ActionDialog, ActionForm } from '@/components/crm/ActionForm';
-import { damageRepairedAction, expenseAction, releaseBlockAction, tariffAction, tariffTermsAction, vehicleBlockAction, vehicleConditionAction, vehicleDocAction, vehiclePhotoAction, vehiclePhotosUploadAction, vehicleUpdateAction } from '../../../actions';
+import { damageRepairedAction, expenseAction, releaseBlockAction, tariffAction, tariffTermsAction, vehicleBlockAction, vehicleConditionAction, vehicleCardAction, vehicleDocAction, vehiclePhotoAction, vehiclePhotosUploadAction, vehicleUpdateAction } from '../../../actions';
 import { PhotoSorter } from '@/components/crm/PhotoSorter';
 import { PhotoInput } from '@/components/crm/PhotoInput';
 import { BODY_LABEL, COND_LABEL } from '@/lib/site';
@@ -94,6 +96,15 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
           </section>
 
           <section className="card pad stack">
+            <h2>Автомобиль</h2>
+            {fw ? (
+              <ActionForm action={vehicleCardAction} hidden={{ vehicleId: id }} submit="Сохранить" className="stack">
+                <CarFields kind="rental" isNew={false} init={vehicleInit(v)} showVin={can(user, 'vehicle.sensitive')} showPlate={can(user, 'vehicle.sensitive')} />
+              </ActionForm>
+            ) : <p className="muted small">{v.year} · {BODY_LABEL[v.bodyType] ?? v.bodyType} · {v.powerHp} л.с. · {v.mileageKm.toLocaleString('ru-RU')} км</p>}
+          </section>
+
+          <section className="card pad stack">
             <h2>Занятость</h2>
             {occ.length ? (
               <ul className="list">
@@ -168,20 +179,11 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
 
         <aside className="aside">
           <section className="card pad stack">
-            <h2>Данные</h2>
+            <h2>Обслуживание и сайт</h2>
             <ActionForm action={vehicleUpdateAction} hidden={{ vehicleId: id }} submit="Сохранить" variant="quiet" className="stack" style={{ gap: 10 }}>
               <fieldset disabled={!fw} style={{ border: 0, padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {can(user, 'vehicle.sensitive') ? (
-                  <>
-                    <label className="field">VIN<input className="input" name="vin" defaultValue={v.vin ?? ''} /></label>
-                    <label className="field">Госномер<input className="input" name="plate" defaultValue={v.plate ?? ''} /></label>
-                  </>
-                ) : <p className="muted small">VIN и госномер скрыты для вашей роли.</p>}
-                <label className="field">Тип кузова<select className="input" name="bodyType" defaultValue={v.bodyType}>{Object.entries(BODY_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
-                <label className="field">Пробег, км<input className="input" name="mileageKm" type="number" defaultValue={v.mileageKm} /></label>
                 <label className="field">Следующее ТО, км<input className="input" name="nextServiceKm" type="number" defaultValue={v.nextServiceKm ?? ''} /></label>
                 <label className="field">Следующее ТО, дата<input className="input" name="nextServiceAt" type="date" defaultValue={v.nextServiceAt ? toLocalInput(v.nextServiceAt).slice(0, 10) : ''} /></label>
-                <label className="field">Описание на сайте<textarea className="input" name="description" defaultValue={v.description ?? ''} /></label>
                 <label className="check"><input type="checkbox" name="isPublished" defaultChecked={v.isPublished} />Показывать на сайте</label>
               </fieldset>
             </ActionForm>

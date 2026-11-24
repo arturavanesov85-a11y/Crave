@@ -282,3 +282,16 @@ tr.row-dragging { opacity: .55; background: var(--surface-2, rgba(200, 169, 106,
 .tg-tabs a { flex-direction: column; gap: 0; padding: 4px 2px; font-size: 13px; line-height: 1.15; min-height: 50px; }
 .tg-tabs a .muted { font-size: 12px; }
 .tg-app .card h2 { font-size: 17px; font-weight: 600; }
+
+/* Календарь выдач и возвратов в мини-приложении */
+.tg-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.tg-cal-head { text-align: center; font-size: 11px; color: var(--muted); padding: 2px 0; }
+.tg-cal-day { display: grid; justify-items: center; align-content: start; gap: 2px; min-height: 46px; padding: 5px 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 14px; text-decoration: none; }
+.tg-cal-day.past { opacity: .55; }
+.tg-cal-day.today { border-color: var(--gold, #c9a96e); }
+.tg-cal-day.sel { background: var(--gold, #c9a96e); color: #111; border-color: var(--gold, #c9a96e); opacity: 1; }
+.tg-cal-dots { display: flex; gap: 2px; min-height: 14px; }
+.tg-cal-dots i, .tg-cal-key { font-style: normal; font-size: 10px; line-height: 14px; min-width: 14px; padding: 0 3px; border-radius: 7px; color: #111; text-align: center; }
+.tg-cal-dots i.up, .tg-cal-key.up { background: #7fc28a; }
+.tg-cal-dots i.down, .tg-cal-key.down { background: #e0b25b; }
+.tg-cal-key { display: inline-block; min-width: 10px; height: 10px; padding: 0; vertical-align: middle; }

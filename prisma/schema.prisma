@@ -127,6 +127,7 @@ model Vehicle {
   photos         String? // JSON-массив путей к фото, первое — обложка
   vin            String?
   plate          String?
+  avito          String? // JSON: поколение, модификация и комплектация по каталогу Авито
   mileageKm      Int               @default(0)
   condition      String            @default("ready") // ready | preparing | maintenance | unavailable
   nextServiceKm  Int?

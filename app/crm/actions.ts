@@ -378,25 +378,58 @@ export async function releaseBlockAction(_: ActionState, fd: FormData): Promise<
   });
 }
 
+/** Обслуживание (ТО) и показ на сайте — блок сбоку в карточке машины. */
 export async function vehicleUpdateAction(_: ActionState, fd: FormData): Promise<ActionState> {
   return run(async () => {
     const user = await guard('fleet.write');
     const id = str(fd, 'vehicleId');
     const num = (k: string) => (str(fd, k) ? Number(str(fd, k)) : null);
-    const data: Record<string, unknown> = {
-      mileageKm: num('mileageKm') ?? 0,
+    await db.vehicle.update({ where: { id }, data: {
       nextServiceKm: num('nextServiceKm'),
       nextServiceAt: str(fd, 'nextServiceAt') ? parseLocal(str(fd, 'nextServiceAt') + 'T00:00') : null,
       isPublished: fd.get('isPublished') === 'on',
-      description: str(fd, 'description') || null,
-    };
-    if (BODY_LABEL[str(fd, 'bodyType')]) data.bodyType = str(fd, 'bodyType');
-    if (can(user, 'vehicle.sensitive')) {
-      data.vin = str(fd, 'vin') || null;
-      data.plate = str(fd, 'plate') || null;
-    }
-    await db.vehicle.update({ where: { id }, data });
+    } });
     await audit(db, user.id, 'vehicle.update', 'vehicle', id);
+    return 'Сохранено';
+  });
+}
+
+/** Поля блока «Автомобиль» (общего с «Авто в продаже»): каталог Авито, характеристики, описание. */
+async function vehicleCardData(fd: FormData, user: SessionUser) {
+  const make = str(fd, 'make'), model = str(fd, 'model');
+  if (!make || !model) throw new Error('Укажите марку и модель');
+  const year = Number(str(fd, 'year')), powerHp = Number(str(fd, 'powerHp'));
+  if (!Number.isInteger(year) || year < 1990 || year > 2100) throw new Error('Проверьте год выпуска');
+  if (!Number.isInteger(powerHp) || powerHp <= 0) throw new Error('Проверьте мощность');
+  if (!str(fd, 'accel')) throw new Error('Укажите разгон до 100 км/ч');
+  const extra = { generation: str(fd, 'generation'), modification: str(fd, 'modification'), complectation: str(fd, 'complectation') };
+  if (extra.modification) {
+    const { findModification } = await import('@/lib/avito');
+    if (!(await findModification(make, model, extra.generation, extra.modification))) throw new Error('Такой модификации нет в каталоге Авито — выберите марку, модель, поколение и модификацию из списков');
+  }
+  const equipment = str(fd, 'equipment').split('\n').map((l) => l.trim()).filter(Boolean);
+  const data: Record<string, unknown> = {
+    make, model, title: str(fd, 'title').slice(0, 80) || [make, model, extra.complectation].filter(Boolean).join(' '), year, powerHp,
+    avito: JSON.stringify(extra),
+    bodyType: BODY_LABEL[str(fd, 'bodyType')] ? str(fd, 'bodyType') : 'sedan', accel: str(fd, 'accel'), drive: str(fd, 'drive') || 'полный', fuel: str(fd, 'fuel') || 'бензин',
+    seats: str(fd, 'seats') ? Number(str(fd, 'seats')) : null, mileageKm: Number(str(fd, 'mileageKm')) || 0,
+    colorExterior: str(fd, 'colorExterior') || null, colorInterior: str(fd, 'colorInterior') || null,
+    description: str(fd, 'description') || null, equipment: equipment.length ? JSON.stringify(equipment) : null,
+  };
+  if (can(user, 'vehicle.sensitive')) {
+    data.vin = str(fd, 'vin').toUpperCase() || null;
+    data.plate = str(fd, 'plate') || null;
+  }
+  return data;
+}
+
+export async function vehicleCardAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  return run(async () => {
+    const user = await guard('fleet.write');
+    const id = str(fd, 'vehicleId');
+    await db.vehicle.update({ where: { id }, data: await vehicleCardData(fd, user) });
+    await audit(db, user.id, 'vehicle.update', 'vehicle', id);
+    revalidatePath('/', 'layout');
     return 'Сохранено';
   });
 }
@@ -482,12 +515,8 @@ export async function vehicleCreateAction(_: ActionState, fd: FormData): Promise
   let id = '';
   const res = await run(async () => {
     const user = await guard('fleet.write');
-    const make = str(fd, 'make'), model = str(fd, 'model');
-    if (!make || !model) throw new Error('Укажите марку и модель');
-    const year = Number(str(fd, 'year')), powerHp = Number(str(fd, 'powerHp'));
-    if (!Number.isInteger(year) || year < 1990 || year > 2100) throw new Error('Проверьте год выпуска');
-    if (!Number.isInteger(powerHp) || powerHp <= 0) throw new Error('Проверьте мощность');
-    if (!str(fd, 'accel')) throw new Error('Укажите разгон до 100 км/ч');
+    const card = await vehicleCardData(fd, user);
+    const make = card.make as string, model = card.model as string;
 
     // Тариф — только с правом изменения тарифов; без тарифа машина не видна на сайте.
     let tariff: { tiers: { minDays: number; dailyRate: number }[]; deposit: number; km: number; over: number; driver: number | null; driverOnly: boolean } | null = null;
@@ -511,17 +540,10 @@ export async function vehicleCreateAction(_: ActionState, fd: FormData): Promise
     let slug = base;
     for (let i = 2; await db.vehicle.findUnique({ where: { slug } }); i++) slug = `${base}-${i}`;
     const last = await db.vehicle.findFirst({ orderBy: { sortOrder: 'desc' }, select: { sortOrder: true } });
-    const equipment = str(fd, 'equipment').split('\n').map((l) => l.trim()).filter(Boolean);
-
     const v = await db.$transaction(async (tx) => {
       const v = await tx.vehicle.create({
         data: {
-          slug, make, model, title: `${make} ${model}`, year, powerHp,
-          bodyType: str(fd, 'bodyType') || 'sedan', accel: str(fd, 'accel'), drive: str(fd, 'drive') || 'полный', fuel: str(fd, 'fuel') || 'бензин',
-          seats: str(fd, 'seats') ? Number(str(fd, 'seats')) : null, mileageKm: Number(str(fd, 'mileageKm')) || 0,
-          colorExterior: str(fd, 'colorExterior') || null, colorInterior: str(fd, 'colorInterior') || null,
-          description: str(fd, 'description') || null, equipment: equipment.length ? JSON.stringify(equipment) : null,
-          vin: can(user, 'vehicle.sensitive') ? str(fd, 'vin') || null : null, plate: can(user, 'vehicle.sensitive') ? str(fd, 'plate') || null : null,
+          ...(card as { make: string; model: string; title: string; year: number; powerHp: number; accel: string; drive: string; fuel: string; bodyType: string }), slug,
           isPublished: fd.get('isPublished') === 'on', sortOrder: (last?.sortOrder ?? 0) + 1,
         },
       });

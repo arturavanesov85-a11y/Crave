@@ -4,7 +4,8 @@ import { can } from '@/lib/permissions';
 import { ActionForm } from '@/components/crm/ActionForm';
 import { vehicleCreateAction } from '../../../actions';
 import { HourlyToggle } from '@/components/crm/HourlyToggle';
-import { BODY_LABEL } from '@/lib/site';
+import { CarFields } from '@/components/crm/CarFields';
+import { vehicleInit } from '@/lib/car-init';
 
 export const metadata = { title: 'Новый автомобиль' };
 
@@ -18,28 +19,7 @@ export default async function NewVehicle() {
       <ActionForm action={vehicleCreateAction} submit="Добавить автомобиль" className="stack" style={{ maxWidth: 820 }}>
         <section className="card pad stack">
           <h2>Автомобиль</h2>
-          <div className="grid-2 stack-sm">
-            <label className="field">Марка<input className="input" name="make" required placeholder="BMW" /></label>
-            <label className="field">Модель<input className="input" name="model" required placeholder="M5 F90 Competition" /></label>
-            <label className="field">Год<input className="input" name="year" type="number" min={1990} max={2100} required /></label>
-            <label className="field">Тип кузова<select className="input" name="bodyType">{Object.entries(BODY_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
-            <label className="field">Мощность, л.с.<input className="input" name="powerHp" type="number" min={1} required /></label>
-            <label className="field">Разгон 0–100, с<input className="input" name="accel" placeholder="3,9" required /></label>
-            <label className="field">Привод<select className="input" name="drive"><option value="полный">Полный</option><option value="задний">Задний</option><option value="передний">Передний</option></select></label>
-            <label className="field">Топливо<select className="input" name="fuel"><option value="бензин">Бензин</option><option value="дизель">Дизель</option><option value="гибрид">Гибрид</option><option value="электро">Электро</option></select></label>
-            <label className="field">Мест<input className="input" name="seats" type="number" min={1} max={9} defaultValue={5} /></label>
-            <label className="field">Пробег, км<input className="input" name="mileageKm" type="number" min={0} defaultValue={0} /></label>
-            <label className="field">Цвет кузова<input className="input" name="colorExterior" /></label>
-            <label className="field">Цвет салона<input className="input" name="colorInterior" /></label>
-            {can(user, 'vehicle.sensitive') ? (
-              <>
-                <label className="field">VIN<input className="input" name="vin" /></label>
-                <label className="field">Госномер<input className="input" name="plate" /></label>
-              </>
-            ) : null}
-          </div>
-          <label className="field">Описание для сайта<textarea className="input" name="description" rows={3} /></label>
-          <label className="field">Комплектация — по одному пункту в строке<textarea className="input" name="equipment" rows={4} /></label>
+          <CarFields kind="rental" isNew init={vehicleInit(null)} showVin={can(user, 'vehicle.sensitive')} showPlate={can(user, 'vehicle.sensitive')} />
         </section>
 
         {tariffs ? (
