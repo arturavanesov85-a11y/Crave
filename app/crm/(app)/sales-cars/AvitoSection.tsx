@@ -14,6 +14,7 @@ export function AvitoSection({ carId, status, problems, since, action }: { carId
         {live && since ? <span className="muted small">с {since}</span> : null}
       </div>
       <p className="muted small">Объявление берётся из этой карточки: модификация по каталогу Авито, цена, описание и фото. Характеристики на Авито — из каталога; тюнинг пишите в описании.</p>
+      {live ? <p className="small">Изменения в карточке (цена, описание, фото, характеристики) уходят на Авито сами при ближайшей автозагрузке — повторно отправлять не нужно, Авито обновит это же объявление.</p> : null}
       {problems.length ? <p className="warn small">Чтобы отправить: {problems.join('; ')}.</p> : null}
       {live
         ? <ActionForm action={action} hidden={{ id: carId, intent: 'unpublish' }} submit="Снять с Авито" variant="quiet" confirm="Снять объявление с Авито?" />

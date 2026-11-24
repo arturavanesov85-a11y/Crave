@@ -295,3 +295,6 @@ tr.row-dragging { opacity: .55; background: var(--surface-2, rgba(200, 169, 106,
 .tg-cal-dots i.up, .tg-cal-key.up { background: #7fc28a; }
 .tg-cal-dots i.down, .tg-cal-key.down { background: #e0b25b; }
 .tg-cal-key { display: inline-block; min-width: 10px; height: 10px; padding: 0; vertical-align: middle; }
+
+/* Пометка «Авито» у машин, отправленных в автозагрузку */
+.tag.avito-tag { margin-top: 4px; background: #00aaff1f; color: #3ab4ff; border-color: #00aaff55; }

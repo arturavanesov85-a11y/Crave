@@ -10,7 +10,8 @@ import { useRowOrder } from '@/components/crm/useRowOrder';
 type Action = (prev: ActionState, fd: FormData) => Promise<ActionState>;
 export type Row = {
   id: string; title: string; year: number; note: string | null; photo: string | null;
-  status: string; statusLabel: string; supplyLine: string | null; price: string; vat: boolean; mileage: string; updated: string;
+  status: string; statusLabel: string; avito: string | null; // «на Авито с …», если машина в файле автозагрузки
+  supplyLine: string | null; price: string; vat: boolean; mileage: string; updated: string;
   dealLine: string | null; deal: DealDefaults;
 };
 
@@ -36,6 +37,7 @@ export function SaleCarsTable({ rows, orderAction, dealAction }: { rows: Row[]; 
                 <td><Link href={`/crm/sales-cars/${c.id}`} style={{ fontWeight: 600 }}>{c.title}</Link><div className="muted small">{c.year}{c.note ? ` · ${c.note}` : ''}</div></td>
                 <td>
                   <span className={`tag ${c.status === 'published' ? 'ok' : c.status === 'reserved' ? 'gold' : ''}`}>{c.statusLabel}</span>
+                  {c.avito ? <div><span className="tag avito-tag" title={c.avito}>Авито</span></div> : null}
                   {c.supplyLine ? <div className="small gold">{c.supplyLine}</div> : null}
                   {c.dealLine ? <div className="small muted">{c.dealLine}</div> : null}
                 </td>

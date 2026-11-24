@@ -1,3 +1,4 @@
+import { fmtDateTime } from '@/lib/dates';
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { db, json } from '@/lib/db';
@@ -26,6 +27,7 @@ export default async function SaleCars() {
       photo: json<string[]>(c.photos, [])[0] ?? null,
       status: c.status,
       statusLabel: SALE_STATUS[c.status],
+      avito: c.avitoStatus === 'live' && ['published', 'reserved'].includes(c.status) ? `Отправлено на Авито${c.avitoSince ? ` ${fmtDateTime(c.avitoSince)}` : ''}` : null,
       supplyLine: c.supply !== 'stock' ? `${SUPPLY[c.supply]}${c.etaAt ? ` · ${fmtDate(c.etaAt)}` : c.etaNote ? ` · ${c.etaNote}` : ''}` : null,
       price: c.price ? rub(c.price) : 'по запросу',
       vat: c.priceVat,
