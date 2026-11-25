@@ -92,7 +92,7 @@ model Lead {
   appointmentAt  DateTime? // сервис: время записи
   saleCarId      String? // продажи: автомобиль из наличия
   carInfo        String? // автомобиль клиента или желаемый
-  amount         Int? // сумма сделки или оценка работ, копейки
+  amount         Float? // сумма сделки или оценка работ, копейки (Float — продажи больше 21 млн ₽)
   lostReason     String?
   closedAt       DateTime?
   viewedAt       DateTime? // когда заявку впервые открыли в CRM; пусто — не прочитана (счётчик в меню)
@@ -383,7 +383,7 @@ model SaleCar {
   title        String
   year         Int
   mileageKm    Int       @default(0)
-  price        Int? // копейки; пусто — «цена по запросу»
+  price        Float? // копейки (Float: цены продаж бывают больше 21 млн ₽ — предела Int); пусто — «цена по запросу»
   priceVat     Boolean   @default(false) // цена с НДС — так и пишется в объявлении
   bodyType     String    @default("sedan")
   powerHp      Int?
@@ -421,7 +421,7 @@ model SaleDeal {
   customerId    String?
   clientName    String
   clientPhone   String // только цифры, 7XXXXXXXXXX
-  price         Int // копейки
+  price         Float // копейки (Float — см. SaleCar.price)
   priceVat      Boolean   @default(false)
   buyer         String? // JSON: паспортные данные покупателя для ДКП
   note          String?
